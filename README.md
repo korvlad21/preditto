@@ -1,6 +1,3 @@
-# firstGoWeb
-first golang web-application
-
 ## Backend
 
 The backend uses Gin and requires Go 1.22 or newer.
