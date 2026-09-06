@@ -48,3 +48,6 @@ frontend/dist/
 
 # macOS
 .DS_Store
+
+# Local AI
+AI_USER_LEARN
