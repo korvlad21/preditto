@@ -28,8 +28,8 @@ Default reading order:
 If the task uses commands, also read the following before the first `Run command`:
 
 1. `AI_LEARN/commands/index.md`
-2. only relevant entries from `AI_LEARN/commands/patterns.md`
-3. only related entries from `AI_LEARN/commands/failures.md`
+2. `Find the tool or ID in AI_LEARN/commands/catalog.md.`
+3. `Read only the relevant block in AI_LEARN/commands/topics/*-patterns.md and the related *-failures.md.`
 
 If the task depends on the user's local environment, also read the relevant files from `AI_USER_LEARN`.
 
@@ -59,6 +59,6 @@ An iteration is complete only if:
 - the task is completed or has honestly reached an external limitation;
 - changes are minimal and verified;
 - the relevant `system_state.md` in `AI_LEARN` and/or `AI_USER_LEARN` reflects only the active state, risk, and next step, rather than receiving another historical entry;
-- `current_iteration.md` contains only the latest iteration; the previous result is preserved in a thematic file, `changelog.md`, or `archive/`;
+- `current_iteration.md` contains only the latest iteration; the previous result is preserved in a thematic file, `AI_LEARN/archive/history/changelog.md`, or `archive/`;
 - useful new findings have been stored in knowledge;
 - unexpected `Failed` results have either been normalized into knowledge or explicitly classified as non-reusable.
