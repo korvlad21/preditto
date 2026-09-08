@@ -7,7 +7,7 @@ Project rules, the four referenced skills, and module navigation are available. 
 ## Active Gaps and Risks
 
 - Language guidance conflicts: `project.md` requires English project memory, while `AGENTS.md` requires English instructions and `knowledge_accumulation.md` requires English Markdown. The user's explicit English-language direction is retained for these command instructions.
-- User-memory paths differ: `AGENTS.md` and `project.md` specify `AI_USER_LEARN/<project_name>/`, while command and memory skills use `AI_USER_LEARN/`.
+- User-memory paths differ: `AGENTS.md` and `project.md` specify `AI_USER_LEARN`, while command and memory skills use `AI_USER_LEARN`.
 - `module_context_loading.md` describes itself as extending itself. Research backlog and coverage files referenced by the research skill are not yet available.
 - Module boundaries remain unresearched. Empty catalog headings inherited from the reference project do not establish that those tools are used here.
 
