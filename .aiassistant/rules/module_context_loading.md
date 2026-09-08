@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Load only the knowledge and source files needed for the current task. This rule extends [context_loading.md](context_loading.md); keep its minimum-context requirements.
+Load only the knowledge and source files needed for the current task. This rule extends [module_context_loading.md](module_context_loading.md); keep its minimum-context requirements.
 
 ## Workflow
 

@@ -6,7 +6,7 @@ Four English module-knowledge rules are available in .aiassistant/rules/. AI_LEA
 
 ## Active Gaps and Risks
 
-- Some references in AGENTS.md and context_loading.md remain unavailable: .aiassistant/rules/project.md, AI_LEARN/commands/*, the lifecycle skill, and docs/ai/skills/*. Their procedures cannot currently be loaded.
+- Some references in AGENTS.md and module_context_loading.md remain unavailable: .aiassistant/rules/project.md, AI_LEARN/commands/*, the lifecycle skill, and docs/ai/skills/*. Their procedures cannot currently be loaded.
 - Module boundaries and detailed architecture are not yet documented. The overview records only the limited verified starting structure.
 
 ## Next Step

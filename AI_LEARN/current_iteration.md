@@ -8,7 +8,7 @@ Added four English Markdown rules for module context loading, focused research, 
 
 ## Verification
 
-Checked the existing rule format and actual top-level code entry points. New documents use English and UTF-8; local Markdown links were checked. Existing AGENTS.md, context_loading.md, and .gitignore were preserved byte for byte. This documentation-only change does not require application tests.
+Checked the existing rule format and actual top-level code entry points. New documents use English and UTF-8; local Markdown links were checked. Existing AGENTS.md, module_context_loading.md, and .gitignore were preserved byte for byte. This documentation-only change does not require application tests.
 
 ## Discovery Failure and Resolution
 
