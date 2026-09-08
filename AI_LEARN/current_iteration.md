@@ -1,15 +1,20 @@
 # Current Iteration
 
-Date: 2026-09-06
+Date: 2026-09-08
 
 ## Outcome
 
-Added four English Markdown rules for module context loading, focused research, knowledge accumulation, and validation. Prepared AI_LEARN/modules/index.md and minimal project orientation and state records. No previous iteration record existed to archive.
+Completed a user-requested controlled command-failure exercise. Added [FAILURE-20260908-001](commands/topics/go-failures.md#failure-20260908-001) and [PATTERN-20260908-001](commands/topics/go-patterns.md#pattern-20260908-001), linked them through the command index, catalog, and navigators, and refreshed active knowledge state.
+
+The previous iteration is preserved in [archive/2026-09-06-current_iteration.md](archive/2026-09-06-current_iteration.md).
 
 ## Verification
 
-Checked the existing rule format and actual top-level code entry points. New documents use English and UTF-8; local Markdown links were checked. Existing AGENTS.md, module_context_loading.md, and .gitignore were preserved byte for byte. This documentation-only change does not require application tests.
+- From `backend/`, `GOTOOLCHAIN=local go --version` exited with code `2`: `flag provided but not defined: -version`.
+- The corrected command, `GOTOOLCHAIN=local go version`, printed the local Go version and exited with code `0`.
+- Verified UTF-8 in 11 knowledge files, 29 local links and anchors, unique record IDs, and an exact archive copy of the previous iteration. `git diff --check` passed; `backend/go.mod` and `backend/go.sum` are unchanged.
+- This exercise validates command failure handling and knowledge navigation; it does not validate the application.
 
-## Discovery Failure and Resolution
+## Knowledge Handling
 
-The initial file-read batch stopped with ENOENT at .aiassistant/rules/project.md. Directory inspection confirmed the file was absent and that the existing rule directory is .aiassistant/rules/, not aiassistant/rules/. A guarded follow-up read identified other unavailable guidance without aborting; directory inspection and available instructions allowed the task to continue. The reusable rule is to check the parent directory once after a missing-path failure instead of repeating the same read. Confirmed guidance gaps are recorded in project_overview.md and system_state.md.
+The induced failure is explicitly labeled intentional. Its cause, incorrect assumption, verified correction, and prevention rule live in the linked topic records. No machine paths, credentials, or installed-version requirements were added to project knowledge. Remaining instruction inconsistencies are tracked in [system_state.md](system_state.md).

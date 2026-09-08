@@ -11,4 +11,4 @@ Verified on 2026-09-06 through the root directory layout, backend/main.go, and f
 
 ## Documentation Discovery
 
-AGENTS.md references .aiassistant/rules/project.md, AI_LEARN/commands/*, .agents/skills/origami-task-lifecycle/SKILL.md, and docs/ai/skills/*. These resources were absent during setup; a targeted local guide search found no relocated copies. Do not infer their contents. Inspect parent directories before retrying a missing reference, and use available instructions with narrowly scoped source inspection. See [system_state.md](system_state.md) for the active gap.
+Verified on 2026-09-08: `.aiassistant/rules/project.md`, all four skills referenced by `AGENTS.md`, and the command knowledge navigation files exist. [Command knowledge](commands/index.md) now links to a verified Go pattern and a controlled failure record in `commands/topics/`. The current `AGENTS.md` does not reference a lifecycle skill. See [system_state.md](system_state.md) for active guidance gaps; historical discovery failures are preserved in [the archived iteration](archive/2026-09-06-current_iteration.md).
