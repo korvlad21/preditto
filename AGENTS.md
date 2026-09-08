@@ -1,63 +1,64 @@
 # AGENTS.md
 
-## Роль
+## Role
 
-Агент работает как аккуратный инженер проекта: сначала понять, затем спланировать, затем сделать минимальные изменения, затем проверить и только потом обновить знания.
+The agent works as a careful project engineer: first understand, then plan, then make minimal changes, then verify, and only then update knowledge.
 
-## Глобальные инварианты
+## Global Invariants
 
-- Все создаваемые и редактируемые текстовые файлы должны быть в UTF-8. Если кодировка не подтверждена, файл небезопасен для правки.
-- `AI_LEARN` хранит только проектные знания; `AI_USER_LEARN/<project_name>` — только локальное окружение и приватный операционный контекст.
-- Неожиданно упавшая команда не должна пропадать: причину, контекст, исправленный запуск и правило нужно сохранить в знания.
-- Если код расходится с памятью, верить коду. Если подтверждённый запуск расходится с памятью о командах, верить последнему подтверждённому результату.
-- Минимизировать контекст, diff и число запусков. Не повторять уже провалившийся путь без новой гипотезы.
+- All instructions must be written in English, including `AGENTS.md`, rules, skills, and procedural guidance in documentation and knowledge files.
+- All created and edited text files must use UTF-8. If the encoding has not been confirmed, the file is unsafe to edit.
+- `AI_LEARN` stores only project knowledge; `AI_USER_LEARN/<project_name>` stores only the local environment and private operational context.
+- An unexpectedly failed command must not go unaccounted for: its cause, context, corrected invocation, and rule must be stored in knowledge.
+- If code conflicts with memory, trust the code. If a confirmed execution conflicts with command memory, trust the latest confirmed result.
+- Minimize context, diff, and the number of executions. Do not repeat a failed approach without a new hypothesis.
 
-## Минимальный контекст
+## Minimum Context
 
-Не загружать весь проект или весь `AI_LEARN`.
+Do not load the entire project or all of `AI_LEARN`.
 
-Базовый порядок чтения:
+Default reading order:
 
 1. `AGENTS.md`
 2. `.aiassistant/rules/project.md`
 3. `AI_LEARN/index.md`
 4. `AI_LEARN/project_overview.md`
-5. далее только нужные файлы
+5. then only the files needed
 
-Если задача использует команды, до первого `Run command` дополнительно читать:
+If the task uses commands, also read the following before the first `Run command`:
 
 1. `AI_LEARN/commands/index.md`
-2. только релевантные записи из `AI_LEARN/commands/patterns.md`
-3. только связанные записи из `AI_LEARN/commands/failures.md`
+2. only relevant entries from `AI_LEARN/commands/patterns.md`
+3. only related entries from `AI_LEARN/commands/failures.md`
 
-Если задача зависит от локального окружения пользователя, дополнительно читать релевантные файлы из `../AI_USER_LEARN/<project_name>/`.
+If the task depends on the user's local environment, also read the relevant files from `../AI_USER_LEARN/<project_name>/`.
 
-Если в целевой подпапке есть локальный `AGENTS.md`, читать его после корневого и до работы в этой подпапке.
+If the target subdirectory contains a local `AGENTS.md`, read it after the root file and before working in that subdirectory.
 
-## Routing по skills
+## Skill Routing
 
-Открывать только те skills, которые реально нужны сценарию:
+Open only the skills actually needed for the scenario:
 
-- `docs/ai/skills/encoding-safe-editing.md` — создание или правка текстовых файлов, особенно при не-ASCII, сомнительной кодировке или shell-правках.
-- `docs/ai/skills/command-workflow.md` — любой `Run command`, выбор безопасного запуска, разбор `Failed`, обновление `AI_LEARN/commands/*`.
-- `docs/ai/skills/memory-workflow.md` — обновление `AI_LEARN` или `AI_USER_LEARN`, завершение итерации, нормализация знаний.
-- `docs/ai/skills/research-mode.md` — исследовательский режим, картирование новой зоны проекта, обновление backlog и coverage.
+- `docs/ai/skills/encoding-safe-editing.md` — creating or editing text files, especially with non-ASCII text, uncertain encoding, or shell-based edits.
+- `docs/ai/skills/command-workflow.md` — any `Run command`, choosing a safe invocation, analyzing `Failed` results, and updating `AI_LEARN/commands/*`.
+- `docs/ai/skills/memory-workflow.md` — updating `AI_LEARN` or `AI_USER_LEARN`, completing an iteration, and normalizing knowledge.
+- `docs/ai/skills/research-mode.md` — research mode, mapping an unfamiliar project area, and updating backlog and coverage.
 
-## Ограничения
+## Constraints
 
-- Не перегружать контекст и не анализировать весь проект за один проход.
-- Не переписывать большие части кода без необходимости и не делать массовый рефакторинг.
-- Не выдумывать структуру проекта и не сохранять неподтверждённые выводы как знания.
-- Не дублировать одни и те же инструкции между корнем, skills и памятью без пользы.
-- Не делать серию однотипных запусков «на удачу».
+- Do not overload context or analyze the entire project in a single pass.
+- Do not rewrite large portions of code unnecessarily or perform bulk refactoring.
+- Do not invent project structure or store unconfirmed conclusions as knowledge.
+- Do not duplicate the same instructions across the root, skills, and memory without a useful reason.
+- Do not make a series of similar attempts hoping one will work.
 
-## Завершение итерации
+## Iteration Completion
 
-Итерация завершена только если:
+An iteration is complete only if:
 
-- задача выполнена или честно упёрлась во внешнее ограничение;
-- изменения минимальны и проверены;
-- релевантный `system_state.md` в `AI_LEARN` и/или `AI_USER_LEARN` отражает только активное состояние, риск и следующий шаг, а не пополняется ещё одной исторической записью;
-- `current_iteration.md` содержит только последнюю итерацию; предыдущий итог сохранён в тематическом файле, `changelog.md` или `archive/`;
-- полезные новые выводы сохранены в знания;
-- неожиданные `Failed` либо нормализованы в знания, либо явно признаны непереиспользуемыми.
+- the task is completed or has honestly reached an external limitation;
+- changes are minimal and verified;
+- the relevant `system_state.md` in `AI_LEARN` and/or `AI_USER_LEARN` reflects only the active state, risk, and next step, rather than receiving another historical entry;
+- `current_iteration.md` contains only the latest iteration; the previous result is preserved in a thematic file, `changelog.md`, or `archive/`;
+- useful new findings have been stored in knowledge;
+- unexpected `Failed` results have either been normalized into knowledge or explicitly classified as non-reusable.
