@@ -38,7 +38,6 @@
 
 Открывать только те skills, которые реально нужны сценарию:
 
-- `.agents/skills/origami-task-lifecycle/SKILL.md` — старт, продолжение и завершение многошаговой или тикетной задачи, identity/capability preflight, доказательства и handoff.
 - `docs/ai/skills/encoding-safe-editing.md` — создание или правка текстовых файлов, особенно при не-ASCII, сомнительной кодировке или shell-правках.
 - `docs/ai/skills/command-workflow.md` — любой `Run command`, выбор безопасного запуска, разбор `Failed`, обновление `AI_LEARN/commands/*`.
 - `docs/ai/skills/memory-workflow.md` — обновление `AI_LEARN` или `AI_USER_LEARN`, завершение итерации, нормализация знаний.
