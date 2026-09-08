@@ -7,7 +7,7 @@
 - Do not introduce non-ASCII text using `Set-Content`, `Out-File`, `>` / `>>`, shell replacements, or one-off inline scripts without explicitly using UTF-8 and performing a subsequent strict validation.
 - If `apply_patch` cannot be used because of a file's legacy encoding, fix the file encoding first instead of applying partial edits on top of the old encoding.
 - After any edit containing Cyrillic or other non-ASCII text, perform strict UTF-8 decoding validation; visual inspection in the terminal is not sufficient.
-- Entries in `AI_LEARN/system_state.md` and other project-memory files must be written only in Russian. English is allowed only inside literal class names, paths, CLI commands, and external identifiers.
+- Entries in `AI_LEARN/system_state.md` and other project-memory files must be written only in English.
 
 ## Memory Boundary
 
