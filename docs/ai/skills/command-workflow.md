@@ -22,7 +22,7 @@ Provide a compact runbook for safe command execution in the `preditto` Go backen
 
 1. Identify the command type: `go` (`go test`, `go run`, `go build`, `go fmt`, `go vet`, `go mod`), `gofmt`, a repository-defined Go CLI, `git`, `docker`, `docker compose`, `bash/sh`, or PostgreSQL CLI (`psql`, `pg_isready`). PostgreSQL is configured in `docker-compose.yaml`; verify CLI availability in the selected host or container.
 2. Before execution, read `AI_LEARN/commands/index.md`, locate the relevant ID in `AI_LEARN/commands/catalog.md`, then read only the matching entry in `topics/<tool>-patterns.md` and linked `topics/<tool>-failures.md` (for example, `go-patterns.md` and `go-failures.md`). Do not load entire collections. If a referenced file is missing, inspect its parent directory once and proceed with available instructions; do not invent a pattern.
-3. For machine-specific commands, also read the relevant `../AI_USER_LEARN/preditto/commands/*` entries.
+3. For machine-specific commands, also read the relevant `AI_USER_LEARN/commands/*` entries.
 4. State the command's purpose and start with the narrowest, cheapest check that can answer it. For a change in one package, check that package or test before considering a full-module check.
 5. Complete preflight using known context; run discovery commands only where needed:
    - Has this command been attempted or failed in a similar context? Is there a confirmed pattern? Does it require a different directory, environment, flag, shell, or prerequisite?
@@ -60,7 +60,7 @@ Provide a compact runbook for safe command execution in the `preditto` Go backen
 4. Identify the cause and incorrect assumption.
 5. Form a correction hypothesis; do not repeat the same failure without new evidence.
 6. Verify the corrected invocation with the narrowest relevant check. If blocked externally, record the blocker and leave the correction explicitly unverified.
-7. Save a normalized rule describing early recognition and the verified invocation. Route project-reusable findings to `AI_LEARN`; route local paths, machine setup, and private operational context to `../AI_USER_LEARN/preditto/`.
+7. Save a normalized rule describing early recognition and the verified invocation. Route project-reusable findings to `AI_LEARN`; route local paths, machine setup, and private operational context to `AI_USER_LEARN/`.
 8. For reusable cases, update the relevant topic entry, `catalog.md`, and index links as needed. Merge with existing cases instead of duplicating them; explicitly classify non-reusable failures as such.
 
 ## Source-of-Truth Priority
@@ -124,4 +124,4 @@ For `AI_LEARN/commands/topics/<tool>-patterns.md` (replace `[go]` with the relev
 - `AI_LEARN/commands/catalog.md`
 - `AI_LEARN/commands/topics/<tool>-failures.md`
 - `AI_LEARN/commands/topics/<tool>-patterns.md`
-- `../AI_USER_LEARN/preditto/commands/*`
+- `AI_USER_LEARN/commands/*`

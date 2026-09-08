@@ -8,7 +8,7 @@ The agent works as a careful project engineer: first understand, then plan, then
 
 - All instructions must be written in English, including `AGENTS.md`, rules, skills, and procedural guidance in documentation and knowledge files.
 - All created and edited text files must use UTF-8. If the encoding has not been confirmed, the file is unsafe to edit.
-- `AI_LEARN` stores only project knowledge; `AI_USER_LEARN/<project_name>` stores only the local environment and private operational context.
+- `AI_LEARN` stores only project knowledge; `AI_USER_LEARN/` at the project root stores only the local environment and private operational context. All `AI_USER_LEARN` paths in project instructions are relative to the project root.
 - An unexpectedly failed command must not go unaccounted for: its cause, context, corrected invocation, and rule must be stored in knowledge.
 - If code conflicts with memory, trust the code. If a confirmed execution conflicts with command memory, trust the latest confirmed result.
 - Minimize context, diff, and the number of executions. Do not repeat a failed approach without a new hypothesis.
@@ -31,7 +31,7 @@ If the task uses commands, also read the following before the first `Run command
 2. only relevant entries from `AI_LEARN/commands/patterns.md`
 3. only related entries from `AI_LEARN/commands/failures.md`
 
-If the task depends on the user's local environment, also read the relevant files from `../AI_USER_LEARN/<project_name>/`.
+If the task depends on the user's local environment, also read the relevant files from `AI_USER_LEARN/`.
 
 If the target subdirectory contains a local `AGENTS.md`, read it after the root file and before working in that subdirectory.
 

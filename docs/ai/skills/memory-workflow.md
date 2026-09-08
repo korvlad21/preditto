@@ -76,4 +76,4 @@ An iteration is complete only if all of the following conditions are met:
 - `AI_LEARN/current_iteration.md`
 - `AI_LEARN/research/research_backlog.md`
 - `AI_LEARN/research/coverage_map.md`
-- `../AI_USER_LEARN/<project_name>/*`
+- `AI_USER_LEARN/*`
