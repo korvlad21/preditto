@@ -4,7 +4,7 @@ The backend uses Gin and requires Go 1.22 or newer.
 
 ```sh
 cd backend
-go run .
+go run ./cmd/api
 ```
 
 The server listens on all interfaces on port `8080`. Set `APP_PORT` to use a

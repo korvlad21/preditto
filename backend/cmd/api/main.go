@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/korvlad21/firstGoWeb/handler"
+	"github.com/korvlad21/firstGoWeb/internal/handler"
 )
 
 func main() {
