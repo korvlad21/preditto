@@ -1,6 +1,6 @@
 services:
   backend:
-    build:
+    build: &backend-build
       context: ./backend
       dockerfile: DockerFile
     restart: unless-stopped
@@ -8,7 +8,7 @@ services:
       - "8080:8080"
     volumes:
       - ./backend:/app
-    environment:
+    environment: &backend-environment
       APP_PORT: 8080
 
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -23,6 +23,18 @@ services:
       timeout: 3s
       start_period: 30s
       retries: 3
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  seed:
+    build: *backend-build
+    restart: "no"
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    environment: *backend-environment
+    command: ["go", "run", "./cmd/seed"]
     depends_on:
       migrate:
         condition: service_completed_successfully

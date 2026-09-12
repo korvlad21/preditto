@@ -8,7 +8,7 @@ Run these commands from the project root with Docker Compose and the existing `.
 docker compose up -d --build
 ```
 
-Compose waits for the PostgreSQL healthcheck, runs the one-shot `migrate` service with `up`, then starts the backend only after migration success. A migration failure blocks backend startup. Migrations are not run by the Go application.
+Compose waits for the PostgreSQL healthcheck, runs the one-shot `migrate` service with `up`, runs the [seed service](../internal/seed/README.md), then starts the backend only after both services succeed. A migration or seed failure blocks backend startup. Migrations are not run by the Go application.
 
 The service mounts this directory read-only and maps the existing `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `POSTGRES_SSLMODE` variables to the driver's `PG*` variables. Credentials are not embedded into a URL. The host must resolve from inside the Compose network (normally `postgres`).
 

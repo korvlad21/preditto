@@ -1,8 +1,10 @@
 # Backend
 
+The [seed package](../../../backend/internal/seed/README.md) owns repeatable initial data and is run by [cmd/seed](../../../backend/cmd/seed/main.go). It reuses config and database packages under the `preditto` Go module. Compose now gates startup in the order PostgreSQL healthy, migrate success, seed success, backend. The seed service shares the backend build and environment. The first seed upserts the specified 36 teams by unique slug in a transaction; its input validation, preservation rules, extension pattern, and manual command are documented in the package README.
+
 [Migration 000003](../../../backend/migrations/000003_create_user_info.up.sql) adds user_info. Its unique, required user_id references users with ON DELETE CASCADE; nullable favorite_team_id references teams with ON DELETE SET NULL. updated_at has only a CURRENT_TIMESTAMP default, with no application trigger; future Go updates must maintain it explicitly. The [down migration](../../../backend/migrations/000003_create_user_info.down.sql) drops user_info and its owned identity sequence. Isolated PostgreSQL checks verified schema, constraints, both deletion rules, unchanged updated_at during an ordinary update, and rollback to version 2 preserving users and teams.
 
-Verified on 2026-09-12: PostgreSQL schema migrations are owned by the separate `migrate` service in [Compose](../../../docker-compose.yaml). The backend waits for successful migration completion; migrations wait for the existing PostgreSQL healthcheck. No Go migration runner is used.
+Verified on 2026-09-12: PostgreSQL schema migrations are owned by the separate `migrate` service in [Compose](../../../docker-compose.yaml). Seeds wait for successful migration completion; migrations wait for the existing PostgreSQL healthcheck. No Go migration runner is used.
 
 The schema, trigger behavior, environment contract, and manual commands are documented in [the migration README](../../../backend/migrations/README.md). SQL files live in `backend/migrations`; migrate tracks their version in `schema_migrations`.
 
