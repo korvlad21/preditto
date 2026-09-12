@@ -1,6 +1,6 @@
 # Module Knowledge Index
 
-No module-specific research notes have been recorded yet. The confirmed starting areas are backend/ and frontend/; these are navigation hints, not a fixed list of business modules.
+- [Backend](backend/overview.md): Go API startup, environment configuration, and PostgreSQL connection lifecycle in `backend/`.
 
 ## Adding a Module
 

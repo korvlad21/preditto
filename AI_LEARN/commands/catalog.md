@@ -6,6 +6,8 @@ Only linked records describe verified commands; empty inherited headings are pla
 
 ## Go Toolchain
 
+- [FAILURE-20260912-001](topics/go-failures.md#failure-20260912-001) — `lib/pq` configuration validation is deferred by `sql.Open`; explicit connector initialization is verified.
+
 - [PATTERN-20260908-001](topics/go-patterns.md#pattern-20260908-001) — query the local Go version with `GOTOOLCHAIN=local go version`.
 - [FAILURE-20260908-001](topics/go-failures.md#failure-20260908-001) — unsupported `--version` flag; `flag provided but not defined: -version` (controlled exercise).
 

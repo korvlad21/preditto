@@ -1,8 +1,11 @@
-module github.com/korvlad21/firstGoWeb
+module preditto
 
 go 1.22
 
-require github.com/gin-gonic/gin v1.10.1
+require (
+	github.com/gin-gonic/gin v1.10.1
+	github.com/lib/pq v1.12.3
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
