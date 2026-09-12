@@ -4,16 +4,12 @@ Date: 2026-09-12
 
 ## Outcome
 
-Added the first users up/down SQL migration, its updated_at trigger, a separate migrate/migrate:v4.20.1 Compose service, and [migration usage documentation](../backend/migrations/README.md). The backend depends on migration success, and migrations depend on PostgreSQL health. Existing environment credentials are reused. Go code and dependencies are unchanged.
-
-The current checkout differs from earlier conversation work: PostgreSQL Go configuration and .env.example are absent, and Compose uses POSTGRES_DSN. This iteration followed the actual checkout and did not restore unrelated prior changes.
-
-The earlier iteration is preserved in [archive](archive/2026-09-08-current_iteration.md). Canonical knowledge is in [backend](modules/backend/overview.md).
+Added the 000003_create_user_info SQL migration pair without changing existing migrations or application code. The profile references users with a unique required user_id and ON DELETE CASCADE, and teams with nullable favorite_team_id and ON DELETE SET NULL. updated_at has a default only and is not automatically updated. The contract is recorded in [backend knowledge](modules/backend/overview.md). The previous result is preserved in [archive](archive/2026-09-12-teams-migration.md).
 
 ## Verification
 
-Compose validation and whitespace checks passed. An isolated Docker project used real PostgreSQL 18.6, the pinned migration image, the actual SQL mount, temporary database storage, and synthetic credentials containing URL-reserved characters. Initial up, no-change up, schema/constraint/trigger assertions, down 1, removal assertions, and reapply passed. A lightweight backend probe started after migration success; an earlier failed migration blocked startup. Temporary containers and their network were removed. Full application startup was not tested.
+An isolated temporary Docker project applied versions 1 through 3 using the existing migrate configuration. PostgreSQL assertions verified column definitions, primary key and identity, uniqueness, missing-reference rejection, nullability, length limits, timestamp default, absence of application triggers, unchanged updated_at on update, user deletion cascade, and team deletion setting the reference to null. Down 1 returned to clean version 2 and removed user_info and its identity sequence while preserving users and teams. Temporary containers, network, and test files were removed. UTF-8, knowledge links, whitespace, and existing application files were checked.
 
-## Failure Handling
+## Diagnostic
 
-[FAILURE-20260912-001](commands/topics/docker-failures.md#failure-20260912-001) records the PostgreSQL URL normalization issue and verified correction. Missing-file discovery and temporary Compose interpolation diagnostics are recorded in local knowledge. UTF-8 and local documentation references were checked.
+A documentation apply_patch attempted to match a sentence as a whole line, although it was part of a longer paragraph, and was rejected before making changes. The corrected patch used the observed heading as its context and succeeded. This one-off patch construction mistake is classified as non-reusable project knowledge; use exact complete-line context when constructing patches.

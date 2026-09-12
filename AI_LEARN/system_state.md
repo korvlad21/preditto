@@ -2,7 +2,7 @@
 
 ## Active State
 
-The first [backend migration](modules/backend/overview.md) creates users and an updated_at trigger. Compose gates backend startup on successful migrate completion after PostgreSQL health. Isolated real PostgreSQL checks passed for constraints, trigger behavior, up/down/reapply, and dependency ordering. [Command knowledge](commands/index.md) records the tested migration commands and URL correction.
+The [backend migrations](modules/backend/overview.md) create users (000001), teams (000002), and user_info (000003). The profile schema, constraints, foreign-key deletion rules, timestamp behavior, and rollback preserving users and teams were verified on isolated PostgreSQL. Compose continues to gate backend startup on successful migrate completion after PostgreSQL health. [Command knowledge](commands/index.md) records the tested migration commands and URL correction.
 
 ## Active Gaps and Risks
 
