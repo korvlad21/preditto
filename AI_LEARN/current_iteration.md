@@ -1,20 +1,19 @@
 # Current Iteration
 
-Date: 2026-09-08
+Date: 2026-09-12
 
 ## Outcome
 
-Completed a user-requested controlled command-failure exercise. Added [FAILURE-20260908-001](commands/topics/go-failures.md#failure-20260908-001) and [PATTERN-20260908-001](commands/topics/go-patterns.md#pattern-20260908-001), linked them through the command index, catalog, and navigators, and refreshed active knowledge state.
+Added the first users up/down SQL migration, its updated_at trigger, a separate migrate/migrate:v4.20.1 Compose service, and [migration usage documentation](../backend/migrations/README.md). The backend depends on migration success, and migrations depend on PostgreSQL health. Existing environment credentials are reused. Go code and dependencies are unchanged.
 
-The previous iteration is preserved in [archive/2026-09-06-current_iteration.md](archive/2026-09-06-current_iteration.md).
+The current checkout differs from earlier conversation work: PostgreSQL Go configuration and .env.example are absent, and Compose uses POSTGRES_DSN. This iteration followed the actual checkout and did not restore unrelated prior changes.
+
+The earlier iteration is preserved in [archive](archive/2026-09-08-current_iteration.md). Canonical knowledge is in [backend](modules/backend/overview.md).
 
 ## Verification
 
-- From `backend/`, `GOTOOLCHAIN=local go --version` exited with code `2`: `flag provided but not defined: -version`.
-- The corrected command, `GOTOOLCHAIN=local go version`, printed the local Go version and exited with code `0`.
-- Verified UTF-8 in 11 knowledge files, 29 local links and anchors, unique record IDs, and an exact archive copy of the previous iteration. `git diff --check` passed; `backend/go.mod` and `backend/go.sum` are unchanged.
-- This exercise validates command failure handling and knowledge navigation; it does not validate the application.
+Compose validation and whitespace checks passed. An isolated Docker project used real PostgreSQL 18.6, the pinned migration image, the actual SQL mount, temporary database storage, and synthetic credentials containing URL-reserved characters. Initial up, no-change up, schema/constraint/trigger assertions, down 1, removal assertions, and reapply passed. A lightweight backend probe started after migration success; an earlier failed migration blocked startup. Temporary containers and their network were removed. Full application startup was not tested.
 
-## Knowledge Handling
+## Failure Handling
 
-The induced failure is explicitly labeled intentional. Its cause, incorrect assumption, verified correction, and prevention rule live in the linked topic records. No machine paths, credentials, or installed-version requirements were added to project knowledge. Remaining instruction inconsistencies are tracked in [system_state.md](system_state.md).
+[FAILURE-20260912-001](commands/topics/docker-failures.md#failure-20260912-001) records the PostgreSQL URL normalization issue and verified correction. Missing-file discovery and temporary Compose interpolation diagnostics are recorded in local knowledge. UTF-8 and local documentation references were checked.

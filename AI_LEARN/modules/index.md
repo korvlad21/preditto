@@ -1,6 +1,6 @@
 # Module Knowledge Index
 
-No module-specific research notes have been recorded yet. The confirmed starting areas are backend/ and frontend/; these are navigation hints, not a fixed list of business modules.
+- [Backend](backend/overview.md): PostgreSQL schema migrations and Docker startup dependencies in `backend/migrations` and `docker-compose.yaml`.
 
 ## Adding a Module
 

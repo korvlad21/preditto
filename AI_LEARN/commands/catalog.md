@@ -11,6 +11,9 @@ Only linked records describe verified commands; empty inherited headings are pla
 
 ## Database and Doctrine
 
+- [PATTERN-20260912-001](topics/docker-patterns.md#pattern-20260912-001) — PostgreSQL migrations through Docker Compose, including manual up and down.
+- [FAILURE-20260912-001](topics/docker-failures.md#failure-20260912-001) — use `postgres:///` with PG environment variables; `postgres://` loses URL syntax during normalization.
+
 ## Frontend and Build
 
 ## MCP and AI

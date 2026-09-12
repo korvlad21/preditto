@@ -19,6 +19,25 @@ services:
       start_period: 30s
       retries: 3
     depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    image: migrate/migrate:v4.20.1
+    restart: "no"
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    environment:
+      PGHOST: ${POSTGRES_HOST}
+      PGPORT: ${POSTGRES_PORT}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      PGSSLMODE: ${POSTGRES_SSLMODE}
+    # The PostgreSQL driver reads connection settings from PG* environment variables.
+    entrypoint: ["migrate", "-path", "/migrations", "-database", "postgres:///"]
+    command: ["up"]
+    depends_on:
       postgres:
         condition: service_healthy
 

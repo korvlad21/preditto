@@ -1,3 +1,5 @@
 # Command Patterns: Choose a Tool
 
+- [PATTERN-20260912-001: Docker PostgreSQL migrations](topics/docker-patterns.md#pattern-20260912-001) — validate Compose and run up/down with the migration service.
+
 - [PATTERN-20260908-001: Query the local Go version](topics/go-patterns.md#pattern-20260908-001) — use the `version` subcommand during toolchain preflight.
