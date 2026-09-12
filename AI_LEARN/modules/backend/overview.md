@@ -1,13 +1,11 @@
 # Backend
 
-Verified on 2026-09-12 through targeted tests, full-module tests, static analysis, and Compose configuration validation.
+[Migration 000003](../../../backend/migrations/000003_create_user_info.up.sql) adds user_info. Its unique, required user_id references users with ON DELETE CASCADE; nullable favorite_team_id references teams with ON DELETE SET NULL. updated_at has only a CURRENT_TIMESTAMP default, with no application trigger; future Go updates must maintain it explicitly. The [down migration](../../../backend/migrations/000003_create_user_info.down.sql) drops user_info and its owned identity sequence. Isolated PostgreSQL checks verified schema, constraints, both deletion rules, unchanged updated_at during an ordinary update, and rollback to version 2 preserving users and teams.
 
-The module name in [go.mod](../../../backend/go.mod) is `preditto`; internal imports use `preditto/internal/...`. The former `github.com/korvlad21/firstGoWeb` prefix was removed from the backend. These packages are local and remain required by API startup and database code. Full-module tests passed after the rename.
+Verified on 2026-09-12: PostgreSQL schema migrations are owned by the separate `migrate` service in [Compose](../../../docker-compose.yaml). The backend waits for successful migration completion; migrations wait for the existing PostgreSQL healthcheck. No Go migration runner is used.
 
-- [config.Load](../../../backend/internal/config/config.go) requires `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and `POSTGRES_SSLMODE` from the process environment. It validates the port and supplies no database defaults.
-- [NewPostgres](../../../backend/internal/database/postgres.go) uses `database/sql` and `lib/pq`. URL encoding preserves special characters. Driver configuration is validated before opening the pool; `PingContext` verifies connectivity. Errors preserve their causes, and failed Ping closes the pool.
-- [API startup](../../../backend/cmd/api/main.go) verifies PostgreSQL before serving HTTP. Its five-second deadline also bounds the driver handshake. The caller closes the pool when `run` exits.
-- [Compose](../../../docker-compose.yaml) forwards all six variables. The ignored root `.env` supplies local values; [.env.example](../../../.env.example) documents Compose defaults. Direct host execution requires exported variables and a host-reachable PostgreSQL address; the backend does not load `.env` itself.
-- [go.mod](../../../backend/go.mod) adds only `github.com/lib/pq v1.12.3`; the Go directive and existing dependency versions are unchanged. No ORM is used.
+The schema, trigger behavior, environment contract, and manual commands are documented in [the migration README](../../../backend/migrations/README.md). SQL files live in `backend/migrations`; migrate tracks their version in `schema_migrations`.
 
-Tests cover configuration errors, DSN escaping, canceled Ping, rejected connections, and stalled-handshake timeout. A successful real PostgreSQL connection remains unverified.
+[Migration 000002](../../../backend/migrations/000002_create_teams.up.sql) adds teams with an identity primary key, required name and unique slug, nullable short_name and logo_url, and a microsecond-precision created_at default. Its [down migration](../../../backend/migrations/000002_create_teams.down.sql) drops only teams and its owned identity sequence. Isolated PostgreSQL checks verified schema, constraints, defaults, apply to version 2, and rollback to version 1 with users preserved.
+
+Isolated Docker checks with PostgreSQL 18.6 and migrate v4.20.1 verified initial apply, repeated up, column definitions, identity generation, uniqueness, null rejection, length limits, updated_at behavior, down 1, and reapply. A lightweight backend probe verified the Compose dependency gate; the actual Go API was not rebuilt or started in this iteration.

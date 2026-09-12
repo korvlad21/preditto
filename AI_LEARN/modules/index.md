@@ -1,6 +1,6 @@
 # Module Knowledge Index
 
-- [Backend](backend/overview.md): Go API startup, environment configuration, and PostgreSQL connection lifecycle in `backend/`.
+- [Backend](backend/overview.md): PostgreSQL schema migrations and Docker startup dependencies in `backend/migrations` and `docker-compose.yaml`.
 
 ## Adding a Module
 
