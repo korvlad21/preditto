@@ -1,0 +1,96 @@
+package test
+
+import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
+	"errors"
+	"strings"
+	"testing"
+
+	"preditto/seeds/development"
+)
+
+// The connector keeps the test driver local without global registration.
+type teamsConnector struct{ conn *teamsConn }
+
+func (c teamsConnector) Connect(context.Context) (driver.Conn, error) { return c.conn, nil }
+func (c teamsConnector) Driver() driver.Driver                        { return teamsDriver{} }
+
+type teamsDriver struct{}
+
+func (teamsDriver) Open(string) (driver.Conn, error) {
+	return nil, errors.New("use the test connector")
+}
+
+type teamsConn struct {
+	rows                        [][]driver.NamedValue
+	committed, rolledBack, fail bool
+}
+
+func (*teamsConn) Prepare(string) (driver.Stmt, error) {
+	return nil, errors.New("prepared statements are not supported")
+}
+func (*teamsConn) Close() error                { return nil }
+func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
+func (c *teamsConn) Commit() error             { c.committed = true; return nil }
+func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
+func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if !strings.Contains(query, "INSERT INTO teams") || !strings.Contains(query, "ON CONFLICT (slug) DO UPDATE") {
+		return nil, errors.New("unexpected seed query")
+	}
+	if c.fail {
+		return nil, errors.New("injected write failure")
+	}
+	c.rows = append(c.rows, append([]driver.NamedValue(nil), args...))
+	return driver.RowsAffected(1), nil
+}
+
+func TestSeedTeams(t *testing.T) {
+	conn := &teamsConn{}
+	db := sql.OpenDB(teamsConnector{conn})
+	t.Cleanup(func() { db.Close() })
+	if err := development.Run(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	if !conn.committed || conn.rolledBack {
+		t.Fatal("successful seed must commit without rollback")
+	}
+	if len(conn.rows) != 36 {
+		t.Fatalf("expected 36 seed teams, got %d", len(conn.rows))
+	}
+	seen := make(map[string]bool)
+	for _, row := range conn.rows {
+		if len(row) != 3 {
+			t.Fatalf("expected name, short_name and slug, got %v", row)
+		}
+		name, nameOK := row[0].Value.(string)
+		shortName, shortOK := row[1].Value.(string)
+		slug, slugOK := row[2].Value.(string)
+		if !nameOK || !shortOK || !slugOK || name == "" || slug == "" || len(shortName) != 3 {
+			t.Fatalf("invalid seed team: %v", row)
+		}
+		for _, letter := range shortName {
+			if letter < 'A' || letter > 'Z' {
+				t.Fatalf("invalid short_name: %q", shortName)
+			}
+		}
+		if seen[slug] {
+			t.Fatalf("duplicate seed slug: %q", slug)
+		}
+		seen[slug] = true
+	}
+}
+
+func TestSeedTeamsRollsBackOnWriteError(t *testing.T) {
+	conn := &teamsConn{fail: true}
+	db := sql.OpenDB(teamsConnector{conn})
+	t.Cleanup(func() { db.Close() })
+	err := development.Run(context.Background(), db)
+	if err == nil || !strings.Contains(err.Error(), "seed teams: upsert team") {
+		t.Fatalf("expected wrapped teams write error, got %v", err)
+	}
+	if conn.committed || !conn.rolledBack {
+		t.Fatal("failed seed must roll back without commit")
+	}
+}

@@ -8,7 +8,7 @@ import (
 
 	"preditto/internal/config"
 	"preditto/internal/database"
-	"preditto/internal/seed"
+	"preditto/seeds/development"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	if err := seed.Run(ctx, db); err != nil {
+	if err := development.Run(ctx, db); err != nil {
 		return err
 	}
 	log.Print("Seeds applied successfully")

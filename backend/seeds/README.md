@@ -1,6 +1,6 @@
 # Database seeds
 
-Seed logic lives in this package; `backend/cmd/seed` is the standalone CLI. It reuses the existing configuration and PostgreSQL connection packages. No seeding framework or additional dependencies are required.
+Seed logic lives in `backend/seeds/development`; `backend/cmd/seed` is the standalone CLI. It reuses the existing configuration and PostgreSQL connection packages. No seeding framework or additional dependencies are required.
 
 From the project root:
 
@@ -25,6 +25,8 @@ docker compose run --rm seed
 
 Restarting only the backend does not rerun seeds.
 
-`Run` executes the ordered seed list in a single transaction. An error rolls back the entire run. Add future seed functions in separate files in this package and register them in dependency order in `seed.go`; each function must be safe to repeat.
+`development.Run` executes the ordered seed list in a single transaction. An error rolls back the entire run. Add future seed functions in separate files in `development` and register them in dependency order in `development/seed.go`; each function must be safe to repeat.
 
 The teams seed contains 36 entries. It validates nonempty names/slugs, unique slugs within the dataset, and exactly three uppercase ASCII letters in every short_name before writing. `ON CONFLICT (slug) DO UPDATE` uses the existing unique constraint to prevent duplicate rows and correct seeded names/abbreviations. It preserves IDs, created_at, and profile references; unrelated teams are untouched. New logos are NULL, while existing logos are preserved on reruns. These checks apply to seed data; the teams schema is unchanged.
+
+Tests in `test` exercise the public runner with a test SQL driver. Tests of private validation helpers remain in `development`, since Go directories are separate packages. From `backend`, run `go test ./seeds/...`; the CLI remains `go run ./cmd/seed` after migrations with PostgreSQL configured.

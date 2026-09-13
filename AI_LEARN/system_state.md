@@ -2,7 +2,7 @@
 
 ## Active State
 
-The [backend](modules/backend/overview.md) has users, teams, and user_info migrations plus a standalone Go seed command for 36 teams. Compose gates startup on PostgreSQL health, migration success, then seed success. Unit tests and isolated PostgreSQL checks verified seed data, repeated upserts, stable IDs and references, full rollback on an injected failure, blocked backend startup, and successful recovery. Existing SQL migrations are unchanged.
+The [backend](modules/backend/overview.md) has users, teams, and user_info migrations plus a standalone Go seed command for 36 teams. Seed implementation lives in `backend/seeds/development`; public runner tests live in `backend/seeds/test`, and private validation tests remain alongside the implementation. The relocation passes backend build, all tests, vet, and import resolution. Compose gates startup on PostgreSQL health, migration success, then seed success. Unit tests and isolated PostgreSQL checks verified seed data, repeated upserts, stable IDs and references, full rollback on an injected failure, blocked backend startup, and successful recovery. Existing SQL migrations are unchanged.
 
 ## Active Gaps and Risks
 
@@ -13,4 +13,4 @@ The [backend](modules/backend/overview.md) has users, teams, and user_info migra
 
 ## Next Step
 
-Start the full application with `docker compose up -d --build` when needed. Use the seed package README to rerun seeds or register the next seed. Align the remaining guidance conflicts in a separate instruction-maintenance task.
+Start the full application with `docker compose up -d --build` when needed. Use [the seed README](../backend/seeds/README.md) to rerun seeds or register the next seed. Align the remaining guidance conflicts in a separate instruction-maintenance task.
