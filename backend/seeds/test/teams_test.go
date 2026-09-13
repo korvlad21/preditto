@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -26,6 +27,7 @@ func (teamsDriver) Open(string) (driver.Conn, error) {
 type teamsConn struct {
 	rows                        [][]driver.NamedValue
 	committed, rolledBack, fail bool
+	users                       map[string]int64
 }
 
 func (*teamsConn) Prepare(string) (driver.Stmt, error) {
@@ -36,6 +38,16 @@ func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
 func (c *teamsConn) Commit() error             { c.committed = true; return nil }
 func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
 func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if strings.Contains(query, "INSERT INTO users") {
+		if c.users == nil {
+			c.users = make(map[string]int64)
+		}
+		c.users[args[0].Value.(string)] = int64(40 + len(c.users))
+		return driver.RowsAffected(1), nil
+	}
+	if strings.Contains(query, "INSERT INTO user_info") {
+		return driver.RowsAffected(1), nil
+	}
 	if !strings.Contains(query, "INSERT INTO teams") || !strings.Contains(query, "ON CONFLICT (slug) DO UPDATE") {
 		return nil, errors.New("unexpected seed query")
 	}
@@ -44,6 +56,30 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 	}
 	c.rows = append(c.rows, append([]driver.NamedValue(nil), args...))
 	return driver.RowsAffected(1), nil
+}
+
+func (c *teamsConn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if !strings.Contains(query, "SELECT id FROM users") {
+		return nil, errors.New("unexpected seed query")
+	}
+	id, found := c.users[args[0].Value.(string)]
+	return &userIDRows{id: id, found: found}, nil
+}
+
+type userIDRows struct {
+	id    int64
+	found bool
+}
+
+func (*userIDRows) Columns() []string { return []string{"id"} }
+func (*userIDRows) Close() error      { return nil }
+func (r *userIDRows) Next(values []driver.Value) error {
+	if !r.found {
+		return io.EOF
+	}
+	values[0] = r.id
+	r.found = false
+	return nil
 }
 
 func TestSeedTeams(t *testing.T) {
