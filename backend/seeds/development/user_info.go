@@ -27,7 +27,7 @@ func seedUserInfo(ctx context.Context, tx *sql.Tx) error {
 		`, item.username).Scan(&userID); err != nil {
 			return fmt.Errorf("find user for user_info %q: %w", item.username, err)
 		}
-		_, err := tx.ExecContext(ctx, `а
+		_, err := tx.ExecContext(ctx, `
 			INSERT INTO user_info (user_id, first_name, last_name, avatar_url, favorite_team_id, updated_at)
 			VALUES ($1, $2, $3, NULL, $4, CURRENT_TIMESTAMP)
 			ON CONFLICT (user_id) DO UPDATE
