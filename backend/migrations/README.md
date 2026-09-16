@@ -44,8 +44,8 @@ References: [migrate CLI](https://github.com/golang-migrate/migrate/blob/v4.20.1
 
 ## User info rollback
 
-`000003_create_user_info.up.sql` creates the table, its update trigger, and the trigger function in one transaction. Its down migration explicitly drops the trigger, then the table, then the function. `IF EXISTS` also supports databases where the trigger or function was not created.
+`000004_create_user_info.up.sql` creates the table, its update trigger, and the trigger function in one transaction. Its down migration explicitly drops the trigger, then the table, then the function. `IF EXISTS` also supports databases where the trigger or function was not created.
 
 ## Countries
 
-Migration 000008 creates countries with a UNIQUE constraint on short_name, required by the countries seed upsert. NULL remains allowed. Rolling back 000008 drops the countries table and its data.
+Migration 000002 creates countries with a required, UNIQUE short_name. Migration 000003 then creates teams with a required country code referencing countries.short_name. Both tables must exist before the seed service runs. Rolling back 000003 removes teams before rolling back 000002 removes countries.

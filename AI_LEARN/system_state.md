@@ -2,7 +2,7 @@
 
 ## Active State
 
-The [backend](modules/backend/overview.md) runs migrations, development seeds, then the API through Compose. The current local database is at migration version 8 with dirty=false after repair of a partial migration 3. Its users, teams, user_info, and countries seed data are present. Migration 3 now creates its table, function, and trigger in one transaction, and its down removes all three. Compose migrate and seed exited 0; backend is healthy and frontend runs.
+The [backend](modules/backend/overview.md) runs migrations, development seeds, then the API through Compose. The current migration order is users 1, countries 2, teams 3, user_info 4, and RBAC 5-8. Teams.country is required and references countries.short_name. The local database was rebuilt from this order and reports version 8 with dirty=false. Seed data contains 16 countries, 36 teams, and three users with no invalid country links. PostgreSQL seed integration tests pass; migrate and seed exited 0, backend is healthy, and frontend runs.
 
 ## Active Gaps and Risks
 
@@ -14,4 +14,4 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 
 ## Next Step
 
-Use the next migration version for future schema changes in databases where the earlier version is already applied. Align the remaining guidance conflicts in a separate instruction-maintenance task.
+Use the next migration version for future schema changes in databases where the earlier version is already applied. The current renumbering was verified through a local development database rebuild and must not be applied as a routine in-place migration on populated external databases. Align the remaining guidance conflicts in a separate instruction-maintenance task.

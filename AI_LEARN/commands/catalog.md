@@ -20,6 +20,7 @@ Only linked records describe verified commands; empty inherited headings are pla
 - [FAILURE-20260915-002](topics/docker-failures.md#failure-20260915-002) — a leading Cyrillic character in seed SQL blocks Compose startup after migrations succeed.
 - [FAILURE-20260915-003](topics/docker-failures.md#failure-20260915-003) — historical migration 3 rollback left its trigger function; the down migration now cleans it up.
 - [FAILURE-20260916-001](topics/docker-failures.md#failure-20260916-001) — dirty version 3 with a partially committed empty user_info table; inspect objects before repairing version state.
+- [FAILURE-20260916-002](topics/docker-failures.md#failure-20260916-002) — teams referenced countries before creation; the migration files were reordered and a local database was rebuilt from a verified backup.
 
 ## Frontend and Build
 

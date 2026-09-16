@@ -14,7 +14,7 @@ func TestValidateTeams(t *testing.T) {
 func TestValidateTeamsRejectsInvalidShortName(t *testing.T) {
 	for _, value := range []string{"", "AB", "ABCD", "AbC", "A1C", "A C", "АБВ"} {
 		t.Run(value, func(t *testing.T) {
-			if err := validateTeams([]team{{"Team", value, "team"}}); err == nil {
+			if err := validateTeams([]team{{"Team", value, "team", "ENG"}}); err == nil {
 				t.Fatal("invalid short_name accepted")
 			}
 		})
@@ -22,15 +22,21 @@ func TestValidateTeamsRejectsInvalidShortName(t *testing.T) {
 }
 
 func TestValidateTeamsRejectsDuplicateSlug(t *testing.T) {
-	if err := validateTeams([]team{{"First", "ONE", "same"}, {"Second", "TWO", "same"}}); err == nil {
+	if err := validateTeams([]team{{"First", "ONE", "same", "ENG"}, {"Second", "TWO", "same", "ENG"}}); err == nil {
 		t.Fatal("duplicate slug accepted")
 	}
 }
 
 func TestValidateTeamsRequiresNameAndSlug(t *testing.T) {
-	for _, item := range []team{{"", "ONE", "one"}, {"One", "ONE", ""}} {
+	for _, item := range []team{{"", "ONE", "one", "ENG"}, {"One", "ONE", "", "ENG"}} {
 		if err := validateTeams([]team{item}); err == nil {
 			t.Fatal("missing name or slug accepted")
 		}
+	}
+}
+
+func TestValidateTeamsRejectsUnknownCountry(t *testing.T) {
+	if err := validateTeams([]team{{"Team", "ONE", "team", "XXX"}}); err == nil {
+		t.Fatal("unknown country accepted")
 	}
 }

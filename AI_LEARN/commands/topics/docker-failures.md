@@ -52,7 +52,7 @@
 - Cause: five steps from version 7 include migration 3. Its current down SQL drops `user_info` but not its standalone trigger function, while its up SQL creates that function.
 - Correct invocation: for the RBAC-only rollback from version 7, use `down 4` to stop at version 3. After resetting the disposable isolated database, fresh up, down 4, and reapply succeeded. The existing application database never rolled back version 3.
 - Rule: compute the rollback count from the current version before running down. Do not use a blind `force` to mask a leftover function.
-- Resolution (2026-09-16): `000003_create_user_info.down.sql` now drops the trigger before the table and drops the function afterward, both with `IF EXISTS`. Isolated PostgreSQL execution verified cleanup with and without these objects, then reapplication of the current up migration. Do not roll back a populated live database solely to verify this historical case.
+- Resolution (2026-09-16): the user_info down migration now drops the trigger before the table and drops the function afterward, both with `IF EXISTS`. It was renumbered to `000004` during the country/teams reorder. Isolated PostgreSQL execution verified cleanup with and without these objects. Do not roll back a populated live database solely to verify this historical case.
 - Related pattern: [PATTERN-20260915-001](docker-patterns.md#pattern-20260915-001).
 
 <a id="failure-20260916-001"></a>
@@ -65,3 +65,13 @@
 - Correction: Verified the table was empty, removed only that partial table and any optional trigger/function, ran `docker compose run --rm migrate force 2`, then `docker compose run --rm migrate up`. Moved migration 3's COMMIT after trigger creation so future application is atomic.
 - Verification: Migration reached version 8 with dirty=false; isolated up/down/up/down passed; Compose seed exited 0, backend became healthy, and expected seeded row counts were present.
 - Rule: `force` changes version metadata only. Inspect data and objects first, repair the partial schema, then select the last fully applied version. Do not drop a populated table as part of this recipe.
+
+<a id="failure-20260916-002"></a>
+## [docker] Teams referenced countries before countries existed
+
+- Date: 2026-09-16.
+- Symptom: migration 2 failed with `pq: relation "countries" does not exist`; the later transaction-aborted advisory unlock message was secondary.
+- Cause: teams migration 2 had been changed to add a country foreign key, while countries was created only in migration 8.
+- Corrected project layout: countries is migration 2, teams is migration 3 with the foreign key, and the prior migrations 3-7 are renumbered 4-8. Team seeds provide valid country codes.
+- Verification: migration 1-8 up/down passed in an isolated PostgreSQL schema; PostgreSQL seed integration tests passed. The local database was backed up, rebuilt using the reordered files, and reached version 8 with dirty=false and valid team country links.
+- Rule: referenced tables must be created before foreign keys. Renumbering migrations already recorded in schema_migrations requires a deliberate data-preserving backup and rebuild in a local development database; do not simply force the version marker.

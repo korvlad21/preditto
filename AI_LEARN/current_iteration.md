@@ -2,8 +2,8 @@
 
 Date: 2026-09-16
 
-Repaired the local dirty migration version 3. The user_info table existed but was empty; its trigger and function were absent. Removed that partial table and optional dependent objects, forced version 2, and ran migration up through version 8. Moved migration 3 COMMIT to the end of its up file so table, function, and trigger are created atomically. The previously fixed down removes all three objects.
+Reordered the eight migrations so users is 1, countries is 2, teams with the required country foreign key is 3, user_info is 4, and RBAC is 5-8. The team seed now supplies a valid country code for each of its 36 teams. Updated seed integration fixtures and migration documentation.
 
-Verification: live schema_migrations reports version 8 and dirty=false. Compose migrate and seed exited 0; backend is healthy and frontend runs. The database contains three users, 36 teams, three user_info records, and 16 countries. The current migration 3 files passed up/down/up/down in a disposable PostgreSQL schema. See [normalized recovery](commands/topics/docker-failures.md#failure-20260916-001).
+Before rebuilding the local database, confirmed that its rows matched development seed counts and identifiers and saved a verified custom-format dump. Fresh migration 1-8 up/down passed in an isolated schema, and PostgreSQL seed integration tests passed. Rebuilt the local public schema, applied migrations 1-8, and ran the normal Compose startup. The database reports version 8 with dirty=false; 16 countries, 36 teams, three users, and no invalid team country references are present. Migrate and seed exited 0, backend is healthy, and frontend runs. See [normalized migration-order failure](commands/topics/docker-failures.md#failure-20260916-002).
 
-The previous iteration is preserved in [archive](archive/2026-09-16-user-info-down-fix.md).
+The previous iteration is preserved in [archive](archive/2026-09-16-country-fk-order-fix.md).

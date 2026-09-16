@@ -125,13 +125,14 @@ func TestSeedTeams(t *testing.T) {
 	}
 	seen := make(map[string]bool)
 	for _, row := range conn.rows {
-		if len(row) != 3 {
-			t.Fatalf("expected name, short_name and slug, got %v", row)
+		if len(row) != 4 {
+			t.Fatalf("expected name, short_name, slug and country, got %v", row)
 		}
 		name, nameOK := row[0].Value.(string)
 		shortName, shortOK := row[1].Value.(string)
 		slug, slugOK := row[2].Value.(string)
-		if !nameOK || !shortOK || !slugOK || name == "" || slug == "" || len(shortName) != 3 {
+		country, countryOK := row[3].Value.(string)
+		if !nameOK || !shortOK || !slugOK || !countryOK || name == "" || slug == "" || len(shortName) != 3 || len(country) != 3 {
 			t.Fatalf("invalid seed team: %v", row)
 		}
 		for _, letter := range shortName {
