@@ -21,6 +21,8 @@ func Run(ctx context.Context, db *sql.DB) error {
 		{"teams", seedTeams},
 		{"users", seedUsers},
 		{"user_info", seedUserInfo},
+		{"roles", seedRoles},
+		{"user_roles", seedUserRoles},
 	} {
 		if err := step.run(ctx, tx); err != nil {
 			return fmt.Errorf("seed %s: %w", step.name, err)

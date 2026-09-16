@@ -2,7 +2,7 @@
 
 ## Active State
 
-The [backend](modules/backend/overview.md) uses Docker Compose to run PostgreSQL migrations, then development seeds, then the API. The migrations now cover users, teams, user_info, and RBAC through version 7. In this local untracked RBAC baseline, [migration 4](../backend/migrations/000004_create_roles.up.sql) creates `roles` without `updated_at` or a trigger. The empty RBAC tables were rolled back to version 3 and reapplied to version 7; existing users remained. A fresh isolated database passed up, down 4, and reapply. Normal Compose startup and the API health endpoint passed.
+The [backend](modules/backend/overview.md) runs migrations, development seeds, then the API through Compose. Migrations cover users, teams, user_info, and RBAC through version 7; roles has no updated_at column. Seeds now include roles and user_roles in the existing single transaction. Reusable assignment/removal functions are in internal/repository. Targeted Go tests and vet pass; PostgreSQL integration tests remain unverified for this change.
 
 ## Active Gaps and Risks
 
@@ -15,4 +15,4 @@ The [backend](modules/backend/overview.md) uses Docker Compose to run PostgreSQL
 
 ## Next Step
 
-Use [the seed README](../backend/seeds/README.md) for seed work. Use the next migration version for future schema changes. Align the remaining guidance conflicts in a separate instruction-maintenance task.
+Run the PostgreSQL integration tests using [the seed README](../backend/seeds/README.md) when a test database is available. Use the next migration version for future schema changes. Align the remaining guidance conflicts in a separate instruction-maintenance task.

@@ -41,7 +41,7 @@ func seedPostgres(t *testing.T) *sql.DB {
 	if _, err := db.Exec("SET search_path TO " + schema); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"000001_create_users.up.sql", "000002_create_teams.up.sql", "000003_create_user_info.up.sql"} {
+	for _, name := range []string{"000001_create_users.up.sql", "000002_create_teams.up.sql", "000003_create_user_info.up.sql", "000004_create_roles.up.sql", "000006_create_user_roles.up.sql"} {
 		migration, err := os.ReadFile(filepath.Join("..", "..", "migrations", name))
 		if err != nil {
 			t.Fatal(err)

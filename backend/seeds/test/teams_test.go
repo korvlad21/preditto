@@ -28,6 +28,9 @@ type teamsConn struct {
 	rows                        [][]driver.NamedValue
 	committed, rolledBack, fail bool
 	users                       map[string]int64
+	roles                       map[string]int64
+	assignments                 [][2]int64
+	failAssignment              bool
 }
 
 func (*teamsConn) Prepare(string) (driver.Stmt, error) {
@@ -38,6 +41,20 @@ func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
 func (c *teamsConn) Commit() error             { c.committed = true; return nil }
 func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
 func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if strings.Contains(query, "INSERT INTO roles") {
+		if c.roles == nil {
+			c.roles = make(map[string]int64)
+		}
+		c.roles[args[0].Value.(string)] = int64(70 + len(c.roles))
+		return driver.RowsAffected(1), nil
+	}
+	if strings.Contains(query, "INSERT INTO user_roles") {
+		if c.failAssignment {
+			return nil, errors.New("injected assignment failure")
+		}
+		c.assignments = append(c.assignments, [2]int64{args[0].Value.(int64), args[1].Value.(int64)})
+		return driver.RowsAffected(1), nil
+	}
 	if strings.Contains(query, "INSERT INTO users") {
 		if c.users == nil {
 			c.users = make(map[string]int64)
@@ -59,6 +76,10 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 }
 
 func (c *teamsConn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if strings.Contains(query, "SELECT id FROM roles") {
+		id, found := c.roles[args[0].Value.(string)]
+		return &userIDRows{id: id, found: found}, nil
+	}
 	if !strings.Contains(query, "SELECT id FROM users") {
 		return nil, errors.New("unexpected seed query")
 	}
@@ -128,5 +149,36 @@ func TestSeedTeamsRollsBackOnWriteError(t *testing.T) {
 	}
 	if conn.committed || !conn.rolledBack {
 		t.Fatal("failed seed must roll back without commit")
+	}
+}
+
+func TestSeedUserRolesUsesResolvedIDs(t *testing.T) {
+	conn := &teamsConn{}
+	db := sql.OpenDB(teamsConnector{conn})
+	t.Cleanup(func() { db.Close() })
+	if err := development.Run(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	want := [][2]int64{{40, 70}, {41, 70}, {42, 71}}
+	if len(conn.assignments) != len(want) {
+		t.Fatalf("assignments=%v, want %v", conn.assignments, want)
+	}
+	for i := range want {
+		if conn.assignments[i] != want[i] {
+			t.Fatalf("assignment=%v, want %v", conn.assignments[i], want[i])
+		}
+	}
+}
+
+func TestSeedUserRolesRollsBackOnWriteError(t *testing.T) {
+	conn := &teamsConn{failAssignment: true}
+	db := sql.OpenDB(teamsConnector{conn})
+	t.Cleanup(func() { db.Close() })
+	err := development.Run(context.Background(), db)
+	if err == nil || !strings.Contains(err.Error(), "seed user_roles: assign role") {
+		t.Fatalf("expected assignment error, got %v", err)
+	}
+	if conn.committed || !conn.rolledBack {
+		t.Fatal("assignment failure must roll back the entire seed transaction")
 	}
 }
