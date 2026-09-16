@@ -41,3 +41,11 @@ The first rollback removes `users` and its data, its identity sequence and trigg
 Both directions use a transaction. The down migration removes the table before its dedicated trigger function; dropping the table removes its trigger and identity sequence automatically.
 
 References: [migrate CLI](https://github.com/golang-migrate/migrate/blob/v4.20.1/cmd/migrate/README.md), [Compose startup order](https://docs.docker.com/compose/how-tos/startup-order/), [PostgreSQL trigger functions](https://www.postgresql.org/docs/current/plpgsql-trigger.html).
+
+## User info rollback
+
+`000003_create_user_info.up.sql` creates the table, its update trigger, and the trigger function in one transaction. Its down migration explicitly drops the trigger, then the table, then the function. `IF EXISTS` also supports databases where the trigger or function was not created.
+
+## Countries
+
+Migration 000008 creates countries with a UNIQUE constraint on short_name, required by the countries seed upsert. NULL remains allowed. Rolling back 000008 drops the countries table and its data.

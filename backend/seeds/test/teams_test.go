@@ -31,6 +31,7 @@ type teamsConn struct {
 	roles                       map[string]int64
 	assignments                 [][2]int64
 	failAssignment              bool
+	failCountry                 bool
 }
 
 func (*teamsConn) Prepare(string) (driver.Stmt, error) {
@@ -41,6 +42,12 @@ func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
 func (c *teamsConn) Commit() error             { c.committed = true; return nil }
 func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
 func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if strings.Contains(query, "INSERT INTO countries") {
+		if c.failCountry {
+			return nil, errors.New("injected country failure")
+		}
+		return driver.RowsAffected(1), nil
+	}
 	if strings.Contains(query, "INSERT INTO roles") {
 		if c.roles == nil {
 			c.roles = make(map[string]int64)

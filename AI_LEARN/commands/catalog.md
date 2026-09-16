@@ -18,7 +18,8 @@ Only linked records describe verified commands; empty inherited headings are pla
 - [PATTERN-20260915-001](topics/docker-patterns.md#pattern-20260915-001) — change an already applied schema through a new migration version.
 - [FAILURE-20260915-001](topics/docker-failures.md#failure-20260915-001) — audit and repair a failed migration before clearing its dirty marker.
 - [FAILURE-20260915-002](topics/docker-failures.md#failure-20260915-002) — a leading Cyrillic character in seed SQL blocks Compose startup after migrations succeed.
-- [FAILURE-20260915-003](topics/docker-failures.md#failure-20260915-003) — rolling back migration 3 leaves its trigger function, so reapplying 3 fails.
+- [FAILURE-20260915-003](topics/docker-failures.md#failure-20260915-003) — historical migration 3 rollback left its trigger function; the down migration now cleans it up.
+- [FAILURE-20260916-001](topics/docker-failures.md#failure-20260916-001) — dirty version 3 with a partially committed empty user_info table; inspect objects before repairing version state.
 
 ## Frontend and Build
 

@@ -51,5 +51,17 @@
 - Symptom / exit code: down succeeded but reached version 2, not the intended version 3; reapply exited 1 because `set_user_info_updated_at()` already existed.
 - Cause: five steps from version 7 include migration 3. Its current down SQL drops `user_info` but not its standalone trigger function, while its up SQL creates that function.
 - Correct invocation: for the RBAC-only rollback from version 7, use `down 4` to stop at version 3. After resetting the disposable isolated database, fresh up, down 4, and reapply succeeded. The existing application database never rolled back version 3.
-- Rule: compute the rollback count from the current version before running down. Migration 3's down/up defect needs a separate fix before any intentional rollback below version 3; do not use a blind `force` to mask the leftover function.
+- Rule: compute the rollback count from the current version before running down. Do not use a blind `force` to mask a leftover function.
+- Resolution (2026-09-16): `000003_create_user_info.down.sql` now drops the trigger before the table and drops the function afterward, both with `IF EXISTS`. Isolated PostgreSQL execution verified cleanup with and without these objects, then reapplication of the current up migration. Do not roll back a populated live database solely to verify this historical case.
 - Related pattern: [PATTERN-20260915-001](docker-patterns.md#pattern-20260915-001).
+
+<a id="failure-20260916-001"></a>
+## [docker] Dirty migration 3 with partially committed user_info
+
+- Date: 2026-09-16.
+- Context: Existing Compose PostgreSQL database, migration version 3 with dirty=true; Compose migrate service exited 1 and blocked seeds and application startup.
+- Symptom: `docker compose run --rm migrate up` reported `Dirty database version 3. Fix and force version.` The original migration error was not present in the available current logs.
+- Observed schema: `user_info` existed with all expected columns and constraints but zero rows; `set_user_info_updated_at()` and `user_info_set_updated_at` were absent. The up migration committed the table before creating the function and trigger, allowing a partial state if a later statement failed.
+- Correction: Verified the table was empty, removed only that partial table and any optional trigger/function, ran `docker compose run --rm migrate force 2`, then `docker compose run --rm migrate up`. Moved migration 3's COMMIT after trigger creation so future application is atomic.
+- Verification: Migration reached version 8 with dirty=false; isolated up/down/up/down passed; Compose seed exited 0, backend became healthy, and expected seeded row counts were present.
+- Rule: `force` changes version metadata only. Inspect data and objects first, repair the partial schema, then select the last fully applied version. Do not drop a populated table as part of this recipe.

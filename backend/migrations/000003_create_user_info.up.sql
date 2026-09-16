@@ -10,8 +10,6 @@ CREATE TABLE user_info (
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMIT;
-
 CREATE FUNCTION set_user_info_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql

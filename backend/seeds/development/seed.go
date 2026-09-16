@@ -18,6 +18,7 @@ func Run(ctx context.Context, db *sql.DB) error {
 		name string
 		run  func(context.Context, *sql.Tx) error
 	}{
+		{"countries", seedCountries},
 		{"teams", seedTeams},
 		{"users", seedUsers},
 		{"user_info", seedUserInfo},

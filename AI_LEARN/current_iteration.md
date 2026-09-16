@@ -2,8 +2,8 @@
 
 Date: 2026-09-16
 
-Added idempotent roles and user-role seeds in dependency order within the existing transaction. Assignment/removal SQL is reusable through internal/repository with caller-owned DB/Tx and actual IDs. The existing roles migration has no updated_at; no schema changes were required. See [backend knowledge](modules/backend/overview.md) and [seed documentation](../backend/seeds/README.md).
+Repaired the local dirty migration version 3. The user_info table existed but was empty; its trigger and function were absent. Removed that partial table and optional dependent objects, forced version 2, and ran migration up through version 8. Moved migration 3 COMMIT to the end of its up file so table, function, and trigger are created atomically. The previously fixed down removes all three objects.
 
-Validation: targeted seed/repository Go tests and vet including cmd/seed passed; PostgreSQL tests were added for repeated runs, nonsequential IDs, deletion, foreign keys, and rollback, but skipped without a test DSN. Runtime integration verification remains outstanding.
+Verification: live schema_migrations reports version 8 and dirty=false. Compose migrate and seed exited 0; backend is healthy and frontend runs. The database contains three users, 36 teams, three user_info records, and 16 countries. The current migration 3 files passed up/down/up/down in a disposable PostgreSQL schema. See [normalized recovery](commands/topics/docker-failures.md#failure-20260916-001).
 
-The previous iteration is preserved in [archive](archive/2026-09-15-rbac-baseline-iteration.md).
+The previous iteration is preserved in [archive](archive/2026-09-16-user-info-down-fix.md).
