@@ -75,6 +75,9 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 	if !strings.Contains(query, "INSERT INTO teams") || !strings.Contains(query, "ON CONFLICT (slug) DO UPDATE") {
 		return nil, errors.New("unexpected seed query")
 	}
+	if !strings.Contains(query, "logo_url = EXCLUDED.logo_url") {
+		return nil, errors.New("team upsert must update the local logo path")
+	}
 	if c.fail {
 		return nil, errors.New("injected write failure")
 	}
@@ -125,13 +128,16 @@ func TestSeedTeams(t *testing.T) {
 	}
 	seen := make(map[string]bool)
 	for _, row := range conn.rows {
-		if len(row) != 4 {
-			t.Fatalf("expected name, short_name, slug and country, got %v", row)
+		if len(row) != 5 {
+			t.Fatalf("expected name, short_name, slug, country and logo_url, got %v", row)
 		}
 		name, nameOK := row[0].Value.(string)
 		shortName, shortOK := row[1].Value.(string)
 		slug, slugOK := row[2].Value.(string)
 		country, countryOK := row[3].Value.(string)
+		if logo, ok := row[4].Value.(string); !ok || logo != "/logos/teams/"+slug+".svg" {
+			t.Fatalf("invalid local logo_url for %q: %v", slug, row[4].Value)
+		}
 		if !nameOK || !shortOK || !slugOK || !countryOK || name == "" || slug == "" || len(shortName) != 3 || len(country) != 3 {
 			t.Fatalf("invalid seed team: %v", row)
 		}

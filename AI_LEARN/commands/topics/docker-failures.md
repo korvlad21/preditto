@@ -75,3 +75,15 @@
 - Corrected project layout: countries is migration 2, teams is migration 3 with the foreign key, and the prior migrations 3-7 are renumbered 4-8. Team seeds provide valid country codes.
 - Verification: migration 1-8 up/down passed in an isolated PostgreSQL schema; PostgreSQL seed integration tests passed. The local database was backed up, rebuilt using the reordered files, and reached version 8 with dirty=false and valid team country links.
 - Rule: referenced tables must be created before foreign keys. Renumbering migrations already recorded in schema_migrations requires a deliberate data-preserving backup and rebuild in a local development database; do not simply force the version marker.
+
+<a id="failure-20260919-001"></a>
+## [docker] Duplicate migration version after countries renumbering
+
+- ID: FAILURE-20260919-001
+- Date: 2026-09-19.
+- Context: normal Compose startup; `golang-migrate` reads the read-only `backend/migrations` mount before connecting to PostgreSQL.
+- Symptom: migrate exited 1 with `duplicate migration file: 000008_create_role_permissions.up.sql`.
+- Cause: the obsolete one-way file `000008_create_countries.up.sql` remained beside the valid `000008_create_role_permissions.up.sql` and `.down.sql` pair after countries moved to version 2. Migration versions must be unique across the source directory.
+- Correction: remove only the obsolete `000008_create_countries.up.sql`; retain `000002_create_countries.{up,down}.sql` and the complete version-8 role-permissions pair.
+- Verification: migration source loading and normal Compose migration up passed after removal; the database remained at version 8 with `dirty=false`.
+- Rule: after renumbering migrations, check that every numeric version has exactly one up file and one down file. Do not leave an old one-way file under a reused version.

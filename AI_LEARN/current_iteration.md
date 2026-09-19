@@ -1,9 +1,13 @@
 # Current Iteration
 
-Date: 2026-09-16
+Date: 2026-09-19
 
-Reordered the eight migrations so users is 1, countries is 2, teams with the required country foreign key is 3, user_info is 4, and RBAC is 5-8. The team seed now supplies a valid country code for each of its 36 teams. Updated seed integration fixtures and migration documentation.
+Follow-up: moved all 36 SVGs to the user-requested `frontend/images/logos/teams` directory. A relative `frontend/public/logos` symlink preserves the existing `/logos/teams/<slug>.svg` URLs and Vite public-asset build behavior without duplicate copies. File contents are unchanged. The production build passed again; all 36 development HTTP responses returned the original SVG bytes with the correct MIME type, and all 36 production copies matched.
 
-Before rebuilding the local database, confirmed that its rows matched development seed counts and identifiers and saved a verified custom-format dump. Fresh migration 1-8 up/down passed in an isolated schema, and PostgreSQL seed integration tests passed. Rebuilt the local public schema, applied migrations 1-8, and ran the normal Compose startup. The database reports version 8 with dirty=false; 16 countries, 36 teams, three users, and no invalid team country references are present. Migrate and seed exited 0, backend is healthy, and frontend runs. See [normalized migration-order failure](commands/topics/docker-failures.md#failure-20260916-002).
+Second follow-up: removed `frontend/public` entirely and configured `frontend/images` as Vite's `publicDir`. The existing favicon and SVG icon sprite moved into `frontend/images`, preserving their root-relative URLs.
 
-The previous iteration is preserved in [archive](archive/2026-09-16-country-fk-order-fix.md).
+Added 36 native SVG club logos to `frontend/images/logos/teams/`, matching every existing development seed slug. The seed now inserts and updates root-relative local `logo_url` values; all other team data and ordering are unchanged. Updated the existing seed test for logo paths and conflict updates.
+
+The [asset inventory](../docs/assets/team-logos.md) records every source, local file, identity note, and verification. Strict UTF-8/XML, completeness, vector-only content, and fragment-reference checks passed. All logos rendered through Vite in Chromium on light and dark backgrounds; cleanup matched original pixels exactly. Targeted seed tests passed. No live database mutation was needed. Local download and scratch-tool issues are recorded separately in `AI_USER_LEARN`.
+
+The production frontend build passed and contains all 36 SVGs unchanged. Temporary review pages were removed. The previous iteration is preserved in [archive](archive/2026-09-16-migration-order-iteration.md), with relative links adjusted for its new directory.

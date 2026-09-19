@@ -13,6 +13,7 @@ Only linked records describe verified commands; empty inherited headings are pla
 
 ## Database and Doctrine
 
+- [FAILURE-20260919-001](topics/docker-failures.md#failure-20260919-001) — duplicate version 8 remained after countries moved to migration 2; remove the obsolete one-way file.
 - [PATTERN-20260912-001](topics/docker-patterns.md#pattern-20260912-001) — PostgreSQL migrations through Docker Compose, including manual up and down.
 - [FAILURE-20260912-001](topics/docker-failures.md#failure-20260912-001) — use `postgres:///` with PG environment variables; `postgres://` loses URL syntax during normalization.
 - [PATTERN-20260915-001](topics/docker-patterns.md#pattern-20260915-001) — change an already applied schema through a new migration version.

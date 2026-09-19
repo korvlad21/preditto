@@ -88,10 +88,11 @@ func seedTeams(ctx context.Context, tx *sql.Tx) error {
 	for _, item := range teams {
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO teams (name, short_name, slug, country, logo_url)
-			VALUES ($1, $2, $3, $4, NULL)
+			VALUES ($1, $2, $3, $4, $5)
 			ON CONFLICT (slug) DO UPDATE
-			SET name = EXCLUDED.name, short_name = EXCLUDED.short_name, country = EXCLUDED.country
-		`, item.name, item.shortName, item.slug, item.country)
+			SET name = EXCLUDED.name, short_name = EXCLUDED.short_name, country = EXCLUDED.country,
+			    logo_url = EXCLUDED.logo_url
+		`, item.name, item.shortName, item.slug, item.country, "/logos/teams/"+item.slug+".svg")
 		if err != nil {
 			return fmt.Errorf("upsert team %q: %w", item.slug, err)
 		}
