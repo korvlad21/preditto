@@ -9,9 +9,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"preditto/internal/auth"
 	"preditto/internal/config"
 	"preditto/internal/database"
 	"preditto/internal/handler"
+	"preditto/internal/repository"
+	apirouter "preditto/internal/router"
+	"preditto/internal/service"
 )
 
 func main() {
@@ -44,6 +48,15 @@ func run() error {
 	}
 
 	helloHandler := handler.NewHelloHandler()
+	tokens, err := auth.NewTokenManager(cfg.Auth)
+	if err != nil {
+		return err
+	}
+	authService, err := service.NewAuthService(repository.NewAuthRepository(db), tokens)
+	if err != nil {
+		return err
+	}
+	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
 
 	router.GET("/", gin.WrapF(helloHandler.Index))
 	router.GET("/hello", gin.WrapF(helloHandler.Hello))

@@ -18,13 +18,13 @@ func main() {
 }
 
 func run() error {
-	cfg, err := config.Load()
+	cfg, err := config.LoadPostgres()
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	db, err := database.NewPostgres(ctx, cfg.Postgres)
+	db, err := database.NewPostgres(ctx, cfg)
 	if err != nil {
 		return err
 	}

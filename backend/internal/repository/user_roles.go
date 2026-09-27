@@ -33,3 +33,11 @@ func RemoveUserRole(ctx context.Context, db executor, userID, roleID int64) erro
 	}
 	return nil
 }
+
+func (r *AuthRepository) AssignRole(ctx context.Context, userID int64, code string) error {
+	var roleID int64
+	if err := r.query.QueryRowContext(ctx, `SELECT id FROM roles WHERE code = $1`, code).Scan(&roleID); err != nil {
+		return fmt.Errorf("resolve registration role: %w", err)
+	}
+	return AssignUserRole(ctx, r.query, userID, roleID)
+}

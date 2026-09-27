@@ -2,7 +2,7 @@
 
 ## Verified Structure
 
-- backend/ contains the Go HTTP application. [backend/cmd/api/main.go](../backend/cmd/api/main.go) creates a Gin router, connects the hello handler, and defines a process-health endpoint.
+- backend/ contains the Go HTTP application. [backend/cmd/api/main.go](../backend/cmd/api/main.go) creates a Gin engine, connects handlers, and defines a process-health endpoint. [internal/router/auth.go](../backend/internal/router/auth.go) declares the auth routes. The [auth contract](../backend/docs/auth.md) describes registration, login, refresh rotation, logout, and reusable access middleware, verified on 2026-09-27.
 - frontend/ contains the React application with TypeScript and Vite, as declared in [frontend/package.json](../frontend/package.json).
 - .aiassistant/rules/ is the existing project-rule directory, including the leading dot.
 - AI_LEARN/modules/ is the entry point for gradually collected module knowledge. Concrete business-module boundaries have not been researched in this iteration.
