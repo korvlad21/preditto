@@ -20,6 +20,10 @@ Countries: [migration 000002](../../../backend/migrations/000002_create_countrie
 
 The [team seed](../../../backend/seeds/development/teams.go) assigns country codes to all 36 teams. On 2026-09-16, a fresh isolated schema passed migration 1-8 up and down, and PostgreSQL seed integration tests passed. The local database was rebuilt from the reordered migrations and reports version 8, dirty=false, with 36 valid team country links.
 
+## Teams API
+
+Verified on 2026-10-04: [the teams contract](../../../backend/docs/teams.md) describes public `POST /api/teams/get_all_teams`. [Team routes](../../../backend/internal/router/team.go) are wired in `cmd/api/main.go`; `TeamHandler`, `TeamService`, and `TeamRepository` follow the existing concrete dependency pattern. [HTTP tests](../../../backend/internal/handler/team_test.go) passed with race detection against isolated PostgreSQL schemas, including filtering, response fields and nullability, empty arrays, invalid input, and database-error secrecy. The response reuses `model.Team` without a separate response DTO.
+
 ## Authentication
 
 Verified on 2026-09-27: the [API contract](../../../backend/docs/auth.md) owns authentication setup, DTO rules, routes, errors, token/session semantics, and test commands. [internal/router/auth.go](../../../backend/internal/router/auth.go) owns the four Gin auth routes and their shared HTTP middleware; `handler.AuthHandler` binds requests and writes responses. The existing singular `handler` and `repository` packages are retained; `service.AuthService`, `auth.TokenManager`, DTOs, models, and access middleware extend them. JWT uses `golang-jwt/jwt/v5 v5.3.1`; password hashing reuses bcrypt.

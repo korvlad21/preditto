@@ -2,6 +2,8 @@
 
 ## Active State
 
+The public [teams API](../backend/docs/teams.md) is registered at `POST /api/teams/get_all_teams`. The implementation and PostgreSQL HTTP tests verify optional country filtering, all-country sentinels, all six fields, nullability, and empty arrays. This addition requires no migration or new dependency.
+
 Vite uses `frontend/images` as its `publicDir`, so `frontend/images/logos/teams` is served at `/logos/teams/`. The `frontend/public` directory is no longer used; seed URLs remain `/logos/teams/<slug>.svg`.
 
 The 36 development teams have local SVG assets in `frontend/images/logos/teams/`. The seed derives `/logos/teams/<slug>.svg` and updates `logo_url` on conflict. Sources, identity notes, and verification are recorded in [the asset inventory](../docs/assets/team-logos.md). These seed changes have not been applied to a running database in this iteration.
