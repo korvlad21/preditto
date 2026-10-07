@@ -28,7 +28,7 @@ func teamRequest(api http.Handler, query, body string) *httptest.ResponseRecorde
 func TestGetAllTeamsInvalidRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	api := gin.New()
-	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(nil))
+	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(nil), handler.NewCountryHandler(nil))
 	for _, body := range []string{`{`, `[]`, `{"country":123}`, `{"country":true}`, `{"country":{}}`} {
 		t.Run(body, func(t *testing.T) {
 			assertError(t, teamRequest(api, "", body), http.StatusBadRequest, "INVALID_REQUEST")
@@ -51,12 +51,12 @@ func TestGetAllTeamsPostgres(t *testing.T) {
 	`)
 	gin.SetMode(gin.TestMode)
 	api := gin.New()
-	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(service.NewTeamService(repository.NewTeamRepository(db))))
+	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(service.NewTeamService(repository.NewTeamRepository(db))), handler.NewCountryHandler(nil))
 
 	all := []map[string]any{
-		{"id": float64(5), "name": "Test team", "short_name": nil, "slug": "test-team", "country": "TST", "logo_url": nil},
-		{"id": float64(11), "name": "British team", "short_name": "BRI", "slug": "british-team", "country": "GBR", "logo_url": "/logos/teams/british-team.svg"},
 		{"id": float64(12), "name": "Another test team", "short_name": "ATT", "slug": "another-test-team", "country": "TST", "logo_url": "/logos/teams/another-test-team.svg"},
+		{"id": float64(11), "name": "British team", "short_name": "BRI", "slug": "british-team", "country": "GBR", "logo_url": "/logos/teams/british-team.svg"},
+		{"id": float64(5), "name": "Test team", "short_name": nil, "slug": "test-team", "country": "TST", "logo_url": nil},
 	}
 	empty := []map[string]any{}
 	for _, tc := range []struct {

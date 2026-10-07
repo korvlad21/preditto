@@ -58,7 +58,8 @@ func run() error {
 	}
 	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
-	apirouter.RegisterTeamRoutes(router.Group("/api"), handler.NewTeamHandler(teamService))
+	countryService := service.NewCountryService(repository.NewCountryRepository(db))
+	apirouter.RegisterTeamRoutes(router.Group("/api"), handler.NewTeamHandler(teamService), handler.NewCountryHandler(countryService))
 
 	router.GET("/", gin.WrapF(helloHandler.Index))
 	router.GET("/hello", gin.WrapF(helloHandler.Hello))

@@ -1,7 +1,7 @@
 # Teams API
 
 `POST /api/teams/get_all_teams` is public and returns a JSON array of teams,
-ordered by `id`. The optional `country` parameter can be supplied in a JSON body
+ordered by `name`. The optional `country` parameter can be supplied in a JSON body
 or the query string. A JSON `country` value takes precedence when both are supplied.
 An empty body or `{}` is valid.
 
@@ -48,4 +48,24 @@ require `PREDITTO_AUTH_TEST_DSN` pointing to a PostgreSQL test database:
 
 ```sh
 go test -mod=readonly ./internal/handler -run '^TestGetAllTeamsPostgres$' -count=1
+```
+
+## Countries
+
+`POST /api/teams/get_all_countries` is public and requires no request parameters
+or body. It returns every row from `countries`, ordered by `name`, as a JSON array.
+Each object contains `id`, `name`, `short_name`, and `created_at`. The timestamp
+uses Go's `time.Time` JSON representation (RFC 3339 with fractional seconds).
+An empty table returns `[]` with HTTP 200. Database errors use the same HTTP 500
+`INTERNAL_ERROR` envelope as teams, without exposing database details.
+
+`model.Country` is the response shape. `CountryRepository`, `CountryService`, and
+`CountryHandler` follow the teams dependency pattern; no request or response DTO
+is needed. The endpoint shares `internal/router/team.go` and is wired in
+`cmd/api/main.go`.
+
+Country HTTP tests reuse the same isolated PostgreSQL schema fixture:
+
+```sh
+go test -mod=readonly ./internal/handler -run '^TestGetAllCountries' -count=1
 ```

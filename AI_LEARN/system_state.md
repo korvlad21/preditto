@@ -2,7 +2,7 @@
 
 ## Active State
 
-The public [teams API](../backend/docs/teams.md) is registered at `POST /api/teams/get_all_teams`. The implementation and PostgreSQL HTTP tests verify optional country filtering, all-country sentinels, all six fields, nullability, and empty arrays. This addition requires no migration or new dependency.
+The public [teams API](../backend/docs/teams.md) exposes `POST /api/teams/get_all_teams` with optional country filtering and `POST /api/teams/get_all_countries` without required parameters or body. Both return arrays ordered by name. Country responses include `id`, `name`, `short_name`, and `created_at`; empty tables return `[]`. Targeted HTTP tests passed against PostgreSQL with race detection, and affected-package/API vet passed. No migration or new dependency is required.
 
 Vite uses `frontend/images` as its `publicDir`, so `frontend/images/logos/teams` is served at `/logos/teams/`. The `frontend/public` directory is no longer used; seed URLs remain `/logos/teams/<slug>.svg`.
 
