@@ -2,6 +2,8 @@
 
 ## Active State
 
+The protected [user API](../backend/docs/user.md) exposes `POST /api/user/get_user_info`. It uses the existing access middleware and user repository, returns only account/profile response fields, and preserves nullable profile values. A missing profile returns HTTP 200 with null profile fields; a missing account returns `USER_NOT_FOUND` with HTTP 404. Affected-package race tests passed against PostgreSQL, including auth regression tests; API compilation and vet passed. No migration or dependency is required.
+
 The public [teams API](../backend/docs/teams.md) exposes `POST /api/teams/get_all_teams` with optional country filtering and `POST /api/teams/get_all_countries` without required parameters or body. Both return arrays ordered by name. Country responses include `id`, `name`, `short_name`, and `created_at`; empty tables return `[]`. Targeted HTTP tests passed against PostgreSQL with race detection, and affected-package/API vet passed. No migration or new dependency is required.
 
 Vite uses `frontend/images` as its `publicDir`, so `frontend/images/logos/teams` is served at `/logos/teams/`. The `frontend/public` directory is no longer used; seed URLs remain `/logos/teams/<slug>.svg`.
@@ -20,6 +22,8 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 - API startup requires distinct JWT secrets and valid TTLs. Registration requires the participant role. Access tokens remain usable until expiry after logout or blocking; no blacklist or refresh-session cleanup scheduler is implemented.
 
 ## Next Step
+
+Use `Authorization: Bearer <access_token>` when integrating the user-info endpoint into the frontend; no user ID or body is needed.
 
 Run the normal development seeds to populate local logo paths in an existing database. Keep future seed slugs and the [asset inventory](../docs/assets/team-logos.md) in sync.
 

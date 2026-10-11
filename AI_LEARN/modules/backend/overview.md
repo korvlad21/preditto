@@ -26,6 +26,10 @@ Verified on 2026-10-04: [the teams contract](../../../backend/docs/teams.md) des
 
 Verified on 2026-10-07: the same route group exposes [all countries](../../../backend/docs/teams.md#countries) through `CountryHandler`, `CountryService`, and `CountryRepository`, returning `model.Country` with all four table columns. No request DTO is needed. [Country HTTP tests](../../../backend/internal/handler/country_test.go) and team tests passed against isolated PostgreSQL schemas with race detection. Both repositories currently order by name; the older team documentation and test expectation incorrectly described ID ordering and have been aligned with the existing SQL.
 
+## User API
+
+Verified on 2026-10-11: [the user contract](../../../backend/docs/user.md) describes protected `POST /api/user/get_user_info`. [User routes](../../../backend/internal/router/user.go) require the existing access middleware. `UserHandler` reads only the Gin-context user ID; `UserService` reuses `AuthRepository.GetUserInfo` in [user persistence](../../../backend/internal/repository/user.go). The safe response model `UserInfo` preserves nullable profile fields without changing the existing authentication model. A parameterized LEFT JOIN handles missing profiles; deleted accounts return HTTP 404. PostgreSQL HTTP tests with race detection verified response secrecy, nullability, account isolation, errors, and auth regressions; API build and affected-package vet passed. No schema or dependency changes are required.
+
 ## Authentication
 
 Verified on 2026-09-27: the [API contract](../../../backend/docs/auth.md) owns authentication setup, DTO rules, routes, errors, token/session semantics, and test commands. [internal/router/auth.go](../../../backend/internal/router/auth.go) owns the four Gin auth routes and their shared HTTP middleware; `handler.AuthHandler` binds requests and writes responses. The existing singular `handler` and `repository` packages are retained; `service.AuthService`, `auth.TokenManager`, DTOs, models, and access middleware extend them. JWT uses `golang-jwt/jwt/v5 v5.3.1`; password hashing reuses bcrypt.

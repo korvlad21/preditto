@@ -204,7 +204,9 @@ unexpired revoked token also returns 204. Invalid, missing, or expired tokens
 return 401. A blocked user may still log out. Other login sessions are unaffected.
 The access token remains valid until its short expiration; there is no blacklist.
 
-Attach middleware to future protected routes:
+The protected `POST /api/user/get_user_info` endpoint returns the authenticated
+user's account and nullable profile; see [the user API contract](user.md).
+Attach middleware to other protected routes:
 
 ```go
 protected := router.Group("/api", middleware.RequireAuth(tokens))

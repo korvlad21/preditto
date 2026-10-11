@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/lib/pq"
 
@@ -53,6 +54,24 @@ const userSelect = `SELECT u.id, u.username, u.email, u.password_hash, u.status,
 
 func (r *AuthRepository) FindUserByLogin(ctx context.Context, login string) (model.User, error) {
 	return scanUser(r.query.QueryRowContext(ctx, userSelect+`WHERE u.username = $1 OR u.email = $1`, login))
+}
+
+func (r *AuthRepository) GetUserInfo(ctx context.Context, id int64) (model.UserInfo, error) {
+	var user model.UserInfo
+	err := r.query.QueryRowContext(ctx, `
+		SELECT u.id, u.username, u.email, u.status,
+			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id
+		FROM users u LEFT JOIN user_info i ON i.user_id = u.id
+		WHERE u.id = $1
+	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.Status,
+		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.UserInfo{}, ErrNotFound
+	}
+	if err != nil {
+		return model.UserInfo{}, fmt.Errorf("get user info: %w", err)
+	}
+	return user, nil
 }
 
 // LockUser prevents status changes while a new session is being issued.
