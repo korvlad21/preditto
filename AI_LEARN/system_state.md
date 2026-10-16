@@ -2,7 +2,7 @@
 
 ## Active State
 
-The [development seeds](../backend/seeds/README.md) now include the UEFA Champions League 2026/2027 tournament and three prize rules totaling 95%. Both run in the existing transaction; the prize rules resolve the actual tournament ID. PostgreSQL seed integration tests with race detection and seed/CLI vet passed on 2026-10-16. These seeds have not been applied to the application database.
+The [development seeds](../backend/seeds/README.md) now include the UEFA Champions League 2026/2027 tournament and three prize rules totaling 95%. Both run in the existing transaction; the prize rules resolve the actual tournament ID. The tournament uses `championsLeague20262027Slug` for its seed key and shared model constants for USD and Champions league; its user-selected dates remain 2026-09-08 through 2027-06-05. Tournament data uses a local struct and slice, matching the teams seed pattern. Cost is 10.00 USD and is restored on rerun; targeted PostgreSQL checks verified cost/currency/type restoration and rollback. PostgreSQL seed integration tests with race detection and seed/CLI vet passed on 2026-10-16. These seeds have not been applied to the application database.
 
 Tournament migrations [000010](../backend/migrations/000010_create_tournaments.up.sql), [000011](../backend/migrations/000011_create_tournament_participants.up.sql), and [000012](../backend/migrations/000012_create_tournament_prize_rules.up.sql) are ready. Isolated PostgreSQL checks passed for application, constraints, rollback to version 9 with original schema and users preserved, reapplication, and full rollback. Existing migrations and the application database were not changed. See [backend knowledge](modules/backend/overview.md) for the schema constraints.
 

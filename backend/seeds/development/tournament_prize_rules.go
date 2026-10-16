@@ -10,8 +10,8 @@ func seedTournamentPrizeRules(ctx context.Context, tx *sql.Tx) error {
 	var tournamentID int64
 	if err := tx.QueryRowContext(ctx, `
 		SELECT id FROM tournaments WHERE slug = $1
-	`, championsLeague2026Slug).Scan(&tournamentID); err != nil {
-		return fmt.Errorf("find tournament for prize rules %q: %w", championsLeague2026Slug, err)
+	`, championsLeague20262027Slug).Scan(&tournamentID); err != nil {
+		return fmt.Errorf("find tournament for prize rules %q: %w", championsLeague20262027Slug, err)
 	}
 	// Only 95% is allocated; the remaining 5% has no prize rule.
 	for _, item := range []struct {
@@ -28,7 +28,7 @@ func seedTournamentPrizeRules(ctx context.Context, tx *sql.Tx) error {
 			ON CONFLICT (tournament_id, place) DO UPDATE SET percentage = EXCLUDED.percentage
 		`, tournamentID, item.place, item.percentage)
 		if err != nil {
-			return fmt.Errorf("upsert tournament %q prize place %d: %w", championsLeague2026Slug, item.place, err)
+			return fmt.Errorf("upsert tournament %q prize place %d: %w", championsLeague20262027Slug, item.place, err)
 		}
 	}
 	return nil

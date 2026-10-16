@@ -39,21 +39,20 @@ func TestTournamentsAndPrizeRulesPostgres(t *testing.T) {
 				}
 				var id int64
 				var name, status, starts, ends, created string
-				var unknownsPreserved, timestampsValid bool
+				var fieldsValid, timestampsValid bool
 				if err := db.QueryRow(`
 					SELECT id, name, status, starts_at::text, ends_at::text, created_at::text,
-						CASE WHEN $2 THEN type_of_tournament = 'custom' AND cost_amount = 123.45
-							AND amount_currency = 'EUR'
-						ELSE type_of_tournament IS NULL AND cost_amount IS NULL AND amount_currency IS NULL END,
+						cost_amount = 10.00
+							AND type_of_tournament = 'Champions league' AND amount_currency = 'USD',
 						created_at IS NOT NULL AND updated_at >= created_at AND updated_at > TIMESTAMP '2000-01-01'
 					FROM tournaments WHERE slug = $1
-				`, slug, scenario == "existing").Scan(&id, &name, &status, &starts, &ends, &created, &unknownsPreserved, &timestampsValid); err != nil {
+				`, slug).Scan(&id, &name, &status, &starts, &ends, &created, &fieldsValid, &timestampsValid); err != nil {
 					t.Fatal(err)
 				}
 				if id != wantID || name != "Лига чемпионов УЕФА 2026/2027" || status != "active" ||
-					starts != "2026-07-07 00:00:00" || ends != "2027-06-05 00:00:00" || !unknownsPreserved || !timestampsValid {
-					t.Fatalf("invalid tournament: id=%d name=%q status=%s dates=%s/%s unknowns=%v timestamps=%v",
-						id, name, status, starts, ends, unknownsPreserved, timestampsValid)
+					starts != "2026-09-08 00:00:00" || ends != "2027-06-05 00:00:00" || !fieldsValid || !timestampsValid {
+					t.Fatalf("invalid tournament: id=%d name=%q status=%s dates=%s/%s fields=%v timestamps=%v",
+						id, name, status, starts, ends, fieldsValid, timestampsValid)
 				}
 				if (run == 1 && created != createdAt) || (scenario == "existing" && created != "2000-01-01 00:00:00") {
 					t.Fatal("created_at changed")

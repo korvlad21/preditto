@@ -4,25 +4,56 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"preditto/internal/model"
 )
 
-const championsLeague2026Slug = "uefa-champions-league-2026-2027"
+const championsLeague20262027Slug = "uefa-champions-league-2026-2027"
+
+type tournament struct {
+	name             string
+	slug             string
+	status           string
+	startsAt         string
+	endsAt           string
+	costAmount       string
+	amountCurrency   string
+	typeOfTournament string
+}
+
+var tournaments = []tournament{
+	// The tournament starts with the league phase; timestamps represent calendar dates.
+	// https://www.uefa.com/uefachampionsleague/news/02a6-20d57cfcd03e-407c22a7f465-1000--2026-27-champions-league-teams-dates-draws-format-final/
+	{
+		name:             "Лига чемпионов УЕФА 2026/2027",
+		slug:             championsLeague20262027Slug,
+		status:           "active",
+		startsAt:         "2026-09-08",
+		endsAt:           "2027-06-05",
+		costAmount:       "10.00",
+		amountCurrency:   model.CurrencyUSD,
+		typeOfTournament: model.TournamentTypeChampionsLeague,
+	},
+}
 
 func seedTournaments(ctx context.Context, tx *sql.Tx) error {
-	// UEFA's full season includes qualifying; timestamps represent calendar dates.
-	// https://www.uefa.com/uefachampionsleague/news/02a6-20d57cfcd03e-407c22a7f465-1000--2026-27-champions-league-teams-dates-draws-format-final/
-	_, err := tx.ExecContext(ctx, `
-		INSERT INTO tournaments (name, slug, status, starts_at, ends_at)
-		VALUES ($1, $2, $3, $4, $5)
+	for _, item := range tournaments {
+		_, err := tx.ExecContext(ctx, `
+		INSERT INTO tournaments (name, slug, status, starts_at, ends_at, cost_amount, amount_currency, type_of_tournament)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (slug) DO UPDATE SET
 			name = EXCLUDED.name,
 			status = EXCLUDED.status,
 			starts_at = EXCLUDED.starts_at,
 			ends_at = EXCLUDED.ends_at,
+			cost_amount = EXCLUDED.cost_amount,
+			amount_currency = EXCLUDED.amount_currency,
+			type_of_tournament = EXCLUDED.type_of_tournament,
 			updated_at = CURRENT_TIMESTAMP
-	`, "Лига чемпионов УЕФА 2026/2027", championsLeague2026Slug, "active", "2026-09-08", "2027-06-05")
-	if err != nil {
-		return fmt.Errorf("upsert tournament %q: %w", championsLeague2026Slug, err)
+		`, item.name, item.slug, item.status, item.startsAt, item.endsAt, item.costAmount, item.amountCurrency, item.typeOfTournament)
+		if err != nil {
+			return fmt.Errorf("upsert tournament %q: %w", item.slug, err)
+		}
 	}
 	return nil
 }
