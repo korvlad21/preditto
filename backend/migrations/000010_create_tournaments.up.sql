@@ -5,10 +5,17 @@ CREATE TABLE tournaments (
     name VARCHAR(150) NOT NULL,
     slug VARCHAR(150) NOT NULL UNIQUE,
     type_of_tournament VARCHAR(30),
-    status VARCHAR(20) CHECK (status IN ('planned', 'active', 'finished', 'cancelled')),
+    status VARCHAR(20) CHECK (
+        status IN (
+            'planned',
+            'active',
+            'finished',
+            'cancelled'
+        )
+    ),
     starts_at TIMESTAMP(6),
     ends_at TIMESTAMP(6),
-    cost_amount DECIMAL(14,2),
+    cost_amount DECIMAL(14, 2),
     amount_currency CHAR(3),
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP

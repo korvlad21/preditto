@@ -32,6 +32,7 @@ type teamsConn struct {
 	assignments                 [][2]int64
 	failAssignment              bool
 	failCountry                 bool
+	tournamentID                int64
 }
 
 func (*teamsConn) Prepare(string) (driver.Stmt, error) {
@@ -42,6 +43,16 @@ func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
 func (c *teamsConn) Commit() error             { c.committed = true; return nil }
 func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
 func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if strings.Contains(query, "INSERT INTO tournaments") {
+		c.tournamentID = 81
+		return driver.RowsAffected(1), nil
+	}
+	if strings.Contains(query, "INSERT INTO tournament_prize_rules") {
+		if c.tournamentID == 0 || args[0].Value != c.tournamentID {
+			return nil, errors.New("prize rule must use the resolved tournament ID")
+		}
+		return driver.RowsAffected(1), nil
+	}
 	if strings.Contains(query, "INSERT INTO countries") {
 		if c.failCountry {
 			return nil, errors.New("injected country failure")
@@ -86,6 +97,9 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 }
 
 func (c *teamsConn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if strings.Contains(query, "SELECT id FROM tournaments") {
+		return &userIDRows{id: c.tournamentID, found: c.tournamentID != 0}, nil
+	}
 	if strings.Contains(query, "SELECT id FROM roles") {
 		id, found := c.roles[args[0].Value.(string)]
 		return &userIDRows{id: id, found: found}, nil

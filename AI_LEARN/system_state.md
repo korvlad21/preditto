@@ -2,6 +2,8 @@
 
 ## Active State
 
+The [development seeds](../backend/seeds/README.md) now include the UEFA Champions League 2026/2027 tournament and three prize rules totaling 95%. Both run in the existing transaction; the prize rules resolve the actual tournament ID. PostgreSQL seed integration tests with race detection and seed/CLI vet passed on 2026-10-16. These seeds have not been applied to the application database.
+
 Tournament migrations [000010](../backend/migrations/000010_create_tournaments.up.sql), [000011](../backend/migrations/000011_create_tournament_participants.up.sql), and [000012](../backend/migrations/000012_create_tournament_prize_rules.up.sql) are ready. Isolated PostgreSQL checks passed for application, constraints, rollback to version 9 with original schema and users preserved, reapplication, and full rollback. Existing migrations and the application database were not changed. See [backend knowledge](modules/backend/overview.md) for the schema constraints.
 
 The protected [user API](../backend/docs/user.md) exposes `POST /api/user/get_user_info`. It uses the existing access middleware and user repository, returns only account/profile response fields, and preserves nullable profile values. A missing profile returns HTTP 200 with null profile fields; a missing account returns `USER_NOT_FOUND` with HTTP 404. Affected-package race tests passed against PostgreSQL, including auth regression tests; API compilation and vet passed. No migration or dependency is required.
@@ -29,4 +31,4 @@ Use `Authorization: Bearer <access_token>` when integrating the user-info endpoi
 
 Run the normal development seeds to populate local logo paths in an existing database. Keep future seed slugs and the [asset inventory](../docs/assets/team-logos.md) in sync.
 
-Apply pending tournament migrations through `docker compose run --rm migrate up` when adopting the new schema. Use migration 13 or later for future schema changes. Environments adopting authentication must apply migration 9, provision participant, and configure JWT environment variables before API startup. The earlier renumbering must not be applied as a routine in-place migration on populated external databases. Align the remaining guidance conflicts in a separate instruction-maintenance task.
+Apply pending tournament migrations through `docker compose run --rm migrate up`, then run `docker compose run --rm seed` to populate the tournament and prize rules in the intended environment. Use migration 13 or later for future schema changes. Environments adopting authentication must apply migration 9, provision participant, and configure JWT environment variables before API startup. The earlier renumbering must not be applied as a routine in-place migration on populated external databases. Align the remaining guidance conflicts in a separate instruction-maintenance task.

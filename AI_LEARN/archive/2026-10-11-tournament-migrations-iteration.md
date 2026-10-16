@@ -1,0 +1,11 @@
+# Current Iteration
+
+Date: 2026-10-11
+
+Added three transactional up/down migration pairs: [tournaments 000010](../../backend/migrations/000010_create_tournaments.up.sql), [participants 000011](../../backend/migrations/000011_create_tournament_participants.up.sql), and [prize rules 000012](../../backend/migrations/000012_create_tournament_prize_rules.up.sql). Existing migrations and tables were not edited. Status restrictions use VARCHAR with CHECK, following the existing CHECK approach in migration 000009. Requested participant indexes, unique membership, composite prize-rule primary key, and inclusive percentage bounds are present. The previous user-info iteration is preserved in [archive](2026-10-11-user-info-api-iteration.md).
+
+Isolated PostgreSQL 18.6 and migrate v4.20.1 passed fresh migration to version 9, up to version 12 with dirty=false, no-change up, allowed statuses and nullable tournament status, rejected invalid statuses and required-field NULLs, identity/timestamp defaults, foreign keys, duplicate membership/prize rejection, percentage boundaries, and index checks. Down 3 restored the original version-9 schema exactly and preserved a synthetic user. Reapply and full down 12 passed without leftover application tables, sequences, or functions. Temporary verification resources were removed; the application database was not modified.
+
+Non-reusable discovery correction: `rg -n 'ENUM|CHECK|migrate' backend/migrations docker-compose.yaml backend/docker` exited 2 because the optional `backend/docker` directory was guessed and does not exist. `rg --files backend -g '*docker*' -g '*Docker*'` identified `backend/.dockerignore` and `backend/DockerFile`; `rg -n 'ENUM|CHECK' backend/migrations` then succeeded. Discover optional paths before including them in a search. The missing optional local index is an expected, previously documented probe in `AI_USER_LEARN/commands/user-info-api-verification.md`, not a new command failure.
+
+Non-reusable editing correction: the initial memory patch tried to delete and add `current_iteration.md` in the same patch, which apply_patch rejected as multiple operations targeting one path before changing files. A single Update File operation replaced its content successfully. Use one operation per path within a patch.
