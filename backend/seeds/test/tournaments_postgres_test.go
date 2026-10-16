@@ -15,8 +15,8 @@ func TestTournamentsAndPrizeRulesPostgres(t *testing.T) {
 			const slug = "uefa-champions-league-2026-2027"
 			if _, err := db.Exec(`
 				ALTER TABLE tournaments ALTER COLUMN id RESTART WITH 101;
-				INSERT INTO tournaments (id, name, slug) VALUES (91, 'Other', 'other');
-				INSERT INTO tournament_prize_rules VALUES (91, 1, 100.00);
+				INSERT INTO tournaments (id, name, slug) VALUES (1, 'Other', 'other');
+				INSERT INTO tournament_prize_rules VALUES (1, 1, 100.00);
 			`); err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +73,7 @@ func TestTournamentsAndPrizeRulesPostgres(t *testing.T) {
 				var otherUnchanged bool
 				if err := db.QueryRow(`SELECT t.name = 'Other' AND p.percentage = 100.00
 					FROM tournaments t JOIN tournament_prize_rules p ON p.tournament_id = t.id
-					WHERE t.id = 91 AND p.place = 1`).Scan(&otherUnchanged); err != nil || !otherUnchanged {
+					WHERE t.id = 1 AND p.place = 1`).Scan(&otherUnchanged); err != nil || !otherUnchanged {
 					t.Fatalf("unrelated tournament changed: %v", err)
 				}
 				if run == 0 {
@@ -102,6 +102,7 @@ func TestTournamentPrizeFailureRollsBackPostgres(t *testing.T) {
 	if err := db.QueryRow(`SELECT (SELECT count(*) FROM countries) + (SELECT count(*) FROM teams)
 		+ (SELECT count(*) FROM users) + (SELECT count(*) FROM user_info) + (SELECT count(*) FROM roles)
 		+ (SELECT count(*) FROM user_roles) + (SELECT count(*) FROM tournaments)
+		+ (SELECT count(*) FROM tournament_participants)
 		+ (SELECT count(*) FROM tournament_prize_rules)`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}

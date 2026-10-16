@@ -25,6 +25,7 @@ func Run(ctx context.Context, db *sql.DB) error {
 		{"roles", seedRoles},
 		{"user_roles", seedUserRoles},
 		{"tournaments", seedTournaments},
+		{"tournament_participants", seedTournamentParticipants},
 		{"tournament_prize_rules", seedTournamentPrizeRules},
 	} {
 		if err := step.run(ctx, tx); err != nil {
