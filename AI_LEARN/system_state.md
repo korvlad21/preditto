@@ -2,6 +2,8 @@
 
 ## Active State
 
+The development [users](../backend/seeds/development/users.go) and [profiles](../backend/seeds/development/user_info.go) contain 20 matching records, including 17 new accounts (14 ACTIVE, 3 BLOCKED); the original three records are unchanged. Five profiles have no favorite team. All referenced team IDs were confirmed in the existing PostgreSQL teams table on 2026-10-16. The application database has not been seeded with the new users. The existing PostgreSQL user/profile test now expects 20 records and checks profile completeness and favorite-team references on repeat runs.
+
 The [development seeds](../backend/seeds/README.md) now include the UEFA Champions League 2026/2027 tournament and three prize rules totaling 95%. Both run in the existing transaction; the prize rules resolve the actual tournament ID. The tournament uses `championsLeague20262027Slug` for its seed key and shared model constants for USD and Champions league; its user-selected dates remain 2026-09-08 through 2027-06-05. Tournament data uses a local struct and slice, matching the teams seed pattern. Cost is 10.00 USD and is restored on rerun; targeted PostgreSQL checks verified cost/currency/type restoration and rollback. PostgreSQL seed integration tests with race detection and seed/CLI vet passed on 2026-10-16. These seeds have not been applied to the application database.
 
 Tournament migrations [000010](../backend/migrations/000010_create_tournaments.up.sql), [000011](../backend/migrations/000011_create_tournament_participants.up.sql), and [000012](../backend/migrations/000012_create_tournament_prize_rules.up.sql) are ready. Isolated PostgreSQL checks passed for application, constraints, rollback to version 9 with original schema and users preserved, reapplication, and full rollback. Existing migrations and the application database were not changed. See [backend knowledge](modules/backend/overview.md) for the schema constraints.
@@ -21,7 +23,7 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 - Language guidance conflicts: `project.md` requires English project memory, while `AGENTS.md` requires English instructions and `knowledge_accumulation.md` requires English Markdown. The user's explicit English-language direction is retained for these command instructions.
 - User-memory paths differ: `AGENTS.md` and `project.md` specify `AI_USER_LEARN`, while command and memory skills use `AI_USER_LEARN`.
 - `module_context_loading.md` describes itself as extending itself. Research backlog and coverage files referenced by the research skill are not yet available.
-- Favorite team IDs 5 and 19 must exist; the seed intentionally fails and rolls back if these literal IDs are absent. Broader business-module boundaries remain unresearched.
+- All literal favorite team IDs in `user_info.go` must exist; the seed intentionally fails and rolls back if a referenced ID is absent. Broader business-module boundaries remain unresearched.
 - Applied migration files should remain consistent with the version already recorded by `schema_migrations`; use a new version for later schema changes.
 - API startup requires distinct JWT secrets and valid TTLs. Registration requires the participant role. Access tokens remain usable until expiry after logout or blocking; no blacklist or refresh-session cleanup scheduler is implemented.
 

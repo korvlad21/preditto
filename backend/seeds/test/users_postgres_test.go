@@ -85,13 +85,26 @@ func TestUsersAndUserInfoPostgres(t *testing.T) {
 			if err := db.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
-			want := 3
+			want := 20
 			if table == "teams" {
 				want = 36
 			}
 			if count != want {
 				t.Fatalf("run %d: %s count = %d, want %d", run, table, count, want)
 			}
+		}
+		var invalidProfiles int
+		if err := db.QueryRow(`
+			SELECT count(*) FROM users u
+			LEFT JOIN user_info i ON i.user_id = u.id
+			LEFT JOIN teams t ON t.id = i.favorite_team_id
+			WHERE i.id IS NULL OR i.first_name = '' OR i.last_name = ''
+				OR (i.favorite_team_id IS NOT NULL AND t.id IS NULL)
+		`).Scan(&invalidProfiles); err != nil {
+			t.Fatal(err)
+		}
+		if invalidProfiles != 0 {
+			t.Fatalf("run %d: %d users have missing or invalid profiles", run, invalidProfiles)
 		}
 		for _, want := range expected {
 			var id, profileID int64

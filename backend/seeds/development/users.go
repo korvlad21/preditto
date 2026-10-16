@@ -19,6 +19,23 @@ var users = []user{
 	{"korvlad21", "vladek2000@inbox.ru", "ACTIVE"},
 	{"hanna_stoma", "hannastoma9@gmail.com", "ACTIVE"},
 	{"boroda", "borodin_nikita@yandex.ru", "BLOCKED"},
+	{"alex_morgan", "alex.morgan@example.com", "ACTIVE"},
+	{"sofia_rossi", "sofia.rossi@example.com", "ACTIVE"},
+	{"daniel_weber", "daniel.weber@example.com", "ACTIVE"},
+	{"emma_wilson", "emma.wilson@example.com", "ACTIVE"},
+	{"lucas_silva", "lucas.silva@example.com", "ACTIVE"},
+	{"clara_martin", "clara.martin@example.com", "BLOCKED"},
+	{"mateo_garcia", "mateo.garcia@example.com", "ACTIVE"},
+	{"olivia_brown", "olivia.brown@example.com", "ACTIVE"},
+	{"felix_schmidt", "felix.schmidt@example.com", "ACTIVE"},
+	{"mia_jensen", "mia.jensen@example.com", "ACTIVE"},
+	{"hugo_dubois", "hugo.dubois@example.com", "BLOCKED"},
+	{"ines_costa", "ines.costa@example.com", "ACTIVE"},
+	{"oscar_lind", "oscar.lind@example.com", "ACTIVE"},
+	{"elena_popov", "elena.popov@example.com", "ACTIVE"},
+	{"noah_clarke", "noah.clarke@example.com", "ACTIVE"},
+	{"zara_ahmed", "zara.ahmed@example.com", "BLOCKED"},
+	{"leo_moretti", "leo.moretti@example.com", "ACTIVE"},
 }
 
 func seedUsers(ctx context.Context, tx *sql.Tx) error {
