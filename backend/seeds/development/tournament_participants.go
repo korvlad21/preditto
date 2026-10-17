@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"preditto/internal/model"
 )
 
 type tournamentParticipant struct {
@@ -13,16 +15,16 @@ type tournamentParticipant struct {
 }
 
 var tournamentParticipants = []tournamentParticipant{
-	{1, "ines_costa", "active"},
-	{1, "alex_morgan", "active"},
-	{1, "felix_schmidt", "active"},
-	{1, "sofia_rossi", "active"},
-	{1, "leo_moretti", "active"},
-	{1, "emma_wilson", "active"},
-	{1, "oscar_lind", "active"},
-	{1, "mateo_garcia", "active"},
-	{1, "noah_clarke", "not_paid"},
-	{1, "zara_ahmed", "blocked"},
+	{1, "ines_costa", model.TournamentParticipantStatusActive},
+	{1, "alex_morgan", model.TournamentParticipantStatusActive},
+	{1, "felix_schmidt", model.TournamentParticipantStatusActive},
+	{1, "sofia_rossi", model.TournamentParticipantStatusActive},
+	{1, "leo_moretti", model.TournamentParticipantStatusActive},
+	{1, "emma_wilson", model.TournamentParticipantStatusActive},
+	{1, "oscar_lind", model.TournamentParticipantStatusActive},
+	{1, "mateo_garcia", model.TournamentParticipantStatusActive},
+	{1, "noah_clarke", model.TournamentParticipantStatusNotPaid},
+	{1, "zara_ahmed", model.TournamentParticipantStatusBlocked},
 }
 
 func seedTournamentParticipants(ctx context.Context, tx *sql.Tx) error {

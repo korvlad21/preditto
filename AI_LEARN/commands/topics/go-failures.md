@@ -1,5 +1,19 @@
 # Go Command Failures
 
+<a id="failure-20261017-001"></a>
+## [go] Seed profile freshness window under race instrumentation
+
+- ID: FAILURE-20261017-001
+- Date: 2026-10-17
+- Context: Go 1.23.3, module `preditto`, no build tags, both PostgreSQL test DSNs set to a disposable database; working directory `backend/`.
+- Original command (test URLs omitted): `PREDITTO_AUTH_TEST_DSN='<disposable PostgreSQL URL>' PREDITTO_SEED_TEST_DSN='<same URL>' go test -race -mod=readonly -count=1 ./...`.
+- Symptom / exit code: `TestUsersAndUserInfoPostgres` reported correct identity, status, and profile fields but `recent=false`; exit 1. The individual test took 30.36 seconds. Other tested packages passed, including HTTP integration tests.
+- Cause: [the test](../../../backend/seeds/test/users_postgres_test.go) requires `updated_at` within the last ten seconds. The [seed runner](../../../backend/seeds/development/seed.go) starts one transaction before [bcrypt hashing for 20 users](../../../backend/seeds/development/users.go); PostgreSQL `CURRENT_TIMESTAMP` remains the transaction-start time. Race instrumentation made the work exceed the assertion's window.
+- Incorrect assumption: a full race run would fit the existing fixed freshness window. Literal substitution confirmed the constant extraction preserved seed values and execution logic; the test was unchanged.
+- Correct validation invocation (same disposable test DSNs): `go test -mod=readonly -count=1 ./...`.
+- Verification: the ordinary full backend suite passed, including PostgreSQL seed and HTTP tests; full-module vet passed. Removing race instrumentation is an alternative validation scope, not a repair of the timing-sensitive test.
+- Rule: diagnose `recent=false` against the SQL interval and transaction duration before changing seed data or status constants. Reliable full race coverage needs timestamp bounds tied to the seed invocation in a separate test-maintenance change; that correction is not implemented or verified here.
+
 <a id="failure-20260912-001"></a>
 ## [go] Driver configuration validation is deferred by sql.Open
 

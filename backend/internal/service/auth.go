@@ -53,7 +53,7 @@ func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest)
 		if err := tx.CreateUser(ctx, &user); err != nil {
 			return err
 		}
-		if err := tx.AssignRole(ctx, user.ID, "participant"); err != nil {
+		if err := tx.AssignRole(ctx, user.ID, model.RoleCodeParticipant); err != nil {
 			return err
 		}
 		var err error

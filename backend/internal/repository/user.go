@@ -11,6 +11,11 @@ import (
 	"preditto/internal/model"
 )
 
+const (
+	pgCodeUniqueViolation     = "23505"
+	pgCodeForeignKeyViolation = "23503"
+)
+
 var (
 	ErrUsernameExists       = errors.New("username already exists")
 	ErrEmailExists          = errors.New("email already exists")
@@ -37,11 +42,11 @@ func userWriteError(err error) error {
 	var pg *pq.Error
 	if errors.As(err, &pg) {
 		switch {
-		case pg.Code == "23505" && pg.Constraint == "users_username_key":
+		case pg.Code == pgCodeUniqueViolation && pg.Constraint == "users_username_key":
 			return ErrUsernameExists
-		case pg.Code == "23505" && pg.Constraint == "users_email_key":
+		case pg.Code == pgCodeUniqueViolation && pg.Constraint == "users_email_key":
 			return ErrEmailExists
-		case pg.Code == "23503" && pg.Constraint == "user_info_favorite_team_id_fkey":
+		case pg.Code == pgCodeForeignKeyViolation && pg.Constraint == "user_info_favorite_team_id_fkey":
 			return ErrFavoriteTeamNotFound
 		}
 	}

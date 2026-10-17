@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"preditto/internal/model"
 )
 
 type user struct {
@@ -16,26 +18,26 @@ type user struct {
 }
 
 var users = []user{
-	{"korvlad21", "vladek2000@inbox.ru", "ACTIVE"},
-	{"hanna_stoma", "hannastoma9@gmail.com", "ACTIVE"},
-	{"boroda", "borodin_nikita@yandex.ru", "BLOCKED"},
-	{"alex_morgan", "alex.morgan@example.com", "ACTIVE"},
-	{"sofia_rossi", "sofia.rossi@example.com", "ACTIVE"},
-	{"daniel_weber", "daniel.weber@example.com", "ACTIVE"},
-	{"emma_wilson", "emma.wilson@example.com", "ACTIVE"},
-	{"lucas_silva", "lucas.silva@example.com", "ACTIVE"},
-	{"clara_martin", "clara.martin@example.com", "BLOCKED"},
-	{"mateo_garcia", "mateo.garcia@example.com", "ACTIVE"},
-	{"olivia_brown", "olivia.brown@example.com", "ACTIVE"},
-	{"felix_schmidt", "felix.schmidt@example.com", "ACTIVE"},
-	{"mia_jensen", "mia.jensen@example.com", "ACTIVE"},
-	{"hugo_dubois", "hugo.dubois@example.com", "BLOCKED"},
-	{"ines_costa", "ines.costa@example.com", "ACTIVE"},
-	{"oscar_lind", "oscar.lind@example.com", "ACTIVE"},
-	{"elena_popov", "elena.popov@example.com", "ACTIVE"},
-	{"noah_clarke", "noah.clarke@example.com", "ACTIVE"},
-	{"zara_ahmed", "zara.ahmed@example.com", "BLOCKED"},
-	{"leo_moretti", "leo.moretti@example.com", "ACTIVE"},
+	{"korvlad21", "vladek2000@inbox.ru", model.UserStatusActive},
+	{"hanna_stoma", "hannastoma9@gmail.com", model.UserStatusActive},
+	{"boroda", "borodin_nikita@yandex.ru", model.UserStatusBlocked},
+	{"alex_morgan", "alex.morgan@example.com", model.UserStatusActive},
+	{"sofia_rossi", "sofia.rossi@example.com", model.UserStatusActive},
+	{"daniel_weber", "daniel.weber@example.com", model.UserStatusActive},
+	{"emma_wilson", "emma.wilson@example.com", model.UserStatusActive},
+	{"lucas_silva", "lucas.silva@example.com", model.UserStatusActive},
+	{"clara_martin", "clara.martin@example.com", model.UserStatusBlocked},
+	{"mateo_garcia", "mateo.garcia@example.com", model.UserStatusActive},
+	{"olivia_brown", "olivia.brown@example.com", model.UserStatusActive},
+	{"felix_schmidt", "felix.schmidt@example.com", model.UserStatusActive},
+	{"mia_jensen", "mia.jensen@example.com", model.UserStatusActive},
+	{"hugo_dubois", "hugo.dubois@example.com", model.UserStatusBlocked},
+	{"ines_costa", "ines.costa@example.com", model.UserStatusActive},
+	{"oscar_lind", "oscar.lind@example.com", model.UserStatusActive},
+	{"elena_popov", "elena.popov@example.com", model.UserStatusActive},
+	{"noah_clarke", "noah.clarke@example.com", model.UserStatusActive},
+	{"zara_ahmed", "zara.ahmed@example.com", model.UserStatusBlocked},
+	{"leo_moretti", "leo.moretti@example.com", model.UserStatusActive},
 }
 
 func seedUsers(ctx context.Context, tx *sql.Tx) error {

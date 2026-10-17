@@ -1,6 +1,9 @@
 package model
 
-const UserStatusActive = "ACTIVE"
+const (
+	UserStatusActive  = "ACTIVE"
+	UserStatusBlocked = "BLOCKED"
+)
 
 type User struct {
 	ID             int64  `json:"id"`

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"preditto/internal/model"
 )
 
 type role struct {
@@ -12,8 +14,8 @@ type role struct {
 }
 
 var roles = []role{
-	{"admin", "Администратор"},
-	{"participant", "Участник"},
+	{model.RoleCodeAdmin, "Администратор"},
+	{model.RoleCodeParticipant, "Участник"},
 }
 
 func seedRoles(ctx context.Context, tx *sql.Tx) error {

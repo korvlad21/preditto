@@ -27,7 +27,7 @@ var tournaments = []tournament{
 	{
 		name:             "Лига чемпионов УЕФА 2026/2027",
 		slug:             championsLeague20262027Slug,
-		status:           "active",
+		status:           model.TournamentStatusActive,
 		startsAt:         "2026-09-08",
 		endsAt:           "2027-06-05",
 		costAmount:       "10.00",

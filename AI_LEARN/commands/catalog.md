@@ -6,6 +6,8 @@ Only linked records describe verified commands; empty inherited headings are pla
 
 ## Go Toolchain
 
+- [FAILURE-20261017-001](topics/go-failures.md#failure-20261017-001) — seed profile freshness uses a fixed ten-second window that bcrypt work can exceed under race instrumentation; ordinary full-module validation passed.
+
 - [FAILURE-20260912-001](topics/go-failures.md#failure-20260912-001) — `lib/pq` configuration validation is deferred by `sql.Open`; explicit connector initialization is verified.
 
 - [PATTERN-20260908-001](topics/go-patterns.md#pattern-20260908-001) — query the local Go version with `GOTOOLCHAIN=local go version`.

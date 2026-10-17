@@ -1,11 +1,11 @@
 # Current Iteration
 
-Date: 2026-10-16
+Date: 2026-10-17
 
-Added [tournament_participants.go](../backend/seeds/development/tournament_participants.go) with a fixed selection of 10 unique seeded usernames, excluding korvlad21, hanna_stoma, and boroda. Every participant targets tournament ID 1; statuses are eight active, one not_paid, and one blocked. The seed resolves user IDs by username, omits joined_at to use its database default, and updates only status on a tournament/user conflict. It runs after tournaments within the existing seed transaction.
+Restored JWT types, the Bearer scheme, API error codes, and error messages to their original string literals at the user's request. Removed the corresponding constant declarations and references from auth, response, middleware, and handlers. Domain/model constants and PostgreSQL violation constants remain unchanged; see [constant scope](modules/backend/overview.md#shared-constants).
 
-Updated the PostgreSQL fixture to apply migration 000011 and the test driver to accept participant inserts. Existing tournament tests retain nonsequential tournament IDs while providing tournament ID 1 for participants. Added integration coverage for nonsequential user IDs, status counts, excluded users, default timestamps, repeated-run status restoration with preserved IDs/joined_at, and rollback when tournament ID 1 is absent. The prize failure test now includes participants in its rollback check.
+All seven reverted Go files match their original Git HEAD versions exactly. Targeted `go test -mod=readonly -count=1 ./internal/auth ./internal/middleware ./internal/handler ./internal/response` passed. PostgreSQL-dependent tests were skipped because no test DSN was supplied; the database suite was not rerun for this literal restoration. UTF-8, remaining-reference, and diff checks passed.
 
-All seed tests passed against disposable PostgreSQL with `go test -mod=readonly -count=1 -v ./seeds/...`. Dataset, formatting, strict UTF-8, and diff checks passed. No command failed. The application database was not seeded. Migration 000011 and tournament ID 1 must exist before applying this seed; tournament IDs are deliberately not resolved by slug.
+One non-reusable editing failure occurred: an initial `apply_patch` used the nonexistent `MessageInvalidError` instead of `MessageInvalidRequest` as context in `handler/team.go`. Patch verification rejected it without changing files. A fresh source search confirmed the actual identifier; reversing the reviewed seven-file diff with a generated exact patch succeeded. Rule: derive reversal context from the current diff instead of retyping identifiers. No application or test command failed in this iteration.
 
-Previous iteration: [expanded user seeds](archive/2026-10-16-expanded-users-iteration.md).
+Previous iteration: [backend constant extraction](archive/2026-10-17-backend-constants-iteration.md).

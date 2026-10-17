@@ -2,6 +2,8 @@
 
 ## Active State
 
+Backend domain statuses, role codes, and PostgreSQL violation codes reuse [constants in their owning packages](modules/backend/overview.md#shared-constants). JWT types, the Bearer scheme, API error codes, and messages use their original inline literals at the user's request. The seven restored Go files match Git HEAD; targeted auth, middleware, handler, and response checks passed without PostgreSQL test DSNs. The earlier full PostgreSQL suite and vet results are preserved in [the previous iteration](archive/2026-10-17-backend-constants-iteration.md).
+
 The [tournament participants seed](../backend/seeds/development/tournament_participants.go) runs after tournaments and users. It resolves 10 selected usernames to actual user IDs and targets literal tournament ID 1, with statuses 8 active / 1 not_paid / 1 blocked. It excludes the original three users and upserts status by the unique tournament/user pair, preserving joined_at on rerun. Migration 000011 and an existing tournament ID 1 are required; a missing user or tournament rolls back the shared seed transaction. All seed tests passed against disposable PostgreSQL, including repeated-run status restoration, preserved joined_at, and rollback when tournament ID 1 is absent. These seed changes have not been applied to the application database.
 
 The development [users](../backend/seeds/development/users.go) and [profiles](../backend/seeds/development/user_info.go) contain 20 matching records, including 17 new accounts (14 ACTIVE, 3 BLOCKED); the original three records are unchanged. Five profiles have no favorite team. All referenced team IDs were confirmed in the existing PostgreSQL teams table on 2026-10-16. The application database has not been seeded with the new users. The existing PostgreSQL user/profile test now expects 20 records and checks profile completeness and favorite-team references on repeat runs.
@@ -22,6 +24,7 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 
 ## Active Gaps and Risks
 
+- The [user seed integration test](../backend/seeds/test/users_postgres_test.go) checks profile timestamps against a fixed ten-second window. Full race instrumentation exceeded that window during bcrypt work; the ordinary suite passed. See the [normalized failure](commands/topics/go-failures.md#failure-20261017-001). Reliable full seed race validation needs a separate change to the elapsed-time assertion.
 - Language guidance conflicts: `project.md` requires English project memory, while `AGENTS.md` requires English instructions and `knowledge_accumulation.md` requires English Markdown. The user's explicit English-language direction is retained for these command instructions.
 - User-memory paths differ: `AGENTS.md` and `project.md` specify `AI_USER_LEARN`, while command and memory skills use `AI_USER_LEARN`.
 - `module_context_loading.md` describes itself as extending itself. Research backlog and coverage files referenced by the research skill are not yet available.
@@ -30,6 +33,8 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 - API startup requires distinct JWT secrets and valid TTLs. Registration requires the participant role. Access tokens remain usable until expiry after logout or blocking; no blacklist or refresh-session cleanup scheduler is implemented.
 
 ## Next Step
+
+For future race validation of the expanded user seeds, replace the fixed freshness window with timestamp bounds tied to the seed invocation; keep this test maintenance separate from constant extraction.
 
 Use `Authorization: Bearer <access_token>` when integrating the user-info endpoint into the frontend; no user ID or body is needed.
 

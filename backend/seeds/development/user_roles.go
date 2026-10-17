@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"preditto/internal/model"
 	"preditto/internal/repository"
 )
 
@@ -14,9 +15,9 @@ type userRole struct {
 }
 
 var userRoles = []userRole{
-	{"korvlad21", "admin"},
-	{"hanna_stoma", "admin"},
-	{"boroda", "participant"},
+	{"korvlad21", model.RoleCodeAdmin},
+	{"hanna_stoma", model.RoleCodeAdmin},
+	{"boroda", model.RoleCodeParticipant},
 }
 
 func seedUserRoles(ctx context.Context, tx *sql.Tx) error {
