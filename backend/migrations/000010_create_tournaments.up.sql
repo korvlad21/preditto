@@ -21,4 +21,8 @@ CREATE TABLE tournaments (
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE user_info
+    ADD CONSTRAINT user_info_selected_tournament_id_fkey
+    FOREIGN KEY (selected_tournament_id) REFERENCES tournaments (id) ON DELETE SET NULL;
+
 COMMIT;

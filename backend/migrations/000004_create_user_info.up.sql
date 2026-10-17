@@ -7,6 +7,7 @@ CREATE TABLE user_info (
     last_name VARCHAR(100) NULL,
     avatar_url VARCHAR(500) NULL,
     favorite_team_id BIGINT NULL REFERENCES teams (id) ON DELETE SET NULL,
+    selected_tournament_id BIGINT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -2,10 +2,10 @@
 
 Date: 2026-10-17
 
-Restored JWT types, the Bearer scheme, API error codes, and error messages to their original string literals at the user's request. Removed the corresponding constant declarations and references from auth, response, middleware, and handlers. Domain/model constants and PostgreSQL violation constants remain unchanged; see [constant scope](modules/backend/overview.md#shared-constants).
+Moved selected_tournament_id into migration 000004 at the user's request. Migration 000010 adds the foreign key after creating tournaments and removes it before dropping tournaments. Removed migration 000013; Go code and the application database are unchanged.
 
-All seven reverted Go files match their original Git HEAD versions exactly. Targeted `go test -mod=readonly -count=1 ./internal/auth ./internal/middleware ./internal/handler ./internal/response` passed. PostgreSQL-dependent tests were skipped because no test DSN was supplied; the database suite was not rerun for this literal restoration. UTF-8, remaining-reference, and diff checks passed.
+Isolated PostgreSQL 18.6 SQL checks passed for fresh migration application, nullable BIGINT, selection without membership, invalid-reference rejection, ON DELETE SET NULL, partial rollback/reapplication, and full rollback/reapplication. The disposable container was removed. UTF-8 and diff checks passed; no unexpected commands failed.
 
-One non-reusable editing failure occurred: an initial `apply_patch` used the nonexistent `MessageInvalidError` instead of `MessageInvalidRequest` as context in `handler/team.go`. Patch verification rejected it without changing files. A fresh source search confirmed the actual identifier; reversing the reviewed seven-file diff with a generated exact patch succeeded. Rule: derive reversal context from the current diff instead of retyping identifiers. No application or test command failed in this iteration.
+Next step: deliberately rebuild the intended local database when authorized; normal up cannot update already applied migrations. Model and API integration remain separate work.
 
-Previous iteration: [backend constant extraction](archive/2026-10-17-backend-constants-iteration.md).
+Previous iteration: [separate selected-tournament migration](archive/2026-10-17-selected-tournament-migration-iteration.md).
