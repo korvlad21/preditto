@@ -2,10 +2,10 @@
 
 Date: 2026-10-17
 
-Moved selected_tournament_id into migration 000004 at the user's request. Migration 000010 adds the foreign key after creating tournaments and removes it before dropping tournaments. Removed migration 000013; Go code and the application database are unchanged.
+Added LoadUser after RequireAuth on the shared protected API group. It reuses UserService.GetUserInfo and stores a shared UserInfo pointer in Gin Context. The repository query includes selected_tournament_id; get_user_info reads the context without another database call. The documented snapshot is fresh per request; successful writes must update the shared object for later consumers in that request.
 
-Isolated PostgreSQL 18.6 SQL checks passed for fresh migration application, nullable BIGINT, selection without membership, invalid-reference rejection, ON DELETE SET NULL, partial rollback/reapplication, and full rollback/reapplication. The disposable container was removed. UTF-8 and diff checks passed; no unexpected commands failed.
+Targeted middleware and PostgreSQL user HTTP tests passed with race detection, including invalid authentication, missing users/profiles, database-error secrecy, one load per request, shared-object updates, and tournament changes/deletion with the same JWT. The complete affected handler, middleware, and router suites also passed with race detection against PostgreSQL, including auth regression tests; affected-package vet passed. No migration, dependency, selection-write endpoint, or application database changes were made. No unexpected command failures occurred.
 
-Next step: deliberately rebuild the intended local database when authorized; normal up cannot update already applied migrations. Model and API integration remain separate work.
+Next step: implement tournament selection persistence separately if requested. Existing environments must have the selected_tournament_id column before running this query.
 
-Previous iteration: [separate selected-tournament migration](archive/2026-10-17-selected-tournament-migration-iteration.md).
+Previous iteration: [selected-tournament baseline](archive/2026-10-17-selected-tournament-baseline-iteration.md).

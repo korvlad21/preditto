@@ -65,11 +65,11 @@ func (r *AuthRepository) GetUserInfo(ctx context.Context, id int64) (model.UserI
 	var user model.UserInfo
 	err := r.query.QueryRowContext(ctx, `
 		SELECT u.id, u.username, u.email, u.status,
-			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id
+			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id, i.selected_tournament_id
 		FROM users u LEFT JOIN user_info i ON i.user_id = u.id
 		WHERE u.id = $1
 	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.Status,
-		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID)
+		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID, &user.SelectedTournamentID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.UserInfo{}, ErrNotFound
 	}

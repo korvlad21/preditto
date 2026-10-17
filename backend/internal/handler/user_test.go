@@ -13,6 +13,7 @@ import (
 
 	"preditto/internal/auth"
 	"preditto/internal/handler"
+	"preditto/internal/middleware"
 	"preditto/internal/repository"
 	"preditto/internal/router"
 	"preditto/internal/service"
@@ -26,8 +27,8 @@ func userAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 		t.Fatal(err)
 	}
 	api := gin.New()
-	users := handler.NewUserHandler(service.NewUserService(repository.NewAuthRepository(db)))
-	router.RegisterUserRoutes(api.Group("/api"), users, tokens)
+	users := service.NewUserService(repository.NewAuthRepository(db))
+	router.RegisterUserRoutes(api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users)), handler.NewUserHandler())
 	return api, tokens
 }
 
@@ -103,7 +104,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 	}
 	want := map[string]any{
 		"id": float64(81), "username": "new_user", "email": "new_user@example.com", "status": "ACTIVE",
-		"first_name": "Vladislav", "last_name": "Korobkin", "avatar_url": "/avatars/81.png", "favorite_team_id": float64(5),
+		"first_name": "Vladislav", "last_name": "Korobkin", "avatar_url": "/avatars/81.png", "favorite_team_id": float64(5), "selected_tournament_id": nil,
 	}
 	check := func(t *testing.T, token, query, body string, want map[string]any) {
 		t.Helper()
@@ -131,6 +132,18 @@ func TestGetUserInfoPostgres(t *testing.T) {
 			check(t, pair.AccessToken, tc.query, tc.body, want)
 		})
 	}
+
+	execSQL(t, db, `INSERT INTO tournaments (id, name, slug) VALUES (201, 'First', 'first'), (202, 'Second', 'second')`)
+	for _, id := range []int64{201, 202} {
+		if _, err := db.Exec("UPDATE user_info SET selected_tournament_id = $1 WHERE user_id = 81", id); err != nil {
+			t.Fatal(err)
+		}
+		want["selected_tournament_id"] = float64(id)
+		check(t, pair.AccessToken, "", "", want)
+	}
+	execSQL(t, db, `DELETE FROM tournaments WHERE id = 202`)
+	want["selected_tournament_id"] = nil
+	check(t, pair.AccessToken, "", "", want)
 
 	execSQL(t, db, `UPDATE user_info SET first_name = NULL, last_name = NULL, avatar_url = NULL, favorite_team_id = NULL WHERE user_id = 81`)
 	for _, field := range []string{"first_name", "last_name", "avatar_url", "favorite_team_id"} {
@@ -163,7 +176,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 	t.Run("another authenticated user", func(t *testing.T) {
 		check(t, otherPair.AccessToken, "?user_id=81", "", map[string]any{
 			"id": float64(82), "username": "other_user", "email": "other_user@example.com", "status": "ACTIVE",
-			"first_name": nil, "last_name": nil, "avatar_url": nil, "favorite_team_id": nil,
+			"first_name": nil, "last_name": nil, "avatar_url": nil, "favorite_team_id": nil, "selected_tournament_id": nil,
 		})
 	})
 

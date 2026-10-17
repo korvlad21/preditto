@@ -13,6 +13,7 @@ import (
 	"preditto/internal/config"
 	"preditto/internal/database"
 	"preditto/internal/handler"
+	"preditto/internal/middleware"
 	"preditto/internal/repository"
 	apirouter "preditto/internal/router"
 	"preditto/internal/service"
@@ -58,7 +59,8 @@ func run() error {
 	}
 	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
 	userService := service.NewUserService(repository.NewAuthRepository(db))
-	apirouter.RegisterUserRoutes(router.Group("/api"), handler.NewUserHandler(userService), tokens)
+	protected := router.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(userService))
+	apirouter.RegisterUserRoutes(protected, handler.NewUserHandler())
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
 	countryService := service.NewCountryService(repository.NewCountryRepository(db))
 	apirouter.RegisterTeamRoutes(router.Group("/api"), handler.NewTeamHandler(teamService), handler.NewCountryHandler(countryService))
