@@ -1,8 +1,8 @@
 # Tournaments API
 
 `POST /api/tournaments/get_all_tournaments` requires an access token in
-`Authorization: Bearer <access_token>` and returns a JSON array ordered by name,
-then ID. No matches, including an empty table, return `[]` with HTTP 200.
+`Authorization: Bearer <access_token>` and returns a JSON array ordered by
+`created_at DESC, id DESC`. No matches, including an empty table, return `[]` with HTTP 200.
 No request body is required. GET is not registered and returns HTTP 404.
 
 The optional query parameter `status` matches `tournaments.status` exactly.
@@ -32,7 +32,7 @@ Each object contains exactly these fields:
 | `count_participant` | Number of distinct active user IDs, or 0 |
 | `is_selected_tournament` | Whether the ID matches the authenticated user's selected tournament |
 
-`RequireAuth` and `LoadUser` run on the shared protected API group.
+`RequireAuth` and `LoadUser` protect both routes using the shared middleware chain.
 `TournamentHandler` reads `middleware.CurrentUser`; no additional user query is
 made. Selection is evaluated from the current request's profile snapshot, so
 changes appear on the next request with the same access token. A null selection
@@ -59,3 +59,52 @@ go test -mod=readonly ./internal/handler -run '^TestGetAllTournaments' -count=1
 The PostgreSQL test requires `PREDITTO_AUTH_TEST_DSN` pointing to a disposable
 PostgreSQL database. It applies the project migrations in an isolated schema
 and removes that schema afterward.
+
+## Select a tournament
+
+`POST /api/tournaments/select_tournament` uses the same access-token middleware.
+Send `Content-Type: application/json` and a body such as `{"id":201}`. The ID must
+be a positive signed 64-bit JSON integer; missing IDs and `null` are rejected.
+The authenticated user comes exclusively from `middleware.CurrentUser(c)`.
+No membership or tournament-status restriction is imposed.
+
+HTTP 200 returns exactly `{"success":true}`, including when selecting the same
+tournament again. Errors include `success:false` and the shared error
+object, for example:
+
+```json
+{"success":false,"error":{"code":"TOURNAMENT_NOT_FOUND","message":"Турнир не найден"}}
+```
+
+| HTTP status | Code | Meaning |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | Missing, invalid, or expired access token |
+| 400 | `TOURNAMENT_ID_REQUIRED` | Missing or null ID |
+| 400 | `INVALID_TOURNAMENT_ID` | Nonpositive ID, incorrect JSON type, or integer overflow |
+| 400 | `INVALID_REQUEST` | Empty, malformed, or incompatible JSON body |
+| 404 | `TOURNAMENT_NOT_FOUND` | Tournament does not exist |
+| 404 | `USER_INFO_NOT_FOUND` | The current user's profile row is missing |
+| 404 | `USER_NOT_FOUND` | The authenticated user no longer exists |
+| 500 | `TOURNAMENT_UPDATE_FAILED` | Selection could not be saved |
+| 500 | `INTERNAL_ERROR` | User loading or tournament lookup failed, or user context is unavailable |
+
+The router installs `response.WithFailureEnvelope` before the shared
+authentication/user-loading middleware only for selection. All its errors use
+`response.AbortError` with `success:false`; other endpoints keep their existing
+envelopes. Pass authentication middleware separately to `RegisterTournamentRoutes`
+so early errors receive this format. Internal database details are never exposed.
+
+`TournamentService.SelectTournament` checks existence before saving.
+`AuthRepository.UpdateSelectedTournament(ctx, userID, tournamentID *int64)` in
+`repository/user.go` updates only the existing `user_info` row; `nil` writes SQL
+NULL for future reset operations. Zero affected rows return `ErrNotFound`.
+The selected-tournament foreign-key violation maps to `ErrTournamentNotFound`,
+covering deletion between the existence check and update. No profile is created
+implicitly. The handler updates the shared user snapshot only after the write
+succeeds; subsequent requests load the selection afresh with the same token.
+
+Run the selection tests with the same disposable database configuration:
+
+```sh
+go test -race -mod=readonly ./internal/handler -run '^TestSelectTournament' -count=1
+```

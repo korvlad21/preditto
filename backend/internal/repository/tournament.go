@@ -3,10 +3,13 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"preditto/internal/model"
 )
+
+var ErrTournamentNotFound = errors.New("tournament not found")
 
 type TournamentRepository struct {
 	db *sql.DB
@@ -14,6 +17,15 @@ type TournamentRepository struct {
 
 func NewTournamentRepository(db *sql.DB) *TournamentRepository {
 	return &TournamentRepository{db: db}
+}
+
+func (r *TournamentRepository) Exists(ctx context.Context, id int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM tournaments WHERE id = $1)`, id).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("check tournament existence: %w", err)
+	}
+	return exists, nil
 }
 
 func (r *TournamentRepository) GetAllTournaments(ctx context.Context, status string) ([]model.Tournament, error) {

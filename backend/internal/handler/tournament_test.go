@@ -31,7 +31,7 @@ func (l *tournamentUserLoader) GetUserInfo(ctx context.Context, userID int64) (m
 	return l.UserInfoLoader.GetUserInfo(ctx, userID)
 }
 
-func tournamentAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager, *tournamentUserLoader) {
+func tournamentAPI(t *testing.T, db *sql.DB, observers ...gin.HandlerFunc) (*gin.Engine, *auth.TokenManager, *tournamentUserLoader) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	tokens, err := auth.NewTokenManager(testConfig())
@@ -40,8 +40,8 @@ func tournamentAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager, *
 	}
 	api := gin.New()
 	users := &tournamentUserLoader{UserInfoLoader: service.NewUserService(repository.NewAuthRepository(db))}
-	protected := api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users))
-	router.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(service.NewTournamentService(repository.NewTournamentRepository(db))))
+	authMiddleware := append([]gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(users)}, observers...)
+	router.RegisterTournamentRoutes(api.Group("/api"), handler.NewTournamentHandler(service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewAuthRepository(db))), authMiddleware...)
 	return api, tokens, users
 }
 

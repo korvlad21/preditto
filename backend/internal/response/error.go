@@ -7,8 +7,23 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+const failureEnvelopeKey = "response.failure_envelope"
+
+// WithFailureEnvelope must precede middleware that can abort the request.
+func WithFailureEnvelope() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(failureEnvelopeKey, true)
+		c.Next()
+	}
+}
+
 func AbortError(c *gin.Context, status int, code, message string) {
+	var success *bool
+	if c.GetBool(failureEnvelopeKey) {
+		success = new(bool)
+	}
 	c.AbortWithStatusJSON(status, struct {
-		Error Error `json:"error"`
-	}{Error: Error{Code: code, Message: message}})
+		Success *bool `json:"success,omitempty"`
+		Error   Error `json:"error"`
+	}{Success: success, Error: Error{Code: code, Message: message}})
 }

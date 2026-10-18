@@ -48,9 +48,29 @@ func userWriteError(err error) error {
 			return ErrEmailExists
 		case pg.Code == pgCodeForeignKeyViolation && pg.Constraint == "user_info_favorite_team_id_fkey":
 			return ErrFavoriteTeamNotFound
+		case pg.Code == pgCodeForeignKeyViolation && pg.Constraint == "user_info_selected_tournament_id_fkey":
+			return ErrTournamentNotFound
 		}
 	}
 	return err
+}
+
+// UpdateSelectedTournament updates an existing profile; nil clears the selection.
+func (r *AuthRepository) UpdateSelectedTournament(ctx context.Context, userID int64, tournamentID *int64) error {
+	result, err := r.query.ExecContext(ctx, `
+		UPDATE user_info SET selected_tournament_id = $1 WHERE user_id = $2
+	`, tournamentID, userID)
+	if err != nil {
+		return fmt.Errorf("update selected tournament: %w", userWriteError(err))
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("selected tournament rows affected: %w", err)
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 const userSelect = `SELECT u.id, u.username, u.email, u.password_hash, u.status,

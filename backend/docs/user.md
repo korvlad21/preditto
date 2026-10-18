@@ -38,10 +38,11 @@ Errors use the existing `{"error":{"code":"...","message":"..."}}` envelope.
 The middleware's existing behavior is retained: account blocking or logout does
 not immediately invalidate an issued access token; no new role checks are added.
 
-`cmd/api/main.go` creates a protected `/api` group with `RequireAuth` followed by
-`LoadUser`; register protected routes on this group. Public auth and team routes
-remain on their public groups. `router.RegisterUserRoutes` receives the protected
-group. `LoadUser` reuses `UserService` and the existing `AuthRepository` user
+`cmd/api/main.go` creates a shared middleware chain with `RequireAuth` followed by
+`LoadUser`. `router.RegisterUserRoutes` receives a protected `/api` group;
+`RegisterTournamentRoutes` receives the middleware separately to configure the
+selection error envelope before authentication. Public auth and team routes
+remain on their public groups. `LoadUser` reuses `UserService` and the existing `AuthRepository` user
 persistence in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
 selects the nine response columns; it never
 reads password hashes. `model.UserInfo` is the response shape because the existing
@@ -53,8 +54,8 @@ the query is visible even with the same token. Concurrent changes after the quer
 do not alter the current request snapshot. A handler that changes selection must
 update `CurrentUser(c).SelectedTournamentID` after a successful database commit
 so subsequent consumers in the same request see its change. Context is not an
-authorization check for tournament membership. No selection-write endpoint is
-introduced here.
+authorization check for tournament membership. The [tournament selection
+endpoint](tournaments.md#select-a-tournament) updates this snapshot after saving.
 
 Run HTTP tests from `backend/`:
 

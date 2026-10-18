@@ -2,17 +2,36 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"preditto/internal/model"
 	"preditto/internal/repository"
 )
 
+var ErrTournamentUpdateFailed = errors.New("tournament selection update failed")
+
 type TournamentService struct {
-	repo *repository.TournamentRepository
+	repo  *repository.TournamentRepository
+	users *repository.AuthRepository
 }
 
-func NewTournamentService(repo *repository.TournamentRepository) *TournamentService {
-	return &TournamentService{repo: repo}
+func NewTournamentService(repo *repository.TournamentRepository, users *repository.AuthRepository) *TournamentService {
+	return &TournamentService{repo: repo, users: users}
+}
+
+func (s *TournamentService) SelectTournament(ctx context.Context, userID, tournamentID int64) error {
+	exists, err := s.repo.Exists(ctx, tournamentID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return repository.ErrTournamentNotFound
+	}
+	if err := s.users.UpdateSelectedTournament(ctx, userID, &tournamentID); err != nil {
+		return fmt.Errorf("%w: %w", ErrTournamentUpdateFailed, err)
+	}
+	return nil
 }
 
 func (s *TournamentService) GetAllTournaments(ctx context.Context, status string, selectedTournamentID *int64) ([]model.Tournament, error) {

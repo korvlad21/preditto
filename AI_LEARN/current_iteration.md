@@ -2,10 +2,12 @@
 
 Date: 2026-10-18
 
-Converted all 32 entries in [tournament_participants.go](../backend/seeds/development/tournament_participants.go) to positional struct literals at the user's request. Values follow the declared tournamentSlug, username, status field order; membership and seed execution are unchanged.
+Implemented [POST /api/tournaments/select_tournament](../backend/docs/tournaments.md#select-a-tournament) through the existing DTO, router, handler, service, and repository layers. It rejects missing/null/nonpositive/non-integer IDs, checks tournament existence, updates only the current user profile, and refreshes the shared Gin snapshot after success. The repository accepts nil to clear the selection. Foreign-key failures and missing profiles have explicit errors; all selection failures, including middleware failures, use success:false through the shared response helper. Other endpoint error envelopes are unchanged. No schema or dependency changes were needed.
 
-Verification: gofmt, strict UTF-8 validation, diff whitespace, and `go test -mod=readonly ./seeds/development -run '^$'` passed. The command validates package/test compilation without executing tests; prior PostgreSQL behavior verification is preserved in the previous iteration. No unexpected failures occurred.
+Verification: targeted selection and user-info PostgreSQL integration tests and authentication/user-context regression tests passed with race detection; affected-package/API vet passed. Tests cover nullable repository writes, repeated selection, user isolation, same-request context consistency, later listing with the same token, missing profiles/tournaments, forced write failure, and middleware failures. Router was compiled in the filtered test invocation but had no matching tests. UTF-8, formatting, and diff checks passed. No unexpected command failures occurred.
 
-Next step: preserve the declared field order when editing positional literals.
+Next step: integrate the documented selection contract in the frontend.
 
-Previous iteration: [uniform slug references](archive/2026-10-18-slug-participants-iteration.md).
+Existing limitation found by source inspection: the older list test still expects name/ID order, while the repository orders by creation time descending. The API documentation was corrected to match code; list ordering and its legacy test were not changed. See [active risks](system_state.md#active-gaps-and-risks).
+
+Previous iteration: [positional participant literals](archive/2026-10-18-positional-participants-iteration.md).
