@@ -1,11 +1,15 @@
 # Current Iteration
 
-Date: 2026-10-17
+Date: 2026-10-18
 
-Added LoadUser after RequireAuth on the shared protected API group. It reuses UserService.GetUserInfo and stores a shared UserInfo pointer in Gin Context. The repository query includes selected_tournament_id; get_user_info reads the context without another database call. The documented snapshot is fresh per request; successful writes must update the shared object for later consumers in that request.
+Implemented protected GET /api/tournaments/get_all_tournaments with all 13 requested fields, optional status filtering, nullable prize percentages, distinct active participant counts, and selection from middleware.CurrentUser. The repository performs one list query without multiplying tournament rows; the service reuses the loaded selection. The architecture follows the teams API. See [the contract](../backend/docs/tournaments.md) and [backend knowledge](modules/backend/overview.md#tournaments-api).
 
-Targeted middleware and PostgreSQL user HTTP tests passed with race detection, including invalid authentication, missing users/profiles, database-error secrecy, one load per request, shared-object updates, and tournament changes/deletion with the same JWT. The complete affected handler, middleware, and router suites also passed with race detection against PostgreSQL, including auth regression tests; affected-package vet passed. No migration, dependency, selection-write endpoint, or application database changes were made. No unexpected command failures occurred.
+Targeted HTTP tests passed against disposable PostgreSQL with race detection, including authentication, all filter modes, SQL injection input, nullable fields, duplicate participant user IDs, zero counts, selected tournament changes with the same token, user isolation, empty results, and error responses. Affected-package and API entry-point vet passed. Formatting and strict UTF-8 checks passed. No migrations, dependencies, or existing business rules changed.
 
-Next step: implement tournament selection persistence separately if requested. Existing environments must have the selected_tournament_id column before running this query.
+Non-reusable navigation failure: `rg --files AI_LEARN/archive/history` exited 2 because the optional history directory does not exist. The incorrect assumption was that this optional archive destination was present. Corrected discovery used `Path('AI_LEARN/archive').iterdir()` successfully; previous iteration records were preserved in the existing archive directory. Rule: inspect the existing archive parent before selecting an optional history path.
 
-Previous iteration: [selected-tournament baseline](archive/2026-10-17-selected-tournament-baseline-iteration.md).
+Non-reusable editing failure: apply_patch rejected a patch that deleted and added the same iteration path in one call. The patch did not apply. Replacing each delete/add pair with one Update File operation succeeded. Use one update operation per existing path when replacing its contents.
+
+Next step: integrate the documented GET endpoint into the client. Existing environments still require the current tournament tables and selected_tournament_id column.
+
+Previous iteration: [shared user context](archive/2026-10-17-shared-user-context-iteration.md).

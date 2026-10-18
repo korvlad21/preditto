@@ -14,7 +14,7 @@ The [development seeds](../backend/seeds/README.md) now include the UEFA Champio
 
 Tournament migrations [000010](../backend/migrations/000010_create_tournaments.up.sql), [000011](../backend/migrations/000011_create_tournament_participants.up.sql), and [000012](../backend/migrations/000012_create_tournament_prize_rules.up.sql) are ready. Isolated PostgreSQL checks passed for application, constraints, rollback to version 9 with original schema and users preserved, reapplication, and full rollback. Existing migrations and the application database were not changed. See [backend knowledge](modules/backend/overview.md) for the schema constraints.
 
-The protected [user API](../backend/docs/user.md) now uses RequireAuth followed by LoadUser on the shared protected group in cmd/api/main.go. LoadUser calls UserService.GetUserInfo once per request and stores a shared UserInfo pointer, including nullable selected_tournament_id. The handler reads middleware.CurrentUser without another query. Missing users retain HTTP 404; missing profiles retain null fields. Targeted PostgreSQL race tests and affected-package vet passed.
+The protected [user API](../backend/docs/user.md) and [tournaments API](../backend/docs/tournaments.md) use RequireAuth followed by LoadUser on the shared protected group in cmd/api/main.go. LoadUser calls UserService.GetUserInfo once per request and stores a shared UserInfo pointer, including nullable selected_tournament_id. Both handlers read middleware.CurrentUser without another user query. Tournament listing supports optional status filtering, nullable prize percentages, distinct active participant counts, and per-user selection in one list query. Targeted tournament PostgreSQL race tests and affected-package/API vet passed; the existing user-context tests were verified in the previous iteration.
 
 The public [teams API](../backend/docs/teams.md) exposes `POST /api/teams/get_all_teams` with optional country filtering and `POST /api/teams/get_all_countries` without required parameters or body. Both return arrays ordered by name. Country responses include `id`, `name`, `short_name`, and `created_at`; empty tables return `[]`. Targeted HTTP tests passed against PostgreSQL with race detection, and affected-package/API vet passed. No migration or new dependency is required.
 
@@ -38,7 +38,7 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 
 For future race validation of the expanded user seeds, replace the fixed freshness window with timestamp bounds tied to the seed invocation; keep this test maintenance separate from constant extraction.
 
-Use `Authorization: Bearer <access_token>` when integrating the user-info endpoint into the frontend; no user ID or body is needed.
+Use `Authorization: Bearer <access_token>` when integrating the user-info and tournament-list endpoints into the frontend; neither accepts a user ID for identity selection. Tournament listing uses GET with an optional `status` query parameter.
 
 Run the normal development seeds to populate local logo paths in an existing database. Keep future seed slugs and the [asset inventory](../docs/assets/team-logos.md) in sync.
 
