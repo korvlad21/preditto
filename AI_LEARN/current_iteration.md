@@ -2,10 +2,10 @@
 
 Date: 2026-10-18
 
-Changed /api/tournaments/get_all_tournaments from GET to POST at the user's request. Updated the route, HTTP test helper, rejected-method assertion, API contract, and active knowledge references. Status remains an optional query parameter; no body is required. See [the contract](../backend/docs/tournaments.md).
+Converted all 32 entries in [tournament_participants.go](../backend/seeds/development/tournament_participants.go) to positional struct literals at the user's request. Values follow the declared tournamentSlug, username, status field order; membership and seed execution are unchanged.
 
-Targeted TestGetAllTournamentsRequiresAuth and TestGetAllTournamentsMissingUserContext tests passed: POST reaches the protected handler and GET returns 404. The existing PostgreSQL test now sends POST; it was not rerun because only the HTTP method changed. SQL, service, and response behavior retain the previous PostgreSQL verification. No unexpected command failures occurred.
+Verification: gofmt, strict UTF-8 validation, diff whitespace, and `go test -mod=readonly ./seeds/development -run '^$'` passed. The command validates package/test compilation without executing tests; prior PostgreSQL behavior verification is preserved in the previous iteration. No unexpected failures occurred.
 
-Next step: use POST in Postman and client integration, with the existing access token and optional status query parameter.
+Next step: preserve the declared field order when editing positional literals.
 
-Previous iteration: [tournament API implementation](archive/2026-10-18-tournaments-get-api-iteration.md).
+Previous iteration: [uniform slug references](archive/2026-10-18-slug-participants-iteration.md).

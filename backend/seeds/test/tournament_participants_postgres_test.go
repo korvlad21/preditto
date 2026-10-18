@@ -10,10 +10,15 @@ import (
 
 func TestTournamentParticipantsPostgres(t *testing.T) {
 	db := seedPostgres(t)
-	if _, err := db.Exec("ALTER TABLE users ALTER COLUMN id RESTART WITH 101"); err != nil {
+	if _, err := db.Exec(`
+		ALTER TABLE users ALTER COLUMN id RESTART WITH 101;
+		ALTER TABLE tournaments ALTER COLUMN id RESTART WITH 101;
+		INSERT INTO tournaments (id, name, slug) VALUES (1, 'Other', 'other');
+	`); err != nil {
 		t.Fatal(err)
 	}
 	var originalSnapshot string
+	additionalSnapshots := make(map[string]string)
 	for run := 0; run < 2; run++ {
 		if err := development.Run(context.Background(), db); err != nil {
 			t.Fatal(err)
@@ -25,12 +30,15 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 				count(*) FILTER (WHERE p.status = 'active'),
 				count(*) FILTER (WHERE p.status = 'not_paid'),
 				count(*) FILTER (WHERE p.status = 'blocked'),
-				count(*) FILTER (WHERE p.tournament_id <> 1 OR p.user_id < 101
+				count(*) FILTER (WHERE p.tournament_id < 101 OR p.user_id < 101
 					OR u.username IN ('korvlad21', 'hanna_stoma', 'boroda')
-					OR p.joined_at IS NULL OR p.joined_at > CURRENT_TIMESTAMP),
+					OR p.joined_at IS NULL OR p.joined_at > CURRENT_TIMESTAMP)
+					+ (SELECT count(*) FROM tournament_participants WHERE tournament_id = 1),
 				string_agg(p.id::text || ':' || u.username || ':' || p.status || ':' || p.joined_at::text,
 					',' ORDER BY u.username)
 			FROM tournament_participants p JOIN users u ON u.id = p.user_id
+			JOIN tournaments t ON t.id = p.tournament_id
+			WHERE t.slug = 'uefa-champions-league-2026-2027'
 		`).Scan(&total, &active, &notPaid, &blocked, &invalid, &snapshot); err != nil {
 			t.Fatal(err)
 		}
@@ -42,9 +50,43 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 			t.Fatal("rerun changed participant identities/joined_at or failed to restore statuses")
 		}
 		originalSnapshot = snapshot
+		for _, want := range []struct {
+			slug                            string
+			total, active, notPaid, blocked int
+		}{
+			{"uefa-champions-league-2026-2027-gel", 15, 14, 1, 0},
+			{"la-liga-2026-2027", 7, 6, 0, 1},
+		} {
+			var distinctUsers int
+			if err := db.QueryRow(`
+				SELECT count(*), count(DISTINCT p.user_id),
+					count(*) FILTER (WHERE p.status = 'active'),
+					count(*) FILTER (WHERE p.status = 'not_paid'),
+					count(*) FILTER (WHERE p.status = 'blocked'),
+					count(*) FILTER (WHERE p.tournament_id < 101 OR p.user_id < 101
+						OR u.status <> 'ACTIVE'
+						OR p.joined_at IS NULL OR p.joined_at > CURRENT_TIMESTAMP),
+					string_agg(p.id::text || ':' || p.user_id::text || ':' || p.status || ':' || p.joined_at::text,
+						',' ORDER BY p.user_id)
+				FROM tournament_participants p JOIN tournaments t ON t.id = p.tournament_id
+				JOIN users u ON u.id = p.user_id
+				WHERE t.slug = $1
+			`, want.slug).Scan(&total, &distinctUsers, &active, &notPaid, &blocked, &invalid, &snapshot); err != nil {
+				t.Fatal(err)
+			}
+			if total != want.total || distinctUsers != want.total || active != want.active ||
+				notPaid != want.notPaid || blocked != want.blocked || invalid != 0 {
+				t.Fatalf("run %d, %s: total=%d distinct=%d active=%d not_paid=%d blocked=%d invalid=%d",
+					run, want.slug, total, distinctUsers, active, notPaid, blocked, invalid)
+			}
+			if run == 1 && snapshot != additionalSnapshots[want.slug] {
+				t.Fatalf("rerun changed participants or failed to restore statuses for %s", want.slug)
+			}
+			additionalSnapshots[want.slug] = snapshot
+		}
 		if run == 0 {
 			var timestampsDefaulted bool
-			if err := db.QueryRow(`SELECT bool_and(p.joined_at = t.created_at)
+			if err := db.QueryRow(`SELECT bool_and(p.joined_at = t.updated_at)
 				FROM tournament_participants p JOIN tournaments t ON t.id = p.tournament_id`).Scan(&timestampsDefaulted); err != nil || !timestampsDefaulted {
 				t.Fatalf("joined_at did not use the transaction timestamp: %v", err)
 			}
@@ -55,14 +97,14 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 	}
 }
 
-func TestTournamentParticipantsMissingTournamentRollsBackPostgres(t *testing.T) {
+func TestTournamentParticipantsFailureRollsBackPostgres(t *testing.T) {
 	db := seedPostgres(t)
-	if _, err := db.Exec("ALTER TABLE tournaments ALTER COLUMN id RESTART WITH 101"); err != nil {
+	if _, err := db.Exec("ALTER TABLE tournament_participants ADD CONSTRAINT reject_active CHECK (status <> 'active')"); err != nil {
 		t.Fatal(err)
 	}
 	err := development.Run(context.Background(), db)
-	if err == nil || !strings.Contains(err.Error(), "seed tournament_participants: upsert tournament 1 participant") {
-		t.Fatalf("expected missing tournament 1 error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "seed tournament_participants: upsert tournament") {
+		t.Fatalf("expected participant write error, got %v", err)
 	}
 	var count int
 	if err := db.QueryRow(`SELECT (SELECT count(*) FROM users) + (SELECT count(*) FROM tournaments)

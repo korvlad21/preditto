@@ -4,7 +4,9 @@ import "time"
 
 const (
 	CurrencyUSD                   = "USD"
+	CurrencyGEL                   = "GEL"
 	TournamentTypeChampionsLeague = "Champions league"
+	TournamentTypeLaLiga          = "La Liga"
 )
 
 const (

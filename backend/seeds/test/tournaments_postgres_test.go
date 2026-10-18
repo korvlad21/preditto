@@ -33,6 +33,7 @@ func TestTournamentsAndPrizeRulesPostgres(t *testing.T) {
 				}
 			}
 			var createdAt string
+			additionalSnapshots := make(map[string]string)
 			for run := 0; run < 2; run++ {
 				if err := development.Run(context.Background(), db); err != nil {
 					t.Fatal(err)
@@ -67,8 +68,47 @@ func TestTournamentsAndPrizeRulesPostgres(t *testing.T) {
 				`, id).Scan(&tournaments, &rules, &percentages, &total); err != nil {
 					t.Fatal(err)
 				}
-				if tournaments != 2 || rules != 3 || percentages != "1:50.00,2:30.00,3:15.00" || total != "95.00" {
+				if tournaments != 4 || rules != 3 || percentages != "1:50.00,2:30.00,3:15.00" || total != "95.00" {
 					t.Fatalf("unexpected tournament/prize rows: %d %d %s %s", tournaments, rules, percentages, total)
+				}
+				for _, want := range []struct {
+					slug, name, starts, ends, cost, currency, kind, prizes string
+				}{
+					{"uefa-champions-league-2026-2027-gel", "Лига чемпионов УЕФА 2026/2027 (GEL)",
+						"2026-09-08", "2027-06-05", "40.00", "GEL", "Champions league", "1:50.00,2:30.00,3:15.00"},
+					{"la-liga-2026-2027", "Ла Лига 2026-2027",
+						"2026-08-15", "2027-05-30", "20.00", "USD", "La Liga", "1:45.00,2:30.00,3:20.00"},
+				} {
+					var valid bool
+					var snapshot, prizes string
+					if err := db.QueryRow(`
+						SELECT t.name = $2 AND t.starts_at = $3::timestamp AND t.ends_at = $4::timestamp
+							AND t.cost_amount = $5::numeric AND t.amount_currency = $6
+							AND t.type_of_tournament = $7 AND t.status = 'active'
+							AND t.id >= 101 AND t.updated_at >= t.created_at,
+							t.id::text || ':' || t.created_at::text,
+							(SELECT string_agg(place::text || ':' || percentage::text, ',' ORDER BY place)
+							 FROM tournament_prize_rules WHERE tournament_id = t.id)
+						FROM tournaments t WHERE t.slug = $1
+					`, want.slug, want.name, want.starts, want.ends, want.cost, want.currency, want.kind).
+						Scan(&valid, &snapshot, &prizes); err != nil {
+						t.Fatal(err)
+					}
+					if !valid || prizes != want.prizes || (run == 1 && snapshot != additionalSnapshots[want.slug]) {
+						t.Fatalf("invalid tournament %s: fields=%v snapshot=%s prizes=%s", want.slug, valid, snapshot, prizes)
+					}
+					additionalSnapshots[want.slug] = snapshot
+					if run == 0 {
+						if _, err := db.Exec(`UPDATE tournaments SET name = 'Old', status = 'planned',
+							starts_at = '2000-01-01', ends_at = '2000-02-01', cost_amount = 1,
+							amount_currency = 'EUR', type_of_tournament = 'custom' WHERE slug = $1`, want.slug); err != nil {
+							t.Fatal(err)
+						}
+						if _, err := db.Exec(`DELETE FROM tournament_prize_rules
+							WHERE tournament_id = (SELECT id FROM tournaments WHERE slug = $1)`, want.slug); err != nil {
+							t.Fatal(err)
+						}
+					}
 				}
 				var otherUnchanged bool
 				if err := db.QueryRow(`SELECT t.name = 'Other' AND p.percentage = 100.00

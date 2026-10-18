@@ -54,8 +54,8 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 		return driver.RowsAffected(1), nil
 	}
 	if strings.Contains(query, "INSERT INTO tournament_participants") {
-		if c.tournamentID == 0 || args[0].Value != int64(1) {
-			return nil, errors.New("participants require seeded tournaments and tournament ID 1")
+		if c.tournamentID == 0 || args[0].Value != c.tournamentID {
+			return nil, errors.New("participants require a resolved seed tournament ID")
 		}
 		return driver.RowsAffected(1), nil
 	}

@@ -8,7 +8,11 @@ import (
 	"preditto/internal/model"
 )
 
-const championsLeague20262027Slug = "uefa-champions-league-2026-2027"
+const (
+	championsLeague20262027Slug    = "uefa-champions-league-2026-2027"
+	championsLeague20262027GELSlug = "uefa-champions-league-2026-2027-gel"
+	laLiga20262027Slug             = "la-liga-2026-2027"
+)
 
 type tournament struct {
 	name             string
@@ -33,6 +37,29 @@ var tournaments = []tournament{
 		costAmount:       "10.00",
 		amountCurrency:   model.CurrencyUSD,
 		typeOfTournament: model.TournamentTypeChampionsLeague,
+	},
+	{
+		name:             "Лига чемпионов УЕФА 2026/2027 (GEL)",
+		slug:             championsLeague20262027GELSlug,
+		status:           model.TournamentStatusActive,
+		startsAt:         "2026-09-08",
+		endsAt:           "2027-06-05",
+		costAmount:       "40.00",
+		amountCurrency:   model.CurrencyGEL,
+		typeOfTournament: model.TournamentTypeChampionsLeague,
+	},
+	// First match and final round dates, stored as calendar dates rather than kickoff times.
+	// https://www.laliga.com/noticias/horarios-de-la-primera-jornada-de-laliga-ea-sports-2026-27
+	// https://rfef.es/es/noticias/la-temporada-202627-ya-tiene-establecidas-sus-fechas-clave
+	{
+		name:             "Ла Лига 2026-2027",
+		slug:             laLiga20262027Slug,
+		status:           model.TournamentStatusActive,
+		startsAt:         "2026-08-15",
+		endsAt:           "2027-05-30",
+		costAmount:       "20.00",
+		amountCurrency:   model.CurrencyUSD,
+		typeOfTournament: model.TournamentTypeLaLiga,
 	},
 }
 

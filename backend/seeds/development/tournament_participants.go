@@ -9,26 +9,60 @@ import (
 )
 
 type tournamentParticipant struct {
-	tournamentID int64
-	username     string
-	status       string
+	tournamentSlug string
+	username       string
+	status         string
 }
 
 var tournamentParticipants = []tournamentParticipant{
-	{1, "ines_costa", model.TournamentParticipantStatusActive},
-	{1, "alex_morgan", model.TournamentParticipantStatusActive},
-	{1, "felix_schmidt", model.TournamentParticipantStatusActive},
-	{1, "sofia_rossi", model.TournamentParticipantStatusActive},
-	{1, "leo_moretti", model.TournamentParticipantStatusActive},
-	{1, "emma_wilson", model.TournamentParticipantStatusActive},
-	{1, "oscar_lind", model.TournamentParticipantStatusActive},
-	{1, "mateo_garcia", model.TournamentParticipantStatusActive},
-	{1, "noah_clarke", model.TournamentParticipantStatusNotPaid},
-	{1, "zara_ahmed", model.TournamentParticipantStatusBlocked},
+	{championsLeague20262027Slug, "ines_costa", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "alex_morgan", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "felix_schmidt", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "sofia_rossi", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "leo_moretti", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "emma_wilson", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "oscar_lind", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "mateo_garcia", model.TournamentParticipantStatusActive},
+	{championsLeague20262027Slug, "noah_clarke", model.TournamentParticipantStatusNotPaid},
+	{championsLeague20262027Slug, "zara_ahmed", model.TournamentParticipantStatusBlocked},
+
+	{championsLeague20262027GELSlug, "ines_costa", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "alex_morgan", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "felix_schmidt", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "sofia_rossi", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "leo_moretti", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "emma_wilson", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "oscar_lind", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "mateo_garcia", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "daniel_weber", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "lucas_silva", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "olivia_brown", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "mia_jensen", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "elena_popov", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "hanna_stoma", model.TournamentParticipantStatusActive},
+	{championsLeague20262027GELSlug, "noah_clarke", model.TournamentParticipantStatusNotPaid},
+
+	{laLiga20262027Slug, "lucas_silva", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "mia_jensen", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "ines_costa", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "daniel_weber", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "olivia_brown", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "leo_moretti", model.TournamentParticipantStatusActive},
+	{laLiga20262027Slug, "elena_popov", model.TournamentParticipantStatusBlocked},
 }
 
 func seedTournamentParticipants(ctx context.Context, tx *sql.Tx) error {
+	tournamentIDs := make(map[string]int64)
 	for _, item := range tournamentParticipants {
+		tournamentID, ok := tournamentIDs[item.tournamentSlug]
+		if !ok {
+			if err := tx.QueryRowContext(ctx, `
+				SELECT id FROM tournaments WHERE slug = $1
+			`, item.tournamentSlug).Scan(&tournamentID); err != nil {
+				return fmt.Errorf("find tournament for participants %q: %w", item.tournamentSlug, err)
+			}
+			tournamentIDs[item.tournamentSlug] = tournamentID
+		}
 		var userID int64
 		if err := tx.QueryRowContext(ctx, `
 			SELECT id FROM users WHERE username = $1
@@ -39,9 +73,9 @@ func seedTournamentParticipants(ctx context.Context, tx *sql.Tx) error {
 			INSERT INTO tournament_participants (tournament_id, user_id, status)
 			VALUES ($1, $2, $3)
 			ON CONFLICT (tournament_id, user_id) DO UPDATE SET status = EXCLUDED.status
-		`, item.tournamentID, userID, item.status)
+		`, tournamentID, userID, item.status)
 		if err != nil {
-			return fmt.Errorf("upsert tournament %d participant %q: %w", item.tournamentID, item.username, err)
+			return fmt.Errorf("upsert tournament %d participant %q: %w", tournamentID, item.username, err)
 		}
 	}
 	return nil
