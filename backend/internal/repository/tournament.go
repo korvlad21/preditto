@@ -36,7 +36,7 @@ func (r *TournamentRepository) GetAllTournaments(ctx context.Context, status str
 		query += ` WHERE t.status = $2`
 		args = append(args, status)
 	}
-	query += ` ORDER BY t.name, t.id`
+	query += ` ORDER BY t.created_at DESC, t.id DESC`
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query tournaments: %w", err)
