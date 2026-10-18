@@ -1,8 +1,9 @@
 # Tournaments API
 
-`GET /api/tournaments/get_all_tournaments` requires an access token in
+`POST /api/tournaments/get_all_tournaments` requires an access token in
 `Authorization: Bearer <access_token>` and returns a JSON array ordered by name,
 then ID. No matches, including an empty table, return `[]` with HTTP 200.
+No request body is required. GET is not registered and returns HTTP 404.
 
 The optional query parameter `status` matches `tournaments.status` exactly.
 Omitted `status`, an empty value, and `all` return every tournament, including
@@ -10,7 +11,7 @@ rows with a null status. Other values are case-sensitive and are not trimmed;
 unknown values return an empty array. For example:
 
 ```text
-GET /api/tournaments/get_all_tournaments?status=active
+POST /api/tournaments/get_all_tournaments?status=active
 ```
 
 Each object contains exactly these fields:

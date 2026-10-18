@@ -46,7 +46,7 @@ func tournamentAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager, *
 }
 
 func tournamentRequest(api http.Handler, token, query string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodGet, "/api/tournaments/get_all_tournaments"+query, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/tournaments/get_all_tournaments"+query, nil)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -72,9 +72,9 @@ func TestGetAllTournamentsRequiresAuth(t *testing.T) {
 		t.Fatal("unauthenticated requests loaded user data")
 	}
 	w := httptest.NewRecorder()
-	api.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/tournaments/get_all_tournaments", nil))
+	api.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/tournaments/get_all_tournaments", nil))
 	if w.Code != http.StatusNotFound {
-		t.Fatalf("POST status = %d, want 404", w.Code)
+		t.Fatalf("GET status = %d, want 404", w.Code)
 	}
 }
 

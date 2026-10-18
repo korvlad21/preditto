@@ -38,7 +38,7 @@ The [backend](modules/backend/overview.md) runs migrations, development seeds, t
 
 For future race validation of the expanded user seeds, replace the fixed freshness window with timestamp bounds tied to the seed invocation; keep this test maintenance separate from constant extraction.
 
-Use `Authorization: Bearer <access_token>` when integrating the user-info and tournament-list endpoints into the frontend; neither accepts a user ID for identity selection. Tournament listing uses GET with an optional `status` query parameter.
+Use `Authorization: Bearer <access_token>` when integrating the user-info and tournament-list endpoints into the frontend; neither accepts a user ID for identity selection. Tournament listing uses POST with an optional `status` query parameter.
 
 Run the normal development seeds to populate local logo paths in an existing database. Keep future seed slugs and the [asset inventory](../docs/assets/team-logos.md) in sync.
 

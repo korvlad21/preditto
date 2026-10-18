@@ -8,5 +8,5 @@ import (
 
 func RegisterTournamentRoutes(api *gin.RouterGroup, tournaments *handler.TournamentHandler) {
 	routes := api.Group("/tournaments")
-	routes.GET("/get_all_tournaments", tournaments.GetAllTournaments)
+	routes.POST("/get_all_tournaments", tournaments.GetAllTournaments)
 }
