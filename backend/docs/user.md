@@ -46,8 +46,8 @@ not immediately invalidate an issued access token; no new role checks are added.
 `cmd/api/main.go` creates a shared middleware chain with `RequireAuth` followed by
 `LoadUser`. `router.RegisterUserRoutes` receives a protected `/api` group;
 `RegisterTournamentRoutes` receives the same protected group. Public auth and team routes
-remain on their public groups. `LoadUser` reuses `UserService` and the existing `AuthRepository` user
-persistence in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
+remain on their public groups. `LoadUser` reuses `UserService` and the `UserRepository`
+in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
 selects the nine response columns; it never
 reads password hashes. `model.UserInfo` is the response shape because the existing
 auth `model.User` does not preserve nullable names or include avatars.

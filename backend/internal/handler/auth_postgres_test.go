@@ -99,7 +99,7 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	svc, err := service.NewAuthService(repository.NewAuthRepository(db), tokens)
+	svc, err := service.NewAuthService(repository.NewAuthRepository(db), repository.NewUserRepository(db), tokens)
 	if err != nil {
 		t.Fatal(err)
 	}

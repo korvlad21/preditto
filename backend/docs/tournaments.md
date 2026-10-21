@@ -98,7 +98,7 @@ The router receives the same protected group as the user routes, with
 `response.AbortError`. Internal database details are never exposed.
 
 `TournamentService.SelectTournament` checks existence before saving.
-`AuthRepository.UpdateSelectedTournament(ctx, userID, tournamentID *int64)` in
+`UserRepository.UpdateSelectedTournament(ctx, userID, tournamentID *int64)` in
 `repository/user.go` updates only the existing `user_info` row; `nil` writes SQL
 NULL for future reset operations. Zero affected rows return `ErrNotFound`.
 The selected-tournament foreign-key violation maps to `ErrTournamentNotFound`,

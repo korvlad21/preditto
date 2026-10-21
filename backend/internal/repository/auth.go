@@ -11,28 +11,28 @@ import (
 
 var ErrNotFound = errors.New("record not found")
 
-type authDB interface {
+type queryDB interface {
 	executor
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
 type AuthRepository struct {
 	db    *sql.DB
-	query authDB
+	query queryDB
 }
 
 func NewAuthRepository(db *sql.DB) *AuthRepository {
 	return &AuthRepository{db: db, query: db}
 }
 
-// InTransaction gives the service transaction-scoped persistence operations.
-func (r *AuthRepository) InTransaction(ctx context.Context, fn func(*AuthRepository) error) error {
+// InTransaction binds session and user persistence to the same SQL transaction.
+func (r *AuthRepository) InTransaction(ctx context.Context, fn func(*AuthRepository, *UserRepository) error) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin auth transaction: %w", err)
 	}
 	defer tx.Rollback()
-	if err := fn(&AuthRepository{query: tx}); err != nil {
+	if err := fn(&AuthRepository{query: tx}, &UserRepository{query: tx}); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {

@@ -110,7 +110,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repo := repository.NewAuthRepository(db)
+	repo := repository.NewUserRepository(db)
 	checkStored := func(want *int64) {
 		t.Helper()
 		user, err := repo.GetUserInfo(context.Background(), 81)

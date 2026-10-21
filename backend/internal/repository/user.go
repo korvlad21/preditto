@@ -22,8 +22,16 @@ var (
 	ErrFavoriteTeamNotFound = errors.New("favorite team not found")
 )
 
+type UserRepository struct {
+	query queryDB
+}
+
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{query: db}
+}
+
 // CreateUser must be called within InTransaction so profile failures roll back users.
-func (r *AuthRepository) CreateUser(ctx context.Context, user *model.User) error {
+func (r *UserRepository) CreateUser(ctx context.Context, user *model.User) error {
 	err := r.query.QueryRowContext(ctx, `
 		INSERT INTO users (username, email, password_hash, status)
 		VALUES ($1, $2, $3, $4) RETURNING id
@@ -56,7 +64,7 @@ func userWriteError(err error) error {
 }
 
 // UpdateSelectedTournament updates an existing profile; nil clears the selection.
-func (r *AuthRepository) UpdateSelectedTournament(ctx context.Context, userID int64, tournamentID *int64) error {
+func (r *UserRepository) UpdateSelectedTournament(ctx context.Context, userID int64, tournamentID *int64) error {
 	result, err := r.query.ExecContext(ctx, `
 		UPDATE user_info SET selected_tournament_id = $1 WHERE user_id = $2
 	`, tournamentID, userID)
@@ -77,11 +85,11 @@ const userSelect = `SELECT u.id, u.username, u.email, u.password_hash, u.status,
 	COALESCE(i.first_name, ''), COALESCE(i.last_name, ''), i.favorite_team_id
 	FROM users u LEFT JOIN user_info i ON i.user_id = u.id `
 
-func (r *AuthRepository) FindUserByLogin(ctx context.Context, login string) (model.User, error) {
+func (r *UserRepository) FindUserByLogin(ctx context.Context, login string) (model.User, error) {
 	return scanUser(r.query.QueryRowContext(ctx, userSelect+`WHERE u.username = $1 OR u.email = $1`, login))
 }
 
-func (r *AuthRepository) GetUserInfo(ctx context.Context, id int64) (model.UserInfo, error) {
+func (r *UserRepository) GetUserInfo(ctx context.Context, id int64) (model.UserInfo, error) {
 	var user model.UserInfo
 	err := r.query.QueryRowContext(ctx, `
 		SELECT u.id, u.username, u.email, u.status,
@@ -100,7 +108,7 @@ func (r *AuthRepository) GetUserInfo(ctx context.Context, id int64) (model.UserI
 }
 
 // LockUser prevents status changes while a new session is being issued.
-func (r *AuthRepository) LockUser(ctx context.Context, id int64) (model.User, error) {
+func (r *UserRepository) LockUser(ctx context.Context, id int64) (model.User, error) {
 	return scanUser(r.query.QueryRowContext(ctx, userSelect+`WHERE u.id = $1 FOR SHARE OF u`, id))
 }
 

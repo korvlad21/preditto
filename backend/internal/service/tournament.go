@@ -13,10 +13,10 @@ var ErrTournamentUpdateFailed = errors.New("tournament selection update failed")
 
 type TournamentService struct {
 	repo  *repository.TournamentRepository
-	users *repository.AuthRepository
+	users *repository.UserRepository
 }
 
-func NewTournamentService(repo *repository.TournamentRepository, users *repository.AuthRepository) *TournamentService {
+func NewTournamentService(repo *repository.TournamentRepository, users *repository.UserRepository) *TournamentService {
 	return &TournamentService{repo: repo, users: users}
 }
 

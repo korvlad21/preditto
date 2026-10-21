@@ -23,17 +23,18 @@ var (
 
 type AuthService struct {
 	repo      *repository.AuthRepository
+	users     *repository.UserRepository
 	tokens    *auth.TokenManager
 	dummyHash []byte
 }
 
-func NewAuthService(repo *repository.AuthRepository, tokens *auth.TokenManager) (*AuthService, error) {
+func NewAuthService(repo *repository.AuthRepository, users *repository.UserRepository, tokens *auth.TokenManager) (*AuthService, error) {
 	// Unknown logins still perform the same expensive bcrypt comparison.
 	hash, err := bcrypt.GenerateFromPassword([]byte("unused timing equalization password"), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("initialize password verifier: %w", err)
 	}
-	return &AuthService{repo: repo, tokens: tokens, dummyHash: hash}, nil
+	return &AuthService{repo: repo, users: users, tokens: tokens, dummyHash: hash}, nil
 }
 
 func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest) (authdto.AuthResponse, error) {
@@ -49,11 +50,11 @@ func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest)
 		FirstName: req.FirstName, LastName: req.LastName, FavoriteTeamID: req.FavoriteTeamID,
 	}
 	var pair authdto.TokenResponse
-	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository) error {
-		if err := tx.CreateUser(ctx, &user); err != nil {
+	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository, users *repository.UserRepository) error {
+		if err := users.CreateUser(ctx, &user); err != nil {
 			return err
 		}
-		if err := tx.AssignRole(ctx, user.ID, model.RoleCodeParticipant); err != nil {
+		if err := users.AssignRole(ctx, user.ID, model.RoleCodeParticipant); err != nil {
 			return err
 		}
 		var err error
@@ -67,7 +68,7 @@ func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest)
 }
 
 func (s *AuthService) Login(ctx context.Context, req authdto.LoginRequest) (authdto.AuthResponse, error) {
-	user, err := s.repo.FindUserByLogin(ctx, req.Login)
+	user, err := s.users.FindUserByLogin(ctx, req.Login)
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return authdto.AuthResponse{}, err
 	}
@@ -80,8 +81,8 @@ func (s *AuthService) Login(ctx context.Context, req authdto.LoginRequest) (auth
 		return authdto.AuthResponse{}, ErrInvalidCredentials
 	}
 	var pair authdto.TokenResponse
-	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository) error {
-		current, err := tx.LockUser(ctx, user.ID)
+	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository, users *repository.UserRepository) error {
+		current, err := users.LockUser(ctx, user.ID)
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrInvalidCredentials
 		}
@@ -110,9 +111,9 @@ func (s *AuthService) Refresh(ctx context.Context, raw string) (authdto.TokenRes
 		return authdto.TokenResponse{}, auth.ErrInvalidToken
 	}
 	var pair authdto.TokenResponse
-	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository) error {
+	err = s.repo.InTransaction(ctx, func(tx *repository.AuthRepository, users *repository.UserRepository) error {
 		// Lock the parent first, matching PostgreSQL's cascading user deletion.
-		user, err := tx.LockUser(ctx, claims.UserID())
+		user, err := users.LockUser(ctx, claims.UserID())
 		if errors.Is(err, repository.ErrNotFound) {
 			return auth.ErrInvalidToken
 		}
@@ -148,7 +149,7 @@ func (s *AuthService) Logout(ctx context.Context, raw string) error {
 	if err != nil {
 		return auth.ErrInvalidToken
 	}
-	return s.repo.InTransaction(ctx, func(tx *repository.AuthRepository) error {
+	return s.repo.InTransaction(ctx, func(tx *repository.AuthRepository, _ *repository.UserRepository) error {
 		session, err := s.session(ctx, tx, raw, claims)
 		if err != nil {
 			return err

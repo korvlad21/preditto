@@ -53,16 +53,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	authService, err := service.NewAuthService(repository.NewAuthRepository(db), tokens)
+	users := repository.NewUserRepository(db)
+	authService, err := service.NewAuthService(repository.NewAuthRepository(db), users, tokens)
 	if err != nil {
 		return err
 	}
 	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
-	userService := service.NewUserService(repository.NewAuthRepository(db))
+	userService := service.NewUserService(users)
 	authMiddleware := []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(userService)}
 	protected := router.Group("/api", authMiddleware...)
 	apirouter.RegisterUserRoutes(protected, handler.NewUserHandler())
-	tournamentService := service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewAuthRepository(db))
+	tournamentService := service.NewTournamentService(repository.NewTournamentRepository(db), users)
 	apirouter.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(tournamentService))
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
 	countryService := service.NewCountryService(repository.NewCountryRepository(db))

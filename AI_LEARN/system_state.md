@@ -2,6 +2,8 @@
 
 ## Active State
 
+[UserRepository](../backend/internal/repository/user.go) owns user/profile persistence and role assignment. UserService and TournamentService depend on it; AuthService receives it alongside AuthRepository for refresh sessions. AuthRepository.InTransaction provides both repositories backed by one SQL transaction, preserving atomic registration and login/refresh locks. See the [authentication contract](../backend/docs/auth.md) for ownership and transaction rules.
+
 [Migration 000004](../backend/migrations/000004_create_user_info.up.sql) now creates nullable selected_tournament_id; migration 000010 adds its tournament foreign key with ON DELETE SET NULL and removes that key on rollback. Migration 000013 was removed at the user's request for a fresh local rebuild. Isolated PostgreSQL checks passed. An existing database requires a deliberate rebuild to adopt this revised baseline; runtime application state has not been inspected in this iteration.
 
 Backend domain statuses, role codes, and PostgreSQL violation codes reuse [constants in their owning packages](modules/backend/overview.md#shared-constants). JWT types and the Bearer scheme remain inline literals. Public API error codes are centralized in `internal/response/error.go` with existing values preserved. The [shared JSON API contract](../backend/docs/responses.md) defines success/data and success/error, removes public messages, and changes logout to HTTP 200 with only success:true when data is absent. Clients require a coordinated migration; internal service/repository errors retain their owning layers.

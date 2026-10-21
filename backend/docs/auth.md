@@ -3,11 +3,18 @@
 All responses follow the [shared API contract and client migration guide](responses.md).
 
 The existing Gin entry point wires `handler.AuthHandler` to `service.AuthService`,
-`repository.AuthRepository`, and the existing `database/sql` PostgreSQL pool.
+`repository.AuthRepository`, `repository.UserRepository`, and the existing
+`database/sql` PostgreSQL pool.
 `router.RegisterAuthRoutes` owns all four auth route declarations and their
 shared request limit and cache headers. The handler owns HTTP binding and responses.
-`repository/user.go` owns user/profile writes and user lookups;
-`repository/auth.go` owns refresh-session persistence and the transaction wrapper.
+`UserRepository` in `repository/user.go` owns user/profile writes and user lookups;
+its `AssignRole` method lives in `repository/user_roles.go`.
+`AuthRepository` in `repository/auth.go` owns refresh-session persistence and the
+transaction wrapper. `AuthService` receives both repositories. `InTransaction`
+passes transaction-scoped auth and user repositories backed by the same `sql.Tx`;
+registration, login, and refresh use those instances for all transactional work.
+Registration therefore commits or rolls back the user, profile, role assignment,
+and first refresh session together.
 `auth.TokenManager` owns JWT signing, parsing, and refresh-token hashing.
 
 ```text
