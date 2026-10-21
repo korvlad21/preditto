@@ -23,19 +23,19 @@ func NewTeamHandler(service *service.TeamService) *TeamHandler {
 func (h *TeamHandler) GetAllTeams(c *gin.Context) {
 	var req teamsdto.GetAllTeamsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.AbortError(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request fields")
+		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		response.AbortError(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request fields")
+		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
 	teams, err := h.service.GetAllTeams(c.Request.Context(), req.Country)
 	if err != nil {
 		_ = c.Error(err)
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
-	c.JSON(http.StatusOK, teams)
+	response.Success(c, http.StatusOK, gin.H{"teams": teams})
 }

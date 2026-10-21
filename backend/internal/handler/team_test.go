@@ -27,7 +27,7 @@ func teamRequest(api http.Handler, query, body string) *httptest.ResponseRecorde
 
 func TestGetAllTeamsInvalidRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(nil), handler.NewCountryHandler(nil))
 	for _, body := range []string{`{`, `[]`, `{"country":123}`, `{"country":true}`, `{"country":{}}`} {
 		t.Run(body, func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestGetAllTeamsPostgres(t *testing.T) {
 			(12, 'Another test team', 'ATT', 'another-test-team', 'TST', '/logos/teams/another-test-team.svg');
 	`)
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(service.NewTeamService(repository.NewTeamRepository(db))), handler.NewCountryHandler(nil))
 
 	all := []map[string]any{
@@ -89,7 +89,7 @@ func TestGetAllTeamsPostgres(t *testing.T) {
 				t.Fatalf("status = %d: %s", w.Code, w.Body.String())
 			}
 			var got []map[string]any
-			if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+			if err := json.Unmarshal(successData(t, w, "teams"), &got); err != nil {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
@@ -99,7 +99,7 @@ func TestGetAllTeamsPostgres(t *testing.T) {
 	}
 
 	execSQL(t, db, `DELETE FROM teams`)
-	if w := teamRequest(api, "", `{}`); w.Code != http.StatusOK || strings.TrimSpace(w.Body.String()) != "[]" {
+	if w := teamRequest(api, "", `{}`); w.Code != http.StatusOK || string(successData(t, w, "teams")) != "[]" {
 		t.Fatalf("empty table: %d %s", w.Code, w.Body.String())
 	}
 	execSQL(t, db, `DROP TABLE teams CASCADE`)

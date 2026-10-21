@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -38,10 +39,10 @@ func tournamentAPI(t *testing.T, db *sql.DB, observers ...gin.HandlerFunc) (*gin
 	if err != nil {
 		t.Fatal(err)
 	}
-	api := gin.New()
+	api := router.New()
 	users := &tournamentUserLoader{UserInfoLoader: service.NewUserService(repository.NewAuthRepository(db))}
 	authMiddleware := append([]gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(users)}, observers...)
-	router.RegisterTournamentRoutes(api.Group("/api"), handler.NewTournamentHandler(service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewAuthRepository(db))), authMiddleware...)
+	router.RegisterTournamentRoutes(api.Group("/api", authMiddleware...), handler.NewTournamentHandler(service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewAuthRepository(db))))
 	return api, tokens, users
 }
 
@@ -80,7 +81,7 @@ func TestGetAllTournamentsRequiresAuth(t *testing.T) {
 
 func TestGetAllTournamentsMissingUserContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	router.RegisterTournamentRoutes(api.Group("/api"), handler.NewTournamentHandler(nil))
 	assertError(t, tournamentRequest(api, "", ""), http.StatusInternalServerError, "INTERNAL_ERROR")
 }
@@ -153,10 +154,14 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 			t.Fatal("personalized response can be cached")
 		}
 		var got []map[string]any
-		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		if err := json.Unmarshal(successData(t, w, "tournaments"), &got); err != nil {
 			t.Fatal(err)
 		}
-		if !reflect.DeepEqual(got, want) {
+		// This fixture inserts every row in one statement, with the same created_at.
+		// Match the existing created_at DESC, id DESC repository order.
+		ordered := append([]map[string]any{}, want...)
+		sort.Slice(ordered, func(i, j int) bool { return ordered[i]["id"].(float64) > ordered[j]["id"].(float64) })
+		if !reflect.DeepEqual(got, ordered) {
 			t.Fatalf("tournaments = %v, want %v", got, want)
 		}
 	}

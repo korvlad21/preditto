@@ -2,6 +2,7 @@ package middleware_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http/httptest"
 	"strings"
@@ -79,6 +80,16 @@ func TestLoadUser(t *testing.T) {
 			}
 			if strings.Contains(w.Body.String(), "private database error") {
 				t.Fatal("error leaked")
+			}
+			var body map[string]any
+			if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil || len(body) != 2 || body["success"] != (tc.status == 200) {
+				t.Fatalf("response envelope: %s", w.Body.String())
+			}
+			if tc.status != 200 {
+				want := map[int]string{401: "UNAUTHORIZED", 404: "USER_NOT_FOUND", 500: "INTERNAL_ERROR"}[tc.status]
+				if body["error"] != want {
+					t.Fatalf("error = %v, want %s", body["error"], want)
+				}
 			}
 			if tc.status == 200 && !strings.Contains(w.Body.String(), `"selected_tournament_id":202`) {
 				t.Fatal("handler did not use updated context")

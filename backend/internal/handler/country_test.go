@@ -19,7 +19,7 @@ import (
 
 func countryAPI(db *sql.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	countries := handler.NewCountryHandler(service.NewCountryService(repository.NewCountryRepository(db)))
 	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(nil), countries)
 	return api
@@ -80,7 +80,7 @@ func TestGetAllCountriesPostgres(t *testing.T) {
 				t.Fatalf("status = %d: %s", w.Code, w.Body.String())
 			}
 			var got []map[string]any
-			if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+			if err := json.Unmarshal(successData(t, w, "countries"), &got); err != nil {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(got, want) {
@@ -90,7 +90,7 @@ func TestGetAllCountriesPostgres(t *testing.T) {
 	}
 
 	execSQL(t, db, `DELETE FROM teams; DELETE FROM countries`)
-	if w := countryRequest(api, "", ""); w.Code != http.StatusOK || strings.TrimSpace(w.Body.String()) != "[]" {
+	if w := countryRequest(api, "", ""); w.Code != http.StatusOK || string(successData(t, w, "countries")) != "[]" {
 		t.Fatalf("empty table: %d %s", w.Code, w.Body.String())
 	}
 	execSQL(t, db, `DROP TABLE countries CASCADE`)

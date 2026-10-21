@@ -29,12 +29,12 @@ func LoadUser(users UserInfoLoader) gin.HandlerFunc {
 		}
 		user, err := users.GetUserInfo(c.Request.Context(), userID)
 		if errors.Is(err, repository.ErrNotFound) {
-			response.AbortError(c, http.StatusNotFound, "USER_NOT_FOUND", "User not found")
+			response.AbortError(c, http.StatusNotFound, response.UserNotFound)
 			return
 		}
 		if err != nil {
 			_ = c.Error(err)
-			response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+			response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 			return
 		}
 		c.Set(userInfoKey, &user)

@@ -68,6 +68,9 @@ func TestRequireAuth(t *testing.T) {
 			if tc.want == 401 && w.Header().Get("WWW-Authenticate") != "Bearer" {
 				t.Fatal("missing challenge")
 			}
+			if tc.want == 401 && w.Body.String() != `{"success":false,"error":"UNAUTHORIZED"}` {
+				t.Fatalf("error envelope: %s", w.Body.String())
+			}
 		})
 	}
 }

@@ -103,7 +103,7 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := gin.New()
+	r := router.New()
 	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc))
 	r.GET("/protected", middleware.RequireAuth(tokens), func(c *gin.Context) { c.JSON(200, gin.H{"user_id": c.GetInt64(middleware.UserIDKey)}) })
 	return r, tokens
@@ -134,7 +134,7 @@ func register(t *testing.T, api http.Handler) authdto.AuthResponse {
 		t.Fatalf("register: %d %s", w.Code, w.Body.String())
 	}
 	var result authdto.AuthResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+	if err := json.Unmarshal(successData(t, w, ""), &result); err != nil {
 		t.Fatal(err)
 	}
 	return result
@@ -149,13 +149,11 @@ func execSQL(t *testing.T, db *sql.DB, query string, args ...any) {
 
 func assertError(t *testing.T, w *httptest.ResponseRecorder, status int, code string) {
 	t.Helper()
-	var body struct {
-		Error struct{ Code, Message string }
-	}
+	var body map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if w.Code != status || body.Error.Code != code || body.Error.Message == "" {
+	if w.Code != status || len(body) != 2 || body["success"] != false || body["error"] != code || w.Header().Get("Content-Type") != "application/json; charset=utf-8" {
 		t.Fatalf("response: %d %s", w.Code, w.Body.String())
 	}
 	for _, private := range []string{"pq:", "password_hash", "token_hash", "SQLSTATE"} {
@@ -213,7 +211,7 @@ func TestRegisterPostgres(t *testing.T) {
 				t.Fatalf("status=%d %s", w.Code, w.Body.String())
 			}
 			var result authdto.AuthResponse
-			if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			if err := json.Unmarshal(successData(t, w, ""), &result); err != nil {
 				t.Fatal(err)
 			}
 			if result.User.ID != 81 || result.User.Username != req.Username || result.User.Email != req.Email || result.User.FirstName != req.FirstName || result.User.LastName != req.LastName || result.User.Status != "ACTIVE" {
@@ -286,7 +284,7 @@ func TestLoginPostgres(t *testing.T) {
 			t.Fatalf("login %s: %d %s", login, w.Code, w.Body.String())
 		}
 		var result authdto.AuthResponse
-		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		if err := json.Unmarshal(successData(t, w, ""), &result); err != nil {
 			t.Fatal(err)
 		}
 		if result.User.ID != user.User.ID || result.User.PasswordHash != "" || result.AccessToken == "" || result.RefreshToken == "" {
@@ -297,7 +295,7 @@ func TestLoginPostgres(t *testing.T) {
 	unknown := call(t, api, "login", authdto.LoginRequest{Login: "unknown", Password: "password"})
 	assertError(t, wrong, 401, "INVALID_CREDENTIALS")
 	assertError(t, unknown, 401, "INVALID_CREDENTIALS")
-	if wrong.Body.String() != unknown.Body.String() || !strings.Contains(wrong.Body.String(), "Invalid login or password") {
+	if wrong.Body.String() != unknown.Body.String() {
 		t.Fatal("credential errors differ")
 	}
 	execSQL(t, db, `UPDATE users SET status='BLOCKED' WHERE id=$1`, user.User.ID)
@@ -321,7 +319,7 @@ func TestRefreshAndLogoutPostgres(t *testing.T) {
 		t.Fatalf("refresh: %d %s", w.Code, w.Body.String())
 	}
 	var pair authdto.TokenResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &pair); err != nil {
+	if err := json.Unmarshal(successData(t, w, ""), &pair); err != nil {
 		t.Fatal(err)
 	}
 	if pair.RefreshToken == user.RefreshToken || pair.AccessToken == user.AccessToken || pair.ExpiresIn != 900 {
@@ -332,7 +330,7 @@ func TestRefreshAndLogoutPostgres(t *testing.T) {
 	}
 	assertError(t, call(t, api, "refresh", authdto.RefreshRequest{RefreshToken: user.RefreshToken}), 401, "INVALID_TOKEN")
 	for i := 0; i < 2; i++ {
-		if w := call(t, api, "logout", authdto.RefreshRequest{RefreshToken: pair.RefreshToken}); w.Code != 204 || w.Body.Len() != 0 {
+		if w := call(t, api, "logout", authdto.RefreshRequest{RefreshToken: pair.RefreshToken}); w.Code != 200 || string(successData(t, w, "")) != "null" {
 			t.Fatalf("logout: %d %s", w.Code, w.Body.String())
 		}
 	}

@@ -1,8 +1,10 @@
 # Tournaments API
 
+All responses follow the [shared API contract and client migration guide](responses.md).
+
 `POST /api/tournaments/get_all_tournaments` requires an access token in
-`Authorization: Bearer <access_token>` and returns a JSON array ordered by
-`created_at DESC, id DESC`. No matches, including an empty table, return `[]` with HTTP 200.
+`Authorization: Bearer <access_token>` and returns an array in `data.tournaments` ordered by
+`created_at DESC, id DESC`. No matches, including an empty table, return `data.tournaments: []` with HTTP 200.
 No request body is required. GET is not registered and returns HTTP 404.
 
 The optional query parameter `status` matches `tournaments.status` exactly.
@@ -68,12 +70,15 @@ be a positive signed 64-bit JSON integer; missing IDs and `null` are rejected.
 The authenticated user comes exclusively from `middleware.CurrentUser(c)`.
 No membership or tournament-status restriction is imposed.
 
-HTTP 200 returns exactly `{"success":true}`, including when selecting the same
+HTTP 200 returns exactly `{"success":true,"data":null}`, including when selecting the same
 tournament again. Errors include `success:false` and the shared error
-object, for example:
+code, for example:
 
 ```json
-{"success":false,"error":{"code":"TOURNAMENT_NOT_FOUND","message":"Турнир не найден"}}
+{
+  "success": false,
+  "error": "TOURNAMENT_NOT_FOUND"
+}
 ```
 
 | HTTP status | Code | Meaning |
@@ -88,11 +93,9 @@ object, for example:
 | 500 | `TOURNAMENT_UPDATE_FAILED` | Selection could not be saved |
 | 500 | `INTERNAL_ERROR` | User loading or tournament lookup failed, or user context is unavailable |
 
-The router installs `response.WithFailureEnvelope` before the shared
-authentication/user-loading middleware only for selection. All its errors use
-`response.AbortError` with `success:false`; other endpoints keep their existing
-envelopes. Pass authentication middleware separately to `RegisterTournamentRoutes`
-so early errors receive this format. Internal database details are never exposed.
+The router receives the same protected group as the user routes, with
+`RequireAuth` before `LoadUser`. All handler and middleware errors use
+`response.AbortError`. Internal database details are never exposed.
 
 `TournamentService.SelectTournament` checks existence before saving.
 `AuthRepository.UpdateSelectedTournament(ctx, userID, tournamentID *int64)` in

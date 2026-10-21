@@ -1,6 +1,8 @@
 # User API
 
-`POST /api/user/get_user_info` returns the authenticated user's account and profile.
+All responses follow the [shared API contract and client migration guide](responses.md).
+
+`POST /api/user/get_user_info` returns the authenticated user's account and profile in `data`.
 No request body or parameters are required. Send the access JWT in
 `Authorization: Bearer <access_token>`; refresh tokens are not accepted.
 
@@ -14,15 +16,18 @@ Example HTTP 200 response:
 
 ```json
 {
-  "id": 81,
-  "username": "new_user",
-  "email": "new_user@example.com",
-  "status": "ACTIVE",
-  "first_name": "Vladislav",
-  "last_name": "Korobkin",
-  "avatar_url": null,
-  "favorite_team_id": 5,
-  "selected_tournament_id": null
+  "success": true,
+  "data": {
+    "id": 81,
+    "username": "new_user",
+    "email": "new_user@example.com",
+    "status": "ACTIVE",
+    "first_name": "Vladislav",
+    "last_name": "Korobkin",
+    "avatar_url": null,
+    "favorite_team_id": 5,
+    "selected_tournament_id": null
+  }
 }
 ```
 
@@ -34,14 +39,13 @@ returns HTTP 404 with `USER_NOT_FOUND`.
 
 Missing, invalid, or expired access tokens return HTTP 401 with `UNAUTHORIZED`.
 Database errors return HTTP 500 with `INTERNAL_ERROR` and no database details.
-Errors use the existing `{"error":{"code":"...","message":"..."}}` envelope.
+Errors use the shared `{"success":false,"error":"CODE"}` envelope.
 The middleware's existing behavior is retained: account blocking or logout does
 not immediately invalidate an issued access token; no new role checks are added.
 
 `cmd/api/main.go` creates a shared middleware chain with `RequireAuth` followed by
 `LoadUser`. `router.RegisterUserRoutes` receives a protected `/api` group;
-`RegisterTournamentRoutes` receives the middleware separately to configure the
-selection error envelope before authentication. Public auth and team routes
+`RegisterTournamentRoutes` receives the same protected group. Public auth and team routes
 remain on their public groups. `LoadUser` reuses `UserService` and the existing `AuthRepository` user
 persistence in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
 selects the nine response columns; it never

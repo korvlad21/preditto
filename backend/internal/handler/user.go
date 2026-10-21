@@ -18,8 +18,8 @@ func NewUserHandler() *UserHandler {
 func (h *UserHandler) GetUserInfo(c *gin.Context) {
 	user, ok := middleware.CurrentUser(c)
 	if !ok {
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	response.Success(c, http.StatusOK, user)
 }

@@ -29,17 +29,6 @@ func selectTournamentRequest(api http.Handler, token, body string) *httptest.Res
 	return w
 }
 
-func assertSelectionError(t *testing.T, w *httptest.ResponseRecorder, status int, code string) {
-	t.Helper()
-	assertError(t, w, status, code)
-	var body struct {
-		Success *bool `json:"success"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil || body.Success == nil || *body.Success {
-		t.Fatalf("missing success:false: %s", w.Body.String())
-	}
-}
-
 type selectionUserLoader struct{}
 
 func (selectionUserLoader) GetUserInfo(context.Context, int64) (model.UserInfo, error) {
@@ -48,7 +37,7 @@ func (selectionUserLoader) GetUserInfo(context.Context, int64) (model.UserInfo, 
 
 func TestSelectTournamentValidation(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	api.Use(func(c *gin.Context) { c.Set(middleware.UserIDKey, int64(81)) }, middleware.LoadUser(selectionUserLoader{}))
 	// A nil service proves invalid bodies never reach persistence.
 	router.RegisterTournamentRoutes(api.Group("/api"), handler.NewTournamentHandler(nil))
@@ -69,7 +58,7 @@ func TestSelectTournamentValidation(t *testing.T) {
 		{"malformed", `{"id":`, "INVALID_REQUEST"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			assertSelectionError(t, selectTournamentRequest(api, "", tc.body), http.StatusBadRequest, tc.code)
+			assertError(t, selectTournamentRequest(api, "", tc.body), http.StatusBadRequest, tc.code)
 		})
 	}
 }
@@ -81,7 +70,7 @@ func TestSelectTournamentRequiresAuth(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, token := range []string{"", "invalid", pair.RefreshToken} {
-		assertSelectionError(t, selectTournamentRequest(api, token, `{"id":201}`), http.StatusUnauthorized, "UNAUTHORIZED")
+		assertError(t, selectTournamentRequest(api, token, `{"id":201}`), http.StatusUnauthorized, "UNAUTHORIZED")
 	}
 	if users.calls != 0 {
 		t.Fatal("unauthenticated requests loaded user data")
@@ -95,9 +84,9 @@ func TestSelectTournamentRequiresAuth(t *testing.T) {
 
 func TestSelectTournamentMissingUserContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	api := gin.New()
+	api := router.New()
 	router.RegisterTournamentRoutes(api.Group("/api"), handler.NewTournamentHandler(nil))
-	assertSelectionError(t, selectTournamentRequest(api, "", `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
+	assertError(t, selectTournamentRequest(api, "", `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
 }
 
 func TestSelectTournamentPostgres(t *testing.T) {
@@ -147,7 +136,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 	} {
 		calls := users.calls
 		w := selectTournamentRequest(api, pair.AccessToken, tc.body)
-		if w.Code != http.StatusOK || w.Body.String() != `{"success":true}` {
+		if w.Code != http.StatusOK || string(successData(t, w, "")) != "null" {
 			t.Fatalf("selection: %d %s", w.Code, w.Body.String())
 		}
 		if before != after || after.SelectedTournamentID == nil || *after.SelectedTournamentID != tc.id || users.calls != calls+1 {
@@ -159,7 +148,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 		checkStored(&tc.id)
 	}
 	id := int64(202)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":999}`), http.StatusNotFound, "TOURNAMENT_NOT_FOUND")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":999}`), http.StatusNotFound, "TOURNAMENT_NOT_FOUND")
 	if after.SelectedTournamentID != oldID {
 		t.Fatal("failed lookup changed request snapshot")
 	}
@@ -168,7 +157,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 	// Reuse the same access token to verify the next request sees the new selection.
 	w := tournamentRequest(api, pair.AccessToken, "")
 	var tournaments []model.Tournament
-	if err := json.Unmarshal(w.Body.Bytes(), &tournaments); err != nil || w.Code != http.StatusOK || len(tournaments) != 2 {
+	if err := json.Unmarshal(successData(t, w, "tournaments"), &tournaments); err != nil || w.Code != http.StatusOK || len(tournaments) != 2 {
 		t.Fatalf("list after selection: %d %s", w.Code, w.Body.String())
 	}
 	for _, tournament := range tournaments {
@@ -182,7 +171,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkStored(nil)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":null}`), http.StatusBadRequest, "TOURNAMENT_ID_REQUIRED")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":null}`), http.StatusBadRequest, "TOURNAMENT_ID_REQUIRED")
 	checkStored(nil)
 	missing := int64(999)
 	if err := repo.UpdateSelectedTournament(context.Background(), 81, &missing); !errors.Is(err, repository.ErrTournamentNotFound) {
@@ -192,24 +181,24 @@ func TestSelectTournamentPostgres(t *testing.T) {
 
 	// Force a write failure after the existence check succeeds.
 	execSQL(t, db, `ALTER TABLE user_info ADD CONSTRAINT reject_selection CHECK (selected_tournament_id IS NULL OR user_id = 82)`)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "TOURNAMENT_UPDATE_FAILED")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "TOURNAMENT_UPDATE_FAILED")
 	if after.SelectedTournamentID != oldID {
 		t.Fatal("failed write changed request snapshot")
 	}
 	checkStored(nil)
 	execSQL(t, db, `ALTER TABLE user_info DROP CONSTRAINT reject_selection; DELETE FROM user_info WHERE user_id = 81`)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusNotFound, "USER_INFO_NOT_FOUND")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusNotFound, "USER_INFO_NOT_FOUND")
 	if err := repo.UpdateSelectedTournament(context.Background(), 81, nil); !errors.Is(err, repository.ErrNotFound) {
 		t.Fatalf("missing profile error = %v", err)
 	}
 
 	// Keep profile loading possible while making only the tournament lookup fail.
 	execSQL(t, db, `ALTER TABLE tournaments RENAME TO unavailable_tournaments`)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
 	execSQL(t, db, `DELETE FROM users WHERE id = 81`)
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusNotFound, "USER_NOT_FOUND")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusNotFound, "USER_NOT_FOUND")
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	assertSelectionError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
+	assertError(t, selectTournamentRequest(api, pair.AccessToken, `{"id":201}`), http.StatusInternalServerError, "INTERNAL_ERROR")
 }

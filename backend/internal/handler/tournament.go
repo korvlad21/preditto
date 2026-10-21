@@ -25,62 +25,62 @@ func NewTournamentHandler(service *service.TournamentService) *TournamentHandler
 func (h *TournamentHandler) SelectTournament(c *gin.Context) {
 	user, ok := middleware.CurrentUser(c)
 	if !ok {
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Внутренняя ошибка сервера")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
 	var req tournamentsdto.SelectTournamentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		var typeErr *json.UnmarshalTypeError
 		if errors.As(err, &typeErr) && typeErr.Field == "id" {
-			response.AbortError(c, http.StatusBadRequest, "INVALID_TOURNAMENT_ID", "ID турнира должен быть положительным целым числом")
+			response.AbortError(c, http.StatusBadRequest, response.InvalidTournamentID)
 		} else {
-			response.AbortError(c, http.StatusBadRequest, "INVALID_REQUEST", "Некорректный JSON запроса")
+			response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		}
 		return
 	}
 	if req.ID == nil {
-		response.AbortError(c, http.StatusBadRequest, "TOURNAMENT_ID_REQUIRED", "ID турнира обязателен и не может быть null")
+		response.AbortError(c, http.StatusBadRequest, response.TournamentIDRequired)
 		return
 	}
 	if *req.ID <= 0 {
-		response.AbortError(c, http.StatusBadRequest, "INVALID_TOURNAMENT_ID", "ID турнира должен быть положительным целым числом")
+		response.AbortError(c, http.StatusBadRequest, response.InvalidTournamentID)
 		return
 	}
 	if err := h.service.SelectTournament(c.Request.Context(), user.ID, *req.ID); err != nil {
 		switch {
 		case errors.Is(err, repository.ErrTournamentNotFound):
-			response.AbortError(c, http.StatusNotFound, "TOURNAMENT_NOT_FOUND", "Турнир не найден")
+			response.AbortError(c, http.StatusNotFound, response.TournamentNotFound)
 		case errors.Is(err, repository.ErrNotFound):
-			response.AbortError(c, http.StatusNotFound, "USER_INFO_NOT_FOUND", "Профиль пользователя не найден")
+			response.AbortError(c, http.StatusNotFound, response.UserInfoNotFound)
 		case errors.Is(err, service.ErrTournamentUpdateFailed):
 			_ = c.Error(err)
-			response.AbortError(c, http.StatusInternalServerError, "TOURNAMENT_UPDATE_FAILED", "Не удалось сохранить выбранный турнир")
+			response.AbortError(c, http.StatusInternalServerError, response.TournamentUpdateFailed)
 		default:
 			_ = c.Error(err)
-			response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Внутренняя ошибка сервера")
+			response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		}
 		return
 	}
 	user.SelectedTournamentID = req.ID
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	response.Success(c, http.StatusOK, nil)
 }
 
 func (h *TournamentHandler) GetAllTournaments(c *gin.Context) {
 	user, ok := middleware.CurrentUser(c)
 	if !ok {
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
 	var req tournamentsdto.GetAllTournamentsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.AbortError(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request fields")
+		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
 	tournaments, err := h.service.GetAllTournaments(c.Request.Context(), req.Status, user.SelectedTournamentID)
 	if err != nil {
 		_ = c.Error(err)
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
-	c.JSON(http.StatusOK, tournaments)
+	response.Success(c, http.StatusOK, gin.H{"tournaments": tournaments})
 }

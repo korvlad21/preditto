@@ -21,8 +21,8 @@ func (h *CountryHandler) GetAllCountries(c *gin.Context) {
 	countries, err := h.service.GetAllCountries(c.Request.Context())
 	if err != nil {
 		_ = c.Error(err)
-		response.AbortError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
 		return
 	}
-	c.JSON(http.StatusOK, countries)
+	response.Success(c, http.StatusOK, gin.H{"countries": countries})
 }

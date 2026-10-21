@@ -36,7 +36,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		authError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, result)
+	response.Success(c, http.StatusCreated, result)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -50,7 +50,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		authError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) Refresh(c *gin.Context) {
@@ -64,7 +64,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		authError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
@@ -77,28 +77,28 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		authError(c, err)
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.Success(c, http.StatusOK, nil)
 }
 
 func authError(c *gin.Context, err error) {
-	status, code, message := http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error"
+	status, code := http.StatusInternalServerError, response.InternalError
 	switch {
 	case errors.Is(err, service.ErrInvalidRequest):
-		status, code, message = http.StatusBadRequest, "INVALID_REQUEST", "Invalid request fields"
+		status, code = http.StatusBadRequest, response.InvalidRequest
 	case errors.Is(err, service.ErrInvalidCredentials):
-		status, code, message = http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid login or password"
+		status, code = http.StatusUnauthorized, response.InvalidCredentials
 	case errors.Is(err, auth.ErrInvalidToken):
-		status, code, message = http.StatusUnauthorized, "INVALID_TOKEN", "Invalid or expired token"
+		status, code = http.StatusUnauthorized, response.InvalidToken
 	case errors.Is(err, service.ErrUserBlocked):
-		status, code, message = http.StatusForbidden, "USER_BLOCKED", "User is blocked"
+		status, code = http.StatusForbidden, response.UserBlocked
 	case errors.Is(err, repository.ErrUsernameExists):
-		status, code, message = http.StatusConflict, "USERNAME_ALREADY_EXISTS", "Username is already taken"
+		status, code = http.StatusConflict, response.UsernameAlreadyExists
 	case errors.Is(err, repository.ErrEmailExists):
-		status, code, message = http.StatusConflict, "EMAIL_ALREADY_EXISTS", "Email is already taken"
+		status, code = http.StatusConflict, response.EmailAlreadyExists
 	case errors.Is(err, repository.ErrFavoriteTeamNotFound):
-		status, code, message = http.StatusBadRequest, "FAVORITE_TEAM_NOT_FOUND", "Favorite team does not exist"
+		status, code = http.StatusBadRequest, response.FavoriteTeamNotFound
 	default:
 		_ = c.Error(err)
 	}
-	response.AbortError(c, status, code, message)
+	response.AbortError(c, status, code)
 }

@@ -36,5 +36,5 @@ func RequireAuth(tokens *auth.TokenManager) gin.HandlerFunc {
 
 func unauthorized(c *gin.Context) {
 	c.Header("WWW-Authenticate", "Bearer")
-	response.AbortError(c, http.StatusUnauthorized, "UNAUTHORIZED", "Valid access token required")
+	response.AbortError(c, http.StatusUnauthorized, response.Unauthorized)
 }

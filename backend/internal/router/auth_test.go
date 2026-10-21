@@ -15,7 +15,7 @@ import (
 
 func TestRegisterAuthRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	engine := gin.New()
+	engine := router.New()
 	router.RegisterAuthRoutes(engine.Group("/api"), handler.NewAuthHandler(nil))
 
 	var got []string
@@ -40,6 +40,9 @@ func TestRegisterAuthRoutes(t *testing.T) {
 		engine.ServeHTTP(w, req)
 		if w.Code != http.StatusBadRequest || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Pragma") != "no-cache" {
 			t.Fatalf("%s: status=%d, headers=%v", path, w.Code, w.Header())
+		}
+		if w.Body.String() != `{"success":false,"error":"INVALID_REQUEST"}` {
+			t.Fatalf("%s: body=%s", path, w.Body.String())
 		}
 	}
 }

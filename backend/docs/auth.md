@@ -1,5 +1,7 @@
 # Authentication API
 
+All responses follow the [shared API contract and client migration guide](responses.md).
+
 The existing Gin entry point wires `handler.AuthHandler` to `service.AuthService`,
 `repository.AuthRepository`, and the existing `database/sql` PostgreSQL pool.
 `router.RegisterAuthRoutes` owns all four auth route declarations and their
@@ -56,7 +58,7 @@ migrations and development seeds before API startup. JWT secrets have no default
 | POST | `/api/auth/register` | 201, user and token pair |
 | POST | `/api/auth/login` | 200, user and token pair |
 | POST | `/api/auth/refresh` | 200, token pair |
-| POST | `/api/auth/logout` | 204, empty body |
+| POST | `/api/auth/logout` | 200, `data: null` |
 
 Send `Content-Type: application/json`. Auth responses use `Cache-Control: no-store`.
 Request bodies are limited to 16 KiB. DTO validation and malformed JSON return 400.
@@ -92,18 +94,21 @@ Example response (IDs and JWT placeholders are illustrative):
 
 ```json
 {
-  "access_token": "<access JWT>",
-  "refresh_token": "<refresh JWT>",
-  "token_type": "Bearer",
-  "expires_in": 900,
-  "user": {
-    "id": 81,
-    "username": "korvlad21",
-    "email": "example@example.com",
-    "status": "ACTIVE",
-    "first_name": "Vladislav",
-    "last_name": "Korobkin",
-    "favorite_team_id": 5
+  "success": true,
+  "data": {
+    "access_token": "<access JWT>",
+    "refresh_token": "<refresh JWT>",
+    "token_type": "Bearer",
+    "expires_in": 900,
+    "user": {
+      "id": 81,
+      "username": "korvlad21",
+      "email": "example@example.com",
+      "status": "ACTIVE",
+      "first_name": "Vladislav",
+      "last_name": "Korobkin",
+      "favorite_team_id": 5
+    }
   }
 }
 ```
@@ -138,7 +143,10 @@ against an unused hash to reduce the timing difference. Wrong passwords and
 unknown logins both return exactly:
 
 ```json
-{"error":{"code":"INVALID_CREDENTIALS","message":"Invalid login or password"}}
+{
+  "success": false,
+  "error": "INVALID_CREDENTIALS"
+}
 ```
 
 Only `ACTIVE` users may log in or refresh. A `BLOCKED` user with a correct password
@@ -157,10 +165,13 @@ Content-Type: application/json
 
 ```json
 {
-  "access_token": "<new access JWT>",
-  "refresh_token": "<new refresh JWT>",
-  "token_type": "Bearer",
-  "expires_in": 900
+  "success": true,
+  "data": {
+    "access_token": "<new access JWT>",
+    "refresh_token": "<new refresh JWT>",
+    "token_type": "Bearer",
+    "expires_in": 900
+  }
 }
 ```
 
@@ -199,8 +210,8 @@ Content-Type: application/json
 ```
 
 Logout validates the refresh JWT and stored session/hash, then revokes the session
-under the same row lock. It returns 204 with no body; repeating logout for that
-unexpired revoked token also returns 204. Invalid, missing, or expired tokens
+under the same row lock. It returns 200 with `{"success":true,"data":null}`; repeating logout for that
+unexpired revoked token returns the same response. Invalid, missing, or expired tokens
 return 401. A blocked user may still log out. Other login sessions are unaffected.
 The access token remains valid until its short expiration; there is no blacklist.
 
@@ -221,7 +232,7 @@ refresh but does not immediately invalidate existing access JWTs.
 
 ## Errors
 
-All auth and middleware errors use `{"error":{"code":"...","message":"..."}}`.
+All auth and middleware errors use `{"success":false,"error":"CODE"}`.
 PostgreSQL details, JWT library errors, and password/token hashes are never sent
 in responses. PasswordHash also has a defensive `json:"-"` model tag.
 

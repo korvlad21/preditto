@@ -43,7 +43,7 @@ func run() error {
 		port = "8080"
 	}
 
-	router := gin.Default()
+	router := apirouter.New()
 	if err := router.SetTrustedProxies(nil); err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func run() error {
 	protected := router.Group("/api", authMiddleware...)
 	apirouter.RegisterUserRoutes(protected, handler.NewUserHandler())
 	tournamentService := service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewAuthRepository(db))
-	apirouter.RegisterTournamentRoutes(router.Group("/api"), handler.NewTournamentHandler(tournamentService), authMiddleware...)
+	apirouter.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(tournamentService))
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
 	countryService := service.NewCountryService(repository.NewCountryRepository(db))
 	apirouter.RegisterTeamRoutes(router.Group("/api"), handler.NewTeamHandler(teamService), handler.NewCountryHandler(countryService))

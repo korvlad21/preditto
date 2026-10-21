@@ -1,6 +1,8 @@
 # Teams API
 
-`POST /api/teams/get_all_teams` is public and returns a JSON array of teams,
+All responses follow the [shared API contract and client migration guide](responses.md).
+
+`POST /api/teams/get_all_teams` is public and returns a team array in `data.teams`,
 ordered by `name`. The optional `country` parameter can be supplied in a JSON body
 or the query string. A JSON `country` value takes precedence when both are supplied.
 An empty body or `{}` is valid.
@@ -11,24 +13,29 @@ For example, `{"country":"GBR"}` filters by the country code, not a numeric ID.
 
 Each object contains `id`, `name`, `short_name`, `slug`, `country`, and `logo_url`.
 Nullable `short_name` and `logo_url` are returned as JSON `null` when absent in
-PostgreSQL. No matches, including an empty table, return `[]` with HTTP 200.
+PostgreSQL. No matches, including an empty table, return `data.teams: []` with HTTP 200.
 
 Example response:
 
 ```json
-[
-  {
-    "id": 11,
-    "name": "British team",
-    "short_name": "BRI",
-    "slug": "british-team",
-    "country": "GBR",
-    "logo_url": "/logos/teams/british-team.svg"
+{
+  "success": true,
+  "data": {
+    "teams": [
+      {
+        "id": 11,
+        "name": "British team",
+        "short_name": "BRI",
+        "slug": "british-team",
+        "country": "GBR",
+        "logo_url": "/logos/teams/british-team.svg"
+      }
+    ]
   }
-]
+}
 ```
 
-Invalid JSON or an incompatible `country` type returns HTTP 400 with the existing
+Invalid JSON or an incompatible `country` type returns HTTP 400 with the shared
 `INVALID_REQUEST` error envelope. Database errors return HTTP 500 with
 `INTERNAL_ERROR`; database details are logged through Gin and omitted from responses.
 
@@ -53,10 +60,10 @@ go test -mod=readonly ./internal/handler -run '^TestGetAllTeamsPostgres$' -count
 ## Countries
 
 `POST /api/teams/get_all_countries` is public and requires no request parameters
-or body. It returns every row from `countries`, ordered by `name`, as a JSON array.
+or body. It returns every row from `countries`, ordered by `name`, as an array in `data.countries`.
 Each object contains `id`, `name`, `short_name`, and `created_at`. The timestamp
 uses Go's `time.Time` JSON representation (RFC 3339 with fractional seconds).
-An empty table returns `[]` with HTTP 200. Database errors use the same HTTP 500
+An empty table returns `data.countries: []` with HTTP 200. Database errors use the same HTTP 500
 `INTERNAL_ERROR` envelope as teams, without exposing database details.
 
 `model.Country` is the response shape. `CountryRepository`, `CountryService`, and

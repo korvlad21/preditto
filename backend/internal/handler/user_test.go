@@ -26,7 +26,7 @@ func userAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	api := gin.New()
+	api := router.New()
 	users := service.NewUserService(repository.NewAuthRepository(db))
 	router.RegisterUserRoutes(api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users)), handler.NewUserHandler())
 	return api, tokens
@@ -116,7 +116,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 			t.Fatal("user response can be cached")
 		}
 		var got map[string]any
-		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		if err := json.Unmarshal(successData(t, w, ""), &got); err != nil {
 			t.Fatal(err)
 		}
 		if !reflect.DeepEqual(got, want) {
