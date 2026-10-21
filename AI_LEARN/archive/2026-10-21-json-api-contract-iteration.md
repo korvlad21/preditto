@@ -1,0 +1,13 @@
+# Current Iteration
+
+Date: 2026-10-21
+
+Unified all existing JSON API handlers and middleware using [response helpers](../../backend/internal/response/error.go) and the [shared contract](../../backend/docs/responses.md). Success carries data; failure carries a stable string code. Public messages and WithFailureEnvelope were removed. Lists use named collections under data; nullable fields remain null. Logout and tournament selection return HTTP 200 with data:null. Protected routes share RequireAuth then LoadUser without changing CurrentUser semantics. API routing and unanswered-error/panic fallbacks preserve diagnostics and never rewrite committed responses; unsupported methods retain 404/NOT_FOUND. Non-API routes and health remain unchanged. No service/repository logic, SQL, schema, DTO, or dependency changes were needed.
+
+Verification: response, middleware, and router tests passed with race detection. The complete handler package passed against disposable PostgreSQL with `go test -race -mod=readonly -count=1 ./internal/handler`; affected-package and API entry-point vet passed. HTTP checks cover auth/logout, lists and nullable fields, user isolation/shared context, failure codes and headers, unknown routes/methods, recovery and server diagnostics, committed responses, HTML/static files, and health. Strict UTF-8, Go formatting, local documentation links, JSON examples, and diff checks passed.
+
+The legacy tournament list test now expects the repository's existing created_at DESC/id DESC order; SQL was unchanged. The initial combined race command (`go test -race -mod=readonly -count=1 ./internal/response ./internal/middleware ./internal/router ./internal/handler`, with a disposable PREDITTO_AUTH_TEST_DSN, from backend/ on Go 1.23.3) exited 1 at TestLoginPostgres with `credential errors differ`: a remaining assertion still required the removed English message. This was a one-off contract-test migration omission, not a reusable toolchain failure. The correction removed that text requirement while retaining exact equality of wrong-password/unknown-user responses and strict code/envelope assertions. Both the narrow `-run '^TestLoginPostgres$'` race rerun and complete handler race rerun passed. Rule: inspect direct body/text assertions as well as shared decoders during contract migration. The Docker readiness failure and verified correction belong in local knowledge.
+
+Next step: migrate API clients using data and translated error codes, including logout 200, and coordinate backend/client rollout.
+
+Previous iteration: [tournament selection](2026-10-18-selection-iteration.md).

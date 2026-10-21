@@ -34,7 +34,7 @@ JWT access/refresh types and the Bearer scheme remain inline literals in [auth/t
 
 ## JSON API Responses
 
-Verified on 2026-10-21 with targeted race tests, PostgreSQL HTTP integration tests, and affected-package/API vet: the [shared contract and migration guide](../../../backend/docs/responses.md) defines the breaking API envelope change. [Response helpers](../../../backend/internal/response/success.go) write success/data or success/error directly; [router.New](../../../backend/internal/router/router.go) preserves Gin diagnostics and handles unmatched API paths. The [error middleware](../../../backend/internal/middleware/errors.go) only handles errors before a response is written. Unsupported methods retain 404/NOT_FOUND; HEAD has no wire body. Non-API routes and health retain their existing behavior. Protected user and tournament routes receive the same RequireAuth/LoadUser group.
+Verified on 2026-10-21 with targeted race tests, PostgreSQL HTTP integration tests, and affected-package/API vet: the [shared contract and migration guide](../../../backend/docs/responses.md) defines the breaking API envelope change. [Response helpers](../../../backend/internal/response/success.go) write success/data or success/error directly; nil success data is omitted, producing only success:true; [router.New](../../../backend/internal/router/router.go) preserves Gin diagnostics and handles unmatched API paths. The [error middleware](../../../backend/internal/middleware/errors.go) only handles errors before a response is written. Unsupported methods retain 404/NOT_FOUND; HEAD has no wire body. Non-API routes and health retain their existing behavior. Protected user and tournament routes receive the same RequireAuth/LoadUser group.
 
 ## Teams API
 

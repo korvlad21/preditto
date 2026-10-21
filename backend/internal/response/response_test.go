@@ -17,7 +17,10 @@ func TestSuccessData(t *testing.T) {
 		data any
 		want string
 	}{
-		{"no data", nil, `{"success":true,"data":null}`},
+		{"no data", nil, `{"success":true}`},
+		{"false data", false, `{"success":true,"data":false}`},
+		{"zero data", 0, `{"success":true,"data":0}`},
+		{"empty string data", "", `{"success":true,"data":""}`},
 		{"empty list", gin.H{"teams": []model.Team{}}, `{"success":true,"data":{"teams":[]}}`},
 		{"nullable fields", gin.H{"avatar_url": (*string)(nil), "favorite_team_id": (*int64)(nil)}, `{"success":true,"data":{"avatar_url":null,"favorite_team_id":null}}`},
 	} {

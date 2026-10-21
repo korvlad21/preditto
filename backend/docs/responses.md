@@ -20,10 +20,11 @@ Failure:
 Successful operation without data:
 
 ```json
-{"success":true,"data":null}
+{"success":true}
 ```
 
-Success has exactly `success` and `data`; failure has exactly `success` and
+Success with data has exactly `success` and `data`; when the helper receives
+`nil`, `data` is omitted and only `success` remains. Failure has exactly `success` and
 `error`. There is no public `message` or nested error object. Public error codes
 are centralized in `internal/response/error.go`. Existing string values are
 preserved; `NOT_FOUND` identifies unmatched API paths and unsupported methods.
@@ -35,12 +36,12 @@ Unknown codes should use a generic localized error fallback.
 | `/api/auth/register` | 201 | Existing user and token fields |
 | `/api/auth/login` | 200 | Existing user and token fields |
 | `/api/auth/refresh` | 200 | Existing token fields |
-| `/api/auth/logout` | 200 | `null` |
+| `/api/auth/logout` | 200 | Omitted |
 | `/api/user/get_user_info` | 200 | Existing account and profile fields |
 | `/api/teams/get_all_teams` | 200 | `{"teams":[...]}` |
 | `/api/teams/get_all_countries` | 200 | `{"countries":[...]}` |
 | `/api/tournaments/get_all_tournaments` | 200 | `{"tournaments":[...]}` |
-| `/api/tournaments/select_tournament` | 200 | `null` |
+| `/api/tournaments/select_tournament` | 200 | Omitted |
 
 Empty collections remain `[]`. Nullable model fields remain `null`; empty strings,
 zeroes, and `false` retain their existing meaning. Business fields are unchanged.
@@ -80,8 +81,8 @@ the same shared `CurrentUser` pointer and one user load per request.
    `body.data.teams` instead of the former top-level array.
 2. Read `body.error` as a string instead of `body.error.code`. Replace use of
    `body.error.message` with the frontend translation dictionary.
-3. Accept HTTP 200 and parse `data: null` for logout. Tournament selection also
-   now includes `data: null`; do not assume it returns only `success`.
+3. Accept HTTP 200 with `{"success":true}` for logout and tournament selection.
+   Successful operations without data omit the `data` field.
 4. Keep HTTP-status handling and token-refresh rules. A successful JSON parse
    does not imply a successful operation: check `success` and the HTTP status.
 5. Handle `NOT_FOUND` for unsupported methods and unknown paths; handle HEAD

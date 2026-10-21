@@ -330,7 +330,7 @@ func TestRefreshAndLogoutPostgres(t *testing.T) {
 	}
 	assertError(t, call(t, api, "refresh", authdto.RefreshRequest{RefreshToken: user.RefreshToken}), 401, "INVALID_TOKEN")
 	for i := 0; i < 2; i++ {
-		if w := call(t, api, "logout", authdto.RefreshRequest{RefreshToken: pair.RefreshToken}); w.Code != 200 || string(successData(t, w, "")) != "null" {
+		if w := call(t, api, "logout", authdto.RefreshRequest{RefreshToken: pair.RefreshToken}); w.Code != 200 || w.Body.String() != `{"success":true}` {
 			t.Fatalf("logout: %d %s", w.Code, w.Body.String())
 		}
 	}

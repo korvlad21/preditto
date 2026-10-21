@@ -136,7 +136,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 	} {
 		calls := users.calls
 		w := selectTournamentRequest(api, pair.AccessToken, tc.body)
-		if w.Code != http.StatusOK || string(successData(t, w, "")) != "null" {
+		if w.Code != http.StatusOK || w.Body.String() != `{"success":true}` {
 			t.Fatalf("selection: %d %s", w.Code, w.Body.String())
 		}
 		if before != after || after.SelectedTournamentID == nil || *after.SelectedTournamentID != tc.id || users.calls != calls+1 {

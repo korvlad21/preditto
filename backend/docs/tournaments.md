@@ -70,7 +70,7 @@ be a positive signed 64-bit JSON integer; missing IDs and `null` are rejected.
 The authenticated user comes exclusively from `middleware.CurrentUser(c)`.
 No membership or tournament-status restriction is imposed.
 
-HTTP 200 returns exactly `{"success":true,"data":null}`, including when selecting the same
+HTTP 200 returns exactly `{"success":true}`, including when selecting the same
 tournament again. Errors include `success:false` and the shared error
 code, for example:
 

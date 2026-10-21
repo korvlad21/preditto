@@ -51,7 +51,7 @@ func TestAPIFallbacks(t *testing.T) {
 		status            int
 		body, contentType string
 	}{
-		{"POST", "/api/known", 200, `{"success":true,"data":null}`, "application/json; charset=utf-8"},
+		{"POST", "/api/known", 200, `{"success":true}`, "application/json; charset=utf-8"},
 		{"GET", "/api/missing", 404, `{"success":false,"error":"NOT_FOUND"}`, "application/json; charset=utf-8"},
 		{"POST", "/api/missing", 404, `{"success":false,"error":"NOT_FOUND"}`, "application/json; charset=utf-8"},
 		{"GET", "/api/known", 404, `{"success":false,"error":"NOT_FOUND"}`, "application/json; charset=utf-8"},
@@ -60,8 +60,8 @@ func TestAPIFallbacks(t *testing.T) {
 		{"GET", "/api/panic", 500, `{"success":false,"error":"INTERNAL_ERROR"}`, "application/json; charset=utf-8"},
 		{"GET", "/api/error", 500, `{"success":false,"error":"INTERNAL_ERROR"}`, "application/json; charset=utf-8"},
 		{"GET", "/api/status", 500, `{"success":false,"error":"INTERNAL_ERROR"}`, "application/json; charset=utf-8"},
-		{"GET", "/api/written-error", 202, `{"success":true,"data":null}`, "application/json; charset=utf-8"},
-		{"GET", "/api/written-panic", 202, `{"success":true,"data":null}`, "application/json; charset=utf-8"},
+		{"GET", "/api/written-error", 202, `{"success":true}`, "application/json; charset=utf-8"},
+		{"GET", "/api/written-panic", 202, `{"success":true}`, "application/json; charset=utf-8"},
 		{"GET", "/api/handled-error", 409, `{"success":false,"error":"USERNAME_ALREADY_EXISTS"}`, "application/json; charset=utf-8"},
 		{"GET", "/", 200, "<div>Hello World</div>", "text/html; charset=utf-8"},
 		{"GET", "/hello", 200, "{\"message\":\"Hello from Go!\"}\n", "application/json"},

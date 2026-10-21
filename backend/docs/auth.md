@@ -58,7 +58,7 @@ migrations and development seeds before API startup. JWT secrets have no default
 | POST | `/api/auth/register` | 201, user and token pair |
 | POST | `/api/auth/login` | 200, user and token pair |
 | POST | `/api/auth/refresh` | 200, token pair |
-| POST | `/api/auth/logout` | 200, `data: null` |
+| POST | `/api/auth/logout` | 200, `{"success":true}` |
 
 Send `Content-Type: application/json`. Auth responses use `Cache-Control: no-store`.
 Request bodies are limited to 16 KiB. DTO validation and malformed JSON return 400.
@@ -210,7 +210,7 @@ Content-Type: application/json
 ```
 
 Logout validates the refresh JWT and stored session/hash, then revokes the session
-under the same row lock. It returns 200 with `{"success":true,"data":null}`; repeating logout for that
+under the same row lock. It returns 200 with `{"success":true}`; repeating logout for that
 unexpired revoked token returns the same response. Invalid, missing, or expired tokens
 return 401. A blocked user may still log out. Other login sessions are unaffected.
 The access token remains valid until its short expiration; there is no blacklist.
