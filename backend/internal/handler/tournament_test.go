@@ -106,7 +106,7 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 			(202, 2, 0);
 		INSERT INTO tournament_participants (tournament_id, user_id, status) VALUES
 			(201, 81, 'active'), (201, 82, 'active'), (201, 83, 'not_paid'), (201, 84, 'blocked'),
-			(202, 81, 'blocked'), (203, 82, 'active');
+			(202, 81, 'blocked'), (203, 82, 'active'), (204, 81, 'not_paid');
 	`)
 	api, tokens, users := tournamentAPI(t, db)
 	pair, _, err := tokens.GeneratePair(81)
@@ -182,20 +182,46 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 		{"whitespace preserved", "?status=" + url.QueryEscape(" active "), empty},
 		{"SQL injection", "?status=" + url.QueryEscape("active' OR 1=1 --"), empty},
 		{"selection cannot be overridden", "?user_id=82&selected_tournament_id=202", all},
+		{"participating", "?is_participate=true", all[:1]},
+		{"not participating", "?is_participate=false", all[1:]},
+		{"participating active", "?status=active&is_participate=true", all[:1]},
+		{"not participating active", "?status=active&is_participate=false", empty},
+		{"blocked is not participating", "?status=planned&is_participate=true", empty},
+		{"blocked included in nonparticipants", "?status=planned&is_participate=false", all[1:2]},
+		{"not paid is not participating", "?status=cancelled&is_participate=true", empty},
+		{"not paid included in nonparticipants", "?status=cancelled&is_participate=false", all[3:4]},
+		{"other user's participation excluded", "?status=finished&is_participate=true", empty},
+		{"other user's participation is not own", "?status=finished&is_participate=false", all[2:3]},
+		{"all participating", "?status=all&is_participate=true", all[:1]},
+		{"all not participating", "?status=all&is_participate=false", all[1:]},
+		{"empty status participating", "?status=&is_participate=true", all[:1]},
+		{"empty status not participating", "?status=&is_participate=false", all[1:]},
+		{"unknown status participating", "?status=unknown&is_participate=true", empty},
+		{"unknown status not participating", "?status=unknown&is_participate=false", empty},
+		{"participation user cannot be overridden", "?user_id=82&is_participate=true", all[:1]},
 	} {
 		t.Run(tc.name, func(t *testing.T) { check(t, pair.AccessToken, tc.query, tc.want) })
 	}
+
+	t.Run("invalid participation filter", func(t *testing.T) {
+		assertError(t, tournamentRequest(api, pair.AccessToken, "?is_participate=invalid"), http.StatusBadRequest, "INVALID_REQUEST")
+	})
 
 	// Relax uniqueness only in this disposable schema to exercise DISTINCT.
 	execSQL(t, db, `ALTER TABLE tournament_participants DROP CONSTRAINT uq_tournament_participants_tournament_user;
 		INSERT INTO tournament_participants (tournament_id, user_id, status) VALUES (201, 81, 'active')`)
 	check(t, pair.AccessToken, "", all)
 
+	check(t, pair.AccessToken, "?is_participate=true", all[:1])
+	check(t, pair.AccessToken, "?is_participate=false", all[1:])
+
 	execSQL(t, db, `UPDATE user_info SET selected_tournament_id = 202 WHERE user_id = 81`)
 	all[0]["is_selected_tournament"] = false
 	all[1]["is_selected_tournament"] = true
 	check(t, pair.AccessToken, "", all)
 	check(t, pair.AccessToken, "?status=active", all[:1])
+	check(t, pair.AccessToken, "?is_participate=true", all[:1])
+	check(t, pair.AccessToken, "?is_participate=false", all[1:])
 	execSQL(t, db, `UPDATE user_info SET selected_tournament_id = NULL WHERE user_id = 81`)
 	all[1]["is_selected_tournament"] = false
 	check(t, pair.AccessToken, "", all)
@@ -206,9 +232,19 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	check(t, otherPair.AccessToken, "?user_id=81", all)
+	check(t, otherPair.AccessToken, "?user_id=81&is_participate=true", []map[string]any{all[0], all[2]})
+	check(t, otherPair.AccessToken, "?is_participate=false", []map[string]any{all[1], all[3], all[4]})
+	noParticipationPair, _, err := tokens.GeneratePair(84)
+	if err != nil {
+		t.Fatal(err)
+	}
+	check(t, noParticipationPair.AccessToken, "?is_participate=true", empty)
+	check(t, noParticipationPair.AccessToken, "?is_participate=false", all)
 
 	execSQL(t, db, `DELETE FROM tournament_participants; DELETE FROM tournament_prize_rules; DELETE FROM tournaments`)
 	check(t, pair.AccessToken, "", empty)
+	check(t, pair.AccessToken, "?is_participate=true", empty)
+	check(t, pair.AccessToken, "?is_participate=false", empty)
 	execSQL(t, db, `DROP TABLE tournament_prize_rules`)
 	assertError(t, tournamentRequest(api, pair.AccessToken, ""), http.StatusInternalServerError, "INTERNAL_ERROR")
 	execSQL(t, db, `DELETE FROM users WHERE id = 81`)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"preditto/internal/model"
 )
@@ -28,7 +29,7 @@ func (r *TournamentRepository) Exists(ctx context.Context, id int64) (bool, erro
 	return exists, nil
 }
 
-func (r *TournamentRepository) GetAllTournaments(ctx context.Context, status string) ([]model.Tournament, error) {
+func (r *TournamentRepository) GetAllTournaments(ctx context.Context, userID int64, status string, isParticipate *bool) ([]model.Tournament, error) {
 	query := `
 		SELECT t.id, t.name, t.type_of_tournament, t.status, t.starts_at, t.ends_at,
 		       t.cost_amount, t.amount_currency, first.percentage, second.percentage,
@@ -44,9 +45,24 @@ func (r *TournamentRepository) GetAllTournaments(ctx context.Context, status str
 			GROUP BY tournament_id
 		) participants ON participants.tournament_id = t.id`
 	args := []any{model.TournamentParticipantStatusActive}
+	var conditions []string
 	if status != "" {
-		query += ` WHERE t.status = $2`
 		args = append(args, status)
+		conditions = append(conditions, fmt.Sprintf("t.status = $%d", len(args)))
+	}
+	if isParticipate != nil {
+		args = append(args, userID)
+		condition := fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM tournament_participants tp
+			WHERE tp.tournament_id = t.id AND tp.user_id = $%d AND tp.status = $1
+		)`, len(args))
+		if !*isParticipate {
+			condition = "NOT " + condition
+		}
+		conditions = append(conditions, condition)
+	}
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 	query += ` ORDER BY t.created_at DESC, t.id DESC`
 	rows, err := r.db.QueryContext(ctx, query, args...)

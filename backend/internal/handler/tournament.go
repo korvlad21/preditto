@@ -76,7 +76,7 @@ func (h *TournamentHandler) GetAllTournaments(c *gin.Context) {
 		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
-	tournaments, err := h.service.GetAllTournaments(c.Request.Context(), req.Status, user.SelectedTournamentID)
+	tournaments, err := h.service.GetAllTournaments(c.Request.Context(), user.ID, req.Status, req.IsParticipate, user.SelectedTournamentID)
 	if err != nil {
 		_ = c.Error(err)
 		response.AbortError(c, http.StatusInternalServerError, response.InternalError)

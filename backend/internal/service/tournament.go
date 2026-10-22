@@ -34,11 +34,11 @@ func (s *TournamentService) SelectTournament(ctx context.Context, userID, tourna
 	return nil
 }
 
-func (s *TournamentService) GetAllTournaments(ctx context.Context, status string, selectedTournamentID *int64) ([]model.Tournament, error) {
+func (s *TournamentService) GetAllTournaments(ctx context.Context, userID int64, status string, isParticipate *bool, selectedTournamentID *int64) ([]model.Tournament, error) {
 	if status == "all" {
 		status = ""
 	}
-	tournaments, err := s.repo.GetAllTournaments(ctx, status)
+	tournaments, err := s.repo.GetAllTournaments(ctx, userID, status, isParticipate)
 	if err != nil {
 		return nil, err
 	}

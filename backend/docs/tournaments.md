@@ -8,13 +8,27 @@ All responses follow the [shared API contract and client migration guide](respon
 No request body is required. GET is not registered and returns HTTP 404.
 
 The optional query parameter `status` matches `tournaments.status` exactly.
-Omitted `status`, an empty value, and `all` return every tournament, including
-rows with a null status. Other values are case-sensitive and are not trimmed;
+Omitted `status`, an empty value, and `all` apply no tournament-status restriction,
+including rows with a null status. Other values are case-sensitive and are not trimmed;
 unknown values return an empty array. For example:
 
 ```text
 POST /api/tournaments/get_all_tournaments?status=active
 ```
+
+The optional boolean query parameter `is_participate` filters by the authenticated
+user's participation. `true` includes only tournaments with a matching
+`tournament_participants` row for that user and `status = 'active'`; `false`
+includes only tournaments without such a row. `not_paid` and `blocked` do not
+count as participation. Omitting the parameter applies no participation filter.
+Both filters combine with AND, for example:
+
+```text
+POST /api/tournaments/get_all_tournaments?status=active&is_participate=true
+```
+
+The user ID comes from `middleware.CurrentUser(c)` and cannot be overridden by
+query parameters. Invalid boolean values return HTTP 400 (`INVALID_REQUEST`).
 
 Each object contains exactly these fields:
 
@@ -45,6 +59,9 @@ or missing profile produces `false` for every tournament. Responses use
 `TournamentRepository` reads the list in one parameterized query. Three prize
 joins each match at most one row using the `(tournament_id, place)` primary key;
 active participant counts are grouped before joining to avoid multiplying rows.
+Participation filtering uses a correlated `EXISTS` or `NOT EXISTS` in that same
+query, matching the current user and active participation status without changing
+the participant counts or response fields.
 The model is the response shape, following the teams API pattern; the request
 DTO only binds the query string.
 
