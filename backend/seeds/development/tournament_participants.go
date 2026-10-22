@@ -15,6 +15,7 @@ type tournamentParticipant struct {
 }
 
 var tournamentParticipants = []tournamentParticipant{
+	{championsLeague20262027Slug, "korvlad21", model.TournamentParticipantStatusActive},
 	{championsLeague20262027Slug, "ines_costa", model.TournamentParticipantStatusActive},
 	{championsLeague20262027Slug, "alex_morgan", model.TournamentParticipantStatusActive},
 	{championsLeague20262027Slug, "felix_schmidt", model.TournamentParticipantStatusActive},

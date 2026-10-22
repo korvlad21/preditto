@@ -31,7 +31,7 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 				count(*) FILTER (WHERE p.status = 'not_paid'),
 				count(*) FILTER (WHERE p.status = 'blocked'),
 				count(*) FILTER (WHERE p.tournament_id < 101 OR p.user_id < 101
-					OR u.username IN ('korvlad21', 'hanna_stoma', 'boroda')
+					OR u.username IN ('hanna_stoma', 'boroda')
 					OR p.joined_at IS NULL OR p.joined_at > CURRENT_TIMESTAMP)
 					+ (SELECT count(*) FROM tournament_participants WHERE tournament_id = 1),
 				string_agg(p.id::text || ':' || u.username || ':' || p.status || ':' || p.joined_at::text,
@@ -42,7 +42,7 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 		`).Scan(&total, &active, &notPaid, &blocked, &invalid, &snapshot); err != nil {
 			t.Fatal(err)
 		}
-		if total != 10 || active != 8 || notPaid != 1 || blocked != 1 || invalid != 0 {
+		if total != 11 || active != 9 || notPaid != 1 || blocked != 1 || invalid != 0 {
 			t.Fatalf("run %d: total=%d active=%d not_paid=%d blocked=%d invalid=%d",
 				run, total, active, notPaid, blocked, invalid)
 		}
@@ -50,6 +50,16 @@ func TestTournamentParticipantsPostgres(t *testing.T) {
 			t.Fatal("rerun changed participant identities/joined_at or failed to restore statuses")
 		}
 		originalSnapshot = snapshot
+		var participates bool
+		if err := db.QueryRow(`SELECT EXISTS (
+			SELECT 1 FROM tournament_participants p
+			JOIN tournaments t ON t.id = p.tournament_id
+			JOIN users u ON u.id = p.user_id
+			WHERE t.slug = 'uefa-champions-league-2026-2027'
+				AND u.username = 'korvlad21' AND p.status = 'active'
+		)`).Scan(&participates); err != nil || !participates {
+			t.Fatalf("run %d: korvlad21 must be an active participant: %v", run, err)
+		}
 		for _, want := range []struct {
 			slug                            string
 			total, active, notPaid, blocked int

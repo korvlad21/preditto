@@ -47,7 +47,7 @@ Participant and prize-rule references do not declare cascading deletion. The sel
 
 The [tournament](../../backend/seeds/development/tournaments.go), [participant](../../backend/seeds/development/tournament_participants.go) and [prize](../../backend/seeds/development/tournament_prize_rules.go) seeds share the development transaction. Tournaments upsert by slug; participants resolve tournament IDs by slug and user IDs by username. Membership is explicit, independent of user slice order, and unique within each group. Reruns preserve identities/joined_at while restoring configured participation status. Account and participation statuses are independent.
 
-The [seed guide](../../backend/seeds/README.md) owns the three configured tournament datasets, dates, costs and counts. Each currently allocates 95% in prize rules; this is dataset configuration, not an enforced general rule. SQL stores DECIMAL, seeds pass decimal strings, and the response model reads cost/percentages into *float64. Exact monetary calculations are not implemented.
+The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as an active participant. The [seed guide](../../backend/seeds/README.md) owns the three configured tournament datasets, dates, costs and counts. Each currently allocates 95% in prize rules; this is dataset configuration, not an enforced general rule. SQL stores DECIMAL, seeds pass decimal strings, and the response model reads cost/percentages into *float64. Exact monetary calculations are not implemented.
 
 [Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. Join/leave, payment, predictions, scoring, payouts and application frontend integration are not implemented.
 
