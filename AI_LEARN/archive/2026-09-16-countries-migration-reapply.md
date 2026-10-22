@@ -6,4 +6,4 @@ Moved countries.short_name uniqueness into migration 000008 and removed the unne
 
 Go seed tests pass on the host, and PostgreSQL seed integration tests pass inside the backend container using disposable schemas. Strict UTF-8 and git diff checks pass.
 
-The previous country seed iteration is preserved in [archive](archive/2026-09-16-countries-seed-before-rollback.md).
+The previous country seed iteration is preserved in [archive](2026-09-16-countries-seed-before-rollback.md).

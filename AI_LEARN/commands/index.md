@@ -1,7 +1,13 @@
-# Command Knowledge
+# Commands and verification
 
-1. Identify the tool and symptom, then search the [catalog](catalog.md).
-2. Open the matching entry through [patterns](patterns.md) or [failures](failures.md); read only the relevant topic block.
-3. Check the current directory, toolchain, environment, and scope before applying a recorded command.
+Choose one topic for the operation; routine reads/searches need no historical lookup.
 
-Record verified cases using the [command workflow](../../docs/ai/skills/command-workflow.md). Keep detailed records in `topics/` and link them from the catalog and these navigation files.
+| Operation | Source and prerequisites |
+| --- | --- |
+| Backend tests, vet, toolchain and database-test skips | [Go](topics/go.md), working directory `backend/` |
+| Compose startup, migrations, seeds and schema recovery | [Docker/PostgreSQL](topics/docker.md), project root |
+| Frontend development/build/lint | [Frontend README](../../frontend/README.md), working directory `frontend/` |
+| Documentation-only changes | Strict UTF-8 decoding, local Markdown paths/anchors, module index coverage, source consistency and `git diff --check`; no application test run required |
+| Unexpected failures or unfamiliar commands | [Command workflow](../../docs/ai/skills/command-workflow.md) |
+
+Commands below are recipes, not evidence that the current checkout/environment was tested. Read relevant prerequisites and inspect the actual scripts before execution. Historical versions and database repairs are retained in [command history](../archive/command-history.md), outside default context.

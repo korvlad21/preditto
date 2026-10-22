@@ -6,7 +6,7 @@ Date: 2026-09-12
 
 Implemented PostgreSQL environment configuration, connection creation and Ping, API startup integration, and Compose environment forwarding. Added .env.example; the ignored .env already contains all required variables and was preserved. No config.go existed, so backend/internal/config/config.go was created.
 
-The contract is in [backend knowledge](../modules/backend/overview.md). The previous iteration is preserved in [archive/2026-09-08-current_iteration.md](2026-09-08-current_iteration.md).
+The contract is in [backend knowledge](../architecture.md). The previous iteration is preserved in [archive/2026-09-08-current_iteration.md](2026-09-08-current_iteration.md).
 
 ## Verification
 
@@ -18,4 +18,4 @@ The contract is in [backend knowledge](../modules/backend/overview.md). The prev
 
 ## Failure Handling
 
-The failed driver initialization test and correction are recorded in [FAILURE-20260912-001](../commands/topics/go-failures.md#failure-20260912-001). Local Docker, dependency source-path, and patch diagnostics are normalized in AI_USER_LEARN. The CLI availability probe's exit code 1 was an expected absence result for PostgreSQL CLIs.
+The failed driver initialization test and correction are recorded in [FAILURE-20260912-001](../commands/topics/go.md#failure-20260912-001). Local Docker, dependency source-path, and patch diagnostics are normalized in AI_USER_LEARN. The CLI availability probe's exit code 1 was an expected absence result for PostgreSQL CLIs.

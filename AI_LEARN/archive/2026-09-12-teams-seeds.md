@@ -6,7 +6,7 @@ Date: 2026-09-12
 
 Added a standalone Go seed command in backend/cmd/seed and an ordered transactional runner in backend/internal/seed, reusing the existing config and database packages. The teams seed contains exactly the 36 requested triples, validates three uppercase ASCII letters per abbreviation, and upserts on slug without changing existing IDs, timestamps, logos, or profile references. New logos are NULL. Compose now starts PostgreSQL, migrate, seed, then backend. No dependencies or SQL migrations were changed.
 
-See [seed documentation](../../backend/internal/seed/README.md) and [backend knowledge](../modules/backend/overview.md). The preceding result is preserved in [archive](2026-09-12-user-info-migration.md).
+See [seed documentation](../../backend/seeds/README.md) and [backend knowledge](../architecture.md). The preceding result is preserved in [archive](2026-09-12-user-info-migration.md).
 
 ## Verification
 

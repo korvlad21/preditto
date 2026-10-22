@@ -4,7 +4,7 @@ Date: 2026-09-08
 
 ## Outcome
 
-Completed a user-requested controlled command-failure exercise. Added [FAILURE-20260908-001](../commands/topics/go-failures.md#failure-20260908-001) and [PATTERN-20260908-001](../commands/topics/go-patterns.md#pattern-20260908-001), linked them through the command index, catalog, and navigators, and refreshed active knowledge state.
+Completed a user-requested controlled command-failure exercise. Added [FAILURE-20260908-001](../commands/topics/go.md#failure-20260908-001) and [PATTERN-20260908-001](../commands/topics/go.md#pattern-20260908-001), linked them through the command index, catalog, and navigators, and refreshed active knowledge state.
 
 The previous iteration is preserved in [archive/2026-09-06-current_iteration.md](2026-09-06-current_iteration.md).
 

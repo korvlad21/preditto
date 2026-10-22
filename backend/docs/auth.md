@@ -224,12 +224,15 @@ The access token remains valid until its short expiration; there is no blacklist
 
 The protected `POST /api/user/get_user_info` endpoint returns the authenticated
 user's account and nullable profile; see [the user API contract](user.md).
-Attach middleware to other protected routes:
+Routes requiring the shared current-user snapshot use the same chain as the API entry point:
 
 ```go
-protected := router.Group("/api", middleware.RequireAuth(tokens))
-protected.GET("/me", meHandler) // Supply the endpoint handler when implementing /me.
+protected := router.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(userService))
 ```
+
+Here `userService` implements UserInfoLoader. RequireAuth alone establishes token identity;
+LoadUser then loads the profile snapshot for handlers using CurrentUser. See the
+[users module](../../AI_LEARN/modules/users.md#current-user-snapshot).
 
 Clients send `Authorization: Bearer <access JWT>`. Middleware validates the access
 key, HS256, required claims, expiration, and `token_type = access`, then stores an
@@ -253,25 +256,22 @@ in responses. PasswordHash also has a defensive `json:"-"` model tag.
 
 ## Verification
 
-From `backend`, run:
+From `backend`, select the affected auth packages:
 
 ```sh
-go test -mod=readonly ./...
-go vet -mod=readonly ./...
+go test -mod=readonly -race -count=1 ./internal/auth ./internal/config ./internal/repository ./internal/service ./internal/handler ./internal/middleware ./internal/router
+go vet -mod=readonly ./internal/auth ./internal/config ./internal/repository ./internal/service ./internal/handler ./internal/middleware ./internal/router
 ```
 
-For actual PostgreSQL integration tests, set `PREDITTO_AUTH_TEST_DSN` and
-`PREDITTO_SEED_TEST_DSN` to a disposable test database URL, then run:
+Set `PREDITTO_AUTH_TEST_DSN` to a disposable PostgreSQL database URL for HTTP
+integration coverage. Auth tests create isolated schemas, apply migrations and
+remove them afterward; the database account needs schema-creation privileges.
+Each pooled connection uses the same isolated search path for concurrent requests.
+Without the DSN, database scenarios explicitly skip.
 
-```sh
-go test -mod=readonly -race -count=1 ./...
-```
-
-Without their respective environment variables, PostgreSQL tests skip explicitly.
-Auth tests create and remove isolated schemas and apply all migrations. They use
-a connection-wide search path in each pooled connection so concurrent requests
-operate on the same isolated schema. The database account needs schema creation
-privileges. Existing seed tests keep their established test setup.
+Seed integration checks separately require `PREDITTO_SEED_TEST_DSN`. See the
+[Go runbook](../../AI_LEARN/commands/topics/go.md) for full-suite prerequisites
+and the known seed timestamp assertion failure under race instrumentation.
 
 Coverage includes the requested register/login/refresh/logout/middleware cases,
 minimal JWT claims, wrong algorithms and signatures, wrong token types signed

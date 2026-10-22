@@ -8,6 +8,6 @@ Verification: targeted selection and user-info PostgreSQL integration tests and 
 
 Next step: integrate the documented selection contract in the frontend.
 
-Existing limitation found by source inspection: the older list test still expects name/ID order, while the repository orders by creation time descending. The API documentation was corrected to match code; list ordering and its legacy test were not changed. See [active risks](../system_state.md#active-gaps-and-risks).
+Existing limitation found by source inspection: the older list test still expects name/ID order, while the repository orders by creation time descending. The API documentation was corrected to match code; list ordering and its legacy test were not changed. Later resolution: the [2026-10-21 contract update](2026-10-21-json-api-contract-iteration.md) corrected this legacy test without changing the SQL ordering.
 
 Previous iteration: [positional participant literals](2026-10-18-positional-participants-iteration.md).

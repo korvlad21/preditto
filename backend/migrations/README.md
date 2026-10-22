@@ -32,7 +32,7 @@ Show the current version:
 docker compose run --rm migrate version
 ```
 
-The first rollback removes `users` and its data, its identity sequence and trigger, and the trigger function. Stop backend writers before rolling back a live database. A later `up` reapplies pending migrations. After adding migration files while the application is already running, use the manual `up` command or recreate the migration service; restarting only the backend does not run migrations.
+`down 1` rolls back the highest applied migration: at version 12 it removes tournament prize rules. Rolling back version 1 removes `users`, its data, identity sequence, trigger and trigger function. Check the current version and dependency order first; use disposable databases for rollback verification. Stop backend writers before rolling back a live database. A later `up` reapplies pending migrations. After adding migration files while the application is already running, use the manual `up` command or recreate the migration service; restarting only the backend does not run migrations.
 
 ## First migration
 
@@ -49,3 +49,7 @@ References: [migrate CLI](https://github.com/golang-migrate/migrate/blob/v4.20.1
 ## Countries
 
 Migration 000002 creates countries with a required, UNIQUE short_name. Migration 000003 then creates teams with a required country code referencing countries.short_name. Both tables must exist before the seed service runs. Rolling back 000003 removes teams before rolling back 000002 removes countries.
+
+## Current baseline
+
+There are twelve up/down pairs. The [architecture](../../AI_LEARN/architecture.md) and [module index](../../AI_LEARN/modules/index.md) map them to functional ownership. Migrations 4 and 10 were revised to add selected tournament storage and its FK; an existing database with the older applied files will not receive these changes through normal `up`. Inspect actual schema/version and plan an explicit transition for shared databases. Use a new numbered pair for future changes to an applied schema.

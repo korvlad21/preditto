@@ -2,7 +2,7 @@
 
 Date: 2026-10-18
 
-Implemented protected GET /api/tournaments/get_all_tournaments with all 13 requested fields, optional status filtering, nullable prize percentages, distinct active participant counts, and selection from middleware.CurrentUser. The repository performs one list query without multiplying tournament rows; the service reuses the loaded selection. The architecture follows the teams API. See [the contract](../../backend/docs/tournaments.md) and [backend knowledge](../modules/backend/overview.md#tournaments-api).
+Implemented protected GET /api/tournaments/get_all_tournaments with all 13 requested fields, optional status filtering, nullable prize percentages, distinct active participant counts, and selection from middleware.CurrentUser. The repository performs one list query without multiplying tournament rows; the service reuses the loaded selection. The architecture follows the teams API. See [the contract](../../backend/docs/tournaments.md) and [backend knowledge](../modules/tournaments.md).
 
 Targeted HTTP tests passed against disposable PostgreSQL with race detection, including authentication, all filter modes, SQL injection input, nullable fields, duplicate participant user IDs, zero counts, selected tournament changes with the same token, user isolation, empty results, and error responses. Affected-package and API entry-point vet passed. Formatting and strict UTF-8 checks passed. No migrations, dependencies, or existing business rules changed.
 

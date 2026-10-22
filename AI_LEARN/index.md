@@ -1,9 +1,14 @@
-# Project Knowledge Index
+# Project knowledge
 
-Read [project_overview.md](project_overview.md) for basic orientation, then [modules/index.md](modules/index.md) to select only the knowledge relevant to the task.
+Start with the [module index](modules/index.md) and read only the module(s) matching the task. The root [AGENTS.md](../AGENTS.md) owns workflow requirements; this directory stores project facts.
 
-- [System state](system_state.md): active documentation gaps and next steps.
-- [Current iteration](current_iteration.md): the latest completed documentation iteration.
-- [Command knowledge](commands/index.md): verified command patterns and normalized failures.
+| Need | Read |
+| --- | --- |
+| Functional behavior and source/test entry points | [Modules](modules/index.md) |
+| Layering, shared request flow, persistence boundaries | [Architecture](architecture.md) |
+| Build/test, Docker or database commands | [Command index](commands/index.md) |
+| Known active risks or incomplete verification | [System state](system_state.md) |
+| Resume the latest significant change | [Current iteration](current_iteration.md) |
+| Explain a past decision or failure | Search `archive/` only for that question |
 
-Module workflow rules live in .aiassistant/rules: [context loading](../.aiassistant/rules/module_context_loading.md), [research](../.aiassistant/rules/module_research.md), [accumulation](../.aiassistant/rules/knowledge_accumulation.md), and [validation](../.aiassistant/rules/knowledge_validation.md). Read each when its stage applies.
+Exact HTTP contracts live in [backend/docs](../backend/docs); setup lives in the [root README](../README.md) and [frontend README](../frontend/README.md). Avoid duplicating their payload examples and operational recipes in modules. Source wins over stale descriptions; runtime claims require execution evidence.

@@ -8,7 +8,7 @@ Moved README.md to backend/seeds, seed.go and teams.go to backend/seeds/developm
 
 Private validation tests are preserved in development/teams_validation_test.go. The separate test package exercises the existing public Run using a local SQL connector, verifying 36 valid unique teams, commit, wrapped write errors, and rollback. No production API or dependencies were added.
 
-See [seed documentation](../../backend/seeds/README.md) and [backend knowledge](../modules/backend/overview.md). The preceding iteration is preserved in [archive](2026-09-12-teams-seeds.md).
+See [seed documentation](../../backend/seeds/README.md) and [backend knowledge](../architecture.md). The preceding iteration is preserved in [archive](2026-09-12-teams-seeds.md).
 
 ## Verification
 

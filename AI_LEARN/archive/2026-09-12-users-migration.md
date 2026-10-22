@@ -8,7 +8,7 @@ Added the first users up/down SQL migration, its updated_at trigger, a separate 
 
 The current checkout differs from earlier conversation work: PostgreSQL Go configuration and .env.example are absent, and Compose uses POSTGRES_DSN. This iteration followed the actual checkout and did not restore unrelated prior changes.
 
-The earlier iteration is preserved in [archive](2026-09-08-current_iteration.md). Canonical knowledge is in [backend](../modules/backend/overview.md).
+The earlier iteration is preserved in [archive](2026-09-08-current_iteration.md). Canonical knowledge is in [backend](../architecture.md).
 
 ## Verification
 
@@ -16,4 +16,4 @@ Compose validation and whitespace checks passed. An isolated Docker project used
 
 ## Failure Handling
 
-[FAILURE-20260912-001](../commands/topics/docker-failures.md#failure-20260912-001) records the PostgreSQL URL normalization issue and verified correction. Missing-file discovery and temporary Compose interpolation diagnostics are recorded in local knowledge. UTF-8 and local documentation references were checked.
+[FAILURE-20260912-001](command-history.md#failure-20260912-001) records the PostgreSQL URL normalization issue and verified correction. Missing-file discovery and temporary Compose interpolation diagnostics are recorded in local knowledge. UTF-8 and local documentation references were checked.

@@ -8,7 +8,7 @@ Added development/users.go and development/user_info.go to the existing seed run
 
 Profiles retrieve actual user IDs by username and upsert by user_id. Avatar values are SQL NULL, favorite teams are the requested existing IDs 5 and 19 (or NULL), and updated_at uses PostgreSQL CURRENT_TIMESTAMP. Boroda's profile is Nikita Borodin. The teams implementation, migrations, schema, CLI and Compose launch paths are unchanged.
 
-See [seed documentation](../backend/seeds/README.md) and [backend knowledge](modules/backend/overview.md). The previous iteration is preserved in [archive](archive/2026-09-13-seed-layout.md).
+See [seed documentation](../../backend/seeds/README.md) and [backend knowledge](../architecture.md). The previous iteration is preserved in [archive](2026-09-13-seed-layout.md).
 
 ## Verification
 

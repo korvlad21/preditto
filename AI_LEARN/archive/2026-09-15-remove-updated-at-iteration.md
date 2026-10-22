@@ -12,4 +12,4 @@ The existing PostgreSQL database had version 7 and retained roles.updated_at aft
 
 Fresh isolated PostgreSQL applied migrations 1-8, rolled back migration 8, and reapplied it. SQL assertions verified column, trigger, and function absence after up and presence after down. Normal docker compose up -d --build completed with migrate and seed exit code 0, backend and frontend running, and /health returning status ok. The live PostgreSQL assertion confirmed version 8 with dirty=false and no roles.updated_at, roles trigger, or roles function.
 
-The previous seed iteration is preserved in [archive](archive/2026-09-13-seed-iteration.md).
+The previous seed iteration is preserved in [archive](2026-09-13-seed-iteration.md).

@@ -4,7 +4,7 @@ Date: 2026-09-12
 
 ## Outcome
 
-Added the 000003_create_user_info SQL migration pair without changing existing migrations or application code. The profile references users with a unique required user_id and ON DELETE CASCADE, and teams with nullable favorite_team_id and ON DELETE SET NULL. updated_at has a default only and is not automatically updated. The contract is recorded in [backend knowledge](../modules/backend/overview.md). The previous result is preserved in [archive](2026-09-12-teams-migration.md).
+Added the 000003_create_user_info SQL migration pair without changing existing migrations or application code. The profile references users with a unique required user_id and ON DELETE CASCADE, and teams with nullable favorite_team_id and ON DELETE SET NULL. updated_at has a default only and is not automatically updated. The contract is recorded in [backend knowledge](../architecture.md). The previous result is preserved in [archive](2026-09-12-teams-migration.md).
 
 ## Verification
 

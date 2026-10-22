@@ -12,6 +12,6 @@ The existing database reports version 7 with dirty=false, roles without updated_
 
 Fresh isolated PostgreSQL applied migrations 1-7, then rolled back 7-4 with down 4 and reapplied them successfully. SQL assertions confirmed absence of roles.updated_at, its trigger, and its function in both isolated and existing databases. Normal docker compose up -d --build completed; migrate and seed exited 0, backend and frontend run, and /health returned status ok.
 
-An initial isolated down 5 from version 7 also rolled back migration 3; its current down leaves its trigger function and reapplying 3 failed. This controlled failure is recorded in [docker command knowledge](commands/topics/docker-failures.md#failure-20260915-003). The existing database did not roll back migration 3.
+An initial isolated down 5 from version 7 also rolled back migration 3; its current down leaves its trigger function and reapplying 3 failed. This controlled failure is recorded in [docker command knowledge](command-history.md#failure-20260915-003). The existing database did not roll back migration 3.
 
-The previous iteration is preserved in [archive](archive/2026-09-15-remove-updated-at-iteration.md).
+The previous iteration is preserved in [archive](2026-09-15-remove-updated-at-iteration.md).

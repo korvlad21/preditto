@@ -1,64 +1,42 @@
 # AGENTS.md
 
-## Role
+## Scope and invariants
 
-The agent works as a careful project engineer: first understand, then plan, then make minimal changes, then verify, and only then update knowledge.
+Work as a careful project engineer: understand the request, inspect relevant code, make minimal authorized changes, and verify the result.
 
-## Global Invariants
+- Write instructions and project knowledge in English. Confirm existing text is valid UTF-8 before editing; write and validate UTF-8 afterward.
+- Keep project facts in `AI_LEARN`; keep private/local environment details in ignored `AI_USER_LEARN`. Never store secrets in project knowledge.
+- Code and current artifacts establish implementation facts; confirmed execution establishes runtime facts. Neither grants authorization. Respect the user's task scope.
+- Analysis-only tasks must not change code or documentation. Report discrepancies and recommendations instead.
+- Do not invent features, broaden a refactor, or repeat a failed approach without a new hypothesis.
 
-- All instructions must be written in English, including `AGENTS.md`, rules, skills, and procedural guidance in documentation and knowledge files.
-- All created and edited text files must use UTF-8. If the encoding has not been confirmed, the file is unsafe to edit.
-- `AI_LEARN` stores only project knowledge; `AI_USER_LEARN` stores only the local environment and private operational context.
-- An unexpectedly failed command must not go unaccounted for: its cause, context, corrected invocation, and rule must be stored in knowledge.
-- If code conflicts with memory, trust the code. If a confirmed execution conflicts with command memory, trust the latest confirmed result.
-- Minimize context, diff, and the number of executions. Do not repeat a failed approach without a new hypothesis.
+## Load only relevant context
 
-## Minimum Context
+1. Read this file and [coding conventions](.aiassistant/rules/project.md).
+2. Use the [knowledge index](AI_LEARN/index.md) and [module index](AI_LEARN/modules/index.md) to select the owning module(s).
+3. Read their documentation and relevant source/tests before development. Read [architecture](AI_LEARN/architecture.md) for unfamiliar or cross-cutting work.
+4. Read any local `AGENTS.md` before working in its subtree. Do not reread unchanged instructions within the same session.
 
-Do not load the entire project or all of `AI_LEARN`.
+Do not load all knowledge or archives by default. Routine read/search commands need no command-history preflight. For builds, tests, database or container work, use the [command index](AI_LEARN/commands/index.md) and only the relevant topic. Consult `AI_USER_LEARN` only when local environment context is necessary.
 
-Default reading order:
+## Mandatory module maintenance
 
-1. `AGENTS.md`
-2. `.aiassistant/rules/project.md`
-3. `AI_LEARN/index.md`
-4. `AI_LEARN/project_overview.md`
-5. then only the files needed
+- Before implementation, identify the functional owner through the module index and verify its documented behavior against the affected code.
+- When an authorized change alters business rules, API behavior, models/schema, dependencies, constraints or documented source ownership, independently update the corresponding `AI_LEARN/modules/<module>.md` in the same change. Keep detailed API contracts in `backend/docs` and link to them.
+- When implementing a new functional module, automatically create its grounded module document and register its purpose, task triggers and dependencies in `AI_LEARN/modules/index.md`. Use the [module outline](docs/ai/skills/memory-workflow.md#module-outline); do not create placeholders for planned features.
+- Update shared architecture or instructions only when boundaries or conventions change. Link shared rules instead of copying them into modules.
+- Do not create extra documents or update memory merely because a task occurred. Internal changes that leave documented facts unchanged need no documentation edits. The analysis-only restriction above also applies to discovered documentation drift.
 
-If the task uses commands, also read the following before the first `Run command`:
+## Conditional workflows
 
-1. `AI_LEARN/commands/index.md`
-2. `Find the tool or ID in AI_LEARN/commands/catalog.md.`
-3. `Read only the relevant block in AI_LEARN/commands/topics/*-patterns.md and the related *-failures.md.`
+- Text edits: [encoding-safe editing](docs/ai/skills/encoding-safe-editing.md).
+- Nontrivial command execution or unexpected failures: [command workflow](docs/ai/skills/command-workflow.md).
+- Research, module documentation or knowledge updates: [memory workflow](docs/ai/skills/memory-workflow.md).
 
-If the task depends on the user's local environment, also read the relevant files from `AI_USER_LEARN`.
+Diagnose unexpected failures. Record reusable cause, context, correction and verification once in the relevant command topic when documentation edits are authorized; merge existing lessons. Report non-reusable or deferred findings without creating repetitive logs. Never label an unexecuted correction as verified.
 
-If the target subdirectory contains a local `AGENTS.md`, read it after the root file and before working in that subdirectory.
+## Completion
 
-## Skill Routing
+Verify affected behavior with appropriate targeted checks; documentation-only edits require UTF-8, reference and source-consistency checks. A skipped integration test is not evidence of database behavior. Report checks and material limits accurately.
 
-Open only the skills actually needed for the scenario:
-
-- `docs/ai/skills/encoding-safe-editing.md` — creating or editing text files, especially with non-ASCII text, uncertain encoding, or shell-based edits.
-- `docs/ai/skills/command-workflow.md` — any `Run command`, choosing a safe invocation, analyzing `Failed` results, and updating `AI_LEARN/commands/*`.
-- `docs/ai/skills/memory-workflow.md` — updating `AI_LEARN` or `AI_USER_LEARN`, completing an iteration, and normalizing knowledge.
-- `docs/ai/skills/research-mode.md` — research mode, mapping an unfamiliar project area, and updating backlog and coverage.
-
-## Constraints
-
-- Do not overload context or analyze the entire project in a single pass.
-- Do not rewrite large portions of code unnecessarily or perform bulk refactoring.
-- Do not invent project structure or store unconfirmed conclusions as knowledge.
-- Do not duplicate the same instructions across the root, skills, and memory without a useful reason.
-- Do not make a series of similar attempts hoping one will work.
-
-## Iteration Completion
-
-An iteration is complete only if:
-
-- the task is completed or has honestly reached an external limitation;
-- changes are minimal and verified;
-- the relevant `system_state.md` in `AI_LEARN` and/or `AI_USER_LEARN` reflects only the active state, risk, and next step, rather than receiving another historical entry;
-- `current_iteration.md` contains only the latest iteration; the previous result is preserved in a thematic file, `AI_LEARN/archive/history/changelog.md`, or `archive/`;
-- useful new findings have been stored in knowledge;
-- unexpected `Failed` results have either been normalized into knowledge or explicitly classified as non-reusable.
+Keep `system_state.md` limited to active risks and next steps, updating it only when they change. Update `current_iteration.md` for a significant handoff; preserve useful prior findings in their owning topic or archive when not already retained. Completion does not require a new historical file for every task.

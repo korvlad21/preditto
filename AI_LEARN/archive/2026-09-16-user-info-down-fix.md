@@ -6,4 +6,4 @@ Fixed migration 000003 rollback: it now drops the user_info update trigger befor
 
 Verified the actual up/down/up/down cycle in an isolated PostgreSQL schema; the trigger and function were removed and the schema was dropped. Also verified down against a temporary table with no trigger or function. The live application database was not rolled back.
 
-The previous iteration is preserved in [archive](archive/2026-09-16-countries-migration-reapply.md).
+The previous iteration is preserved in [archive](2026-09-16-countries-migration-reapply.md).

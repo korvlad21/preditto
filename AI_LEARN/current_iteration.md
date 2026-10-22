@@ -1,11 +1,19 @@
-# Current Iteration
+# Current iteration
 
-Date: 2026-10-21
+Date: 2026-10-22
 
-[UserRepository](../backend/internal/repository/user.go) now owns CreateUser, FindUserByLogin, GetUserInfo, LockUser, UpdateSelectedTournament, and AssignRole (in user_roles.go). UserService and TournamentService depend on UserRepository; AuthService receives it alongside AuthRepository. The API entry point shares a UserRepository backed by the same database pool. AuthRepository retains refresh-session persistence and InTransaction, whose callback receives auth and user repositories backed by one sql.Tx. Registration remains atomic across user, profile, role assignment, and first session; login and refresh retain user locking and transactional session writes. SQL, API contracts, schemas, and dependencies are unchanged. API documentation and backend knowledge reflect the split.
+## Outcome
 
-Verification: affected repository/service/handler/middleware/router/API packages passed `go test -race -mod=readonly -count=1` and `go vet -mod=readonly`. The complete handler suite also passed with race detection against disposable PostgreSQL, including registration rollback at four stages, login, refresh/logout, rotation rollback and concurrency, user profiles, and tournament selection. Formatting, diff checks, strict UTF-8, and documentation links passed. No unexpected command failures occurred.
+Reorganized AI documentation around [AGENTS.md](../AGENTS.md), one coding-conventions file, three conditional workflows, [architecture](architecture.md) and four [functional modules](modules/index.md). Module maintenance is mandatory for implementation changes that alter documented facts, including automatic documentation/index registration for new modules. Analysis-only tasks explicitly leave files unchanged.
 
-Next step: keep transactional user operations on the callback-scoped UserRepository; future profile operations belong to UserRepository.
+Consolidated overlapping research/memory rules and command navigators, preserving dated command evidence in [the archive](archive/command-history.md). Updated setup, frontend, seed, migration and auth guidance against current source. Historical reference targets were repaired; current state now contains only active risks and next steps. No application code, migrations, seeds, dependencies or runtime configuration changed.
 
-Previous iteration: [omit absent success data](archive/2026-10-21-omit-empty-success-data-iteration.md).
+## Verification
+
+Source/schema and existing test-scenario inspection covered all four modules and the shared backend/frontend boundaries. Strict UTF-8, local Markdown paths/anchors, module navigation, route/test-reference checks and git diff whitespace checks passed. The pre-edit SHA-256 baseline of 165 tracked non-Markdown files remained unchanged. Application tests, services, migrations and seeds were not executed for this documentation-only change; no deployed-state claims are made. External URLs were retained, not revalidated.
+
+## Next step
+
+Use the module routing and maintenance rules on subsequent implementation tasks; update only facts affected by the task. Existing runtime/test limitations remain in [system state](system_state.md). This change introduces instruction-based maintenance, not a CI gate or proof of identical behavior across assistant products.
+
+Previous significant iteration: [UserRepository split](archive/2026-10-21-user-repository-split-iteration.md).

@@ -1,79 +1,51 @@
-# Skill: Memory Workflow
+# Project knowledge workflow
 
-## Purpose
+Use for module research, documentation changes or significant handoffs. [AGENTS.md](../../../AGENTS.md) owns mandatory maintenance and the analysis-only exception.
 
-Manages what should be stored in knowledge, where it should be stored, and prevents an iteration from being considered complete without updating the current state.
+## Load and verify
 
-## When to Use
+Select the module through the [module index](../../../AI_LEARN/modules/index.md). Follow its source map into the affected routes, handlers, services, repositories, models, migrations, seeds and tests. Inspect related frontend behavior when relevant. Work in focused passes; do not load the entire repository.
 
-- when a new confirmed project finding appears;
-- when a finding about the user's local environment appears;
-- when a significant iteration is completed;
-- when it is necessary to decide whether to update `AI_LEARN` or `AI_USER_LEARN`.
+Use code for implementation facts, SQL for constraints and confirmed execution for runtime facts. Separate current behavior, limitations and proposed work. Record a source/schema review date without implying tests ran. Report documentation drift during analysis; correct it during authorized implementation when relevant.
 
-## What It Covers
+## Module outline
 
-- separation of project and user-specific memory;
-- normalization of knowledge instead of storing raw logs;
-- synchronization of the active `system_state.md` without accumulating history;
-- iteration completion criteria.
+Use one file per implemented functional module. Omit empty or inapplicable sections; link exact contracts and shared procedures instead of duplicating them.
 
-## Workflow
+```markdown
+# Module name
 
-1. Classify the knowledge:
-   - project-specific and reproducible — store it in `AI_LEARN`;
-   - machine-specific or private — store it in `AI_USER_LEARN`;
-   - mixed — split it without duplication.
+Reviewed: YYYY-MM-DD; state whether source inspection or runtime verification.
 
-2. Link the knowledge to a real artifact: a file, class, config, table, route, endpoint, job, or confirmed command execution.
+## Purpose and API
+Ownership, task triggers, routes/access requirements and link to exact API contract.
 
-3. Store not the raw output stream, but a short rule or fact that reduces the chance of future errors.
+## Business behavior
+Validation, state transitions, filters, ordering, null/empty semantics, errors,
+transaction/concurrency rules and boundaries that are easy to misunderstand.
 
-4. After each significant iteration, synchronize the relevant `system_state.md`: keep only the active state, risk, and next step; do not append a completed task as another historical entry.
+## Sources, models and persistence
+Links to routes, handlers, services, repositories, DTOs/models and migrations;
+owned tables, keys, important constraints and deletion behavior.
 
-5. If the iteration introduced new command errors or prevented previously known ones, update the corresponding `commands/*` entries as well.
+## Dependencies and limitations
+Related modules, seed identity/repeat-run rules, frontend integration status,
+implemented constraints versus known gaps. No invented future features.
 
-6. If a topic grows too large, add a short summary and a link from the index instead of duplicating the same text across multiple places.
+## Verification
+Existing tests and relevant commands, required fixtures/DSNs, known skips/limits.
+```
 
-7. Replace `current_iteration.md` with the result of the latest iteration. Preserve the previous result in a thematic file, `AI_LEARN/archive/history/changelog.md`, or `archive/` if it has not already been recorded elsewhere.
+The [tournaments document](../../../AI_LEARN/modules/tournaments.md) is a concrete example. Keep field-by-field payloads in API contracts and operational commands in their owning guides. Split a large module only when independent task paths need selective loading.
 
-8. If a startup file has turned into a log, first preserve the full historical snapshot in `archive/`, then rebuild a compact up-to-date version.
+## Update and register
 
-## New Session
+Update the owning module alongside changed facts; register newly implemented modules in the index. Update architecture only for shared boundaries, and rules/skills only for reusable procedure changes. Avoid copying the same rule across these layers.
 
-In a new session, treat memory as a working navigator:
+Store project-reusable knowledge in `AI_LEARN`; local environment/private details in ignored `AI_USER_LEARN`. Summarize findings with artifact links rather than raw logs. Never promote a hypothesis to a confirmed fact.
 
-1. read the root route;
-2. open only the relevant entries;
-3. follow confirmed patterns instead of rediscovering already known rules;
-4. if memory conflicts with the code or the latest confirmed execution, update the memory.
+Keep `system_state.md` for active risks/next steps. Replace `current_iteration.md` only for a significant handoff and preserve useful prior findings once, in a thematic document or archive. Do not archive every small edit or append completed tasks to startup files. Historical records must remain visibly dated and outside default context.
 
-## Completion Criteria
+## Validate
 
-An iteration is complete only if all of the following conditions are met:
-
-- the task is completed or an external blocker is described honestly;
-- changes are minimal and verified;
-- the relevant `system_state.md` reflects the current active state;
-- `current_iteration.md` contains only the latest result;
-- new important findings are stored;
-- useful `Failed` results are normalized into knowledge or explicitly marked as non-reusable.
-
-## Do Not
-
-- do not store secrets or local access details in `AI_LEARN`;
-- do not create empty entries just to satisfy the structure;
-- do not duplicate the same knowledge across the root, skills, and memory;
-- do not store a hypothesis without linking it to an artifact;
-- do not append completed task history to startup files;
-- do not consider an iteration complete without synchronizing the state.
-
-## Related Files
-
-- `AI_LEARN/index.md`
-- `AI_LEARN/system_state.md`
-- `AI_LEARN/project_overview.md`
-- `AI_LEARN/current_iteration.md`
-- `AI_LEARN/research/research_backlog.md`
-- `AI_LEARN/research/coverage_map.md`
-- `AI_USER_LEARN/*`
+Before completion, check strict UTF-8, Markdown target paths/anchors, navigation to new modules, source names, routes, schema constraints and test prerequisites. Check inbound references when moving/removing files. Review the diff for duplicated rules, stale current-state claims, secrets and accidental application changes. Report source inspection and executed tests separately.
