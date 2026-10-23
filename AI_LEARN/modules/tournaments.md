@@ -8,7 +8,7 @@ Owns tournament listing, user selection coordination and participant/prize proje
 
 | Protected POST route | Successful result |
 | --- | --- |
-| `/api/tournaments/get_all_tournaments` | 200, data.tournaments; optional status and is_participate query filters, no required body |
+| `/api/tournaments/get_all_tournaments` | 200, data.tournaments; optional status and is_participate JSON filters, no required body |
 | `/api/tournaments/select_tournament` | 200, success without data; JSON id required |
 
 Both routes require RequireAuth followed by LoadUser. The [tournament API contract](../../backend/docs/tournaments.md) owns exact fields, error codes and examples, using the [shared response contract](../../backend/docs/responses.md).
@@ -17,7 +17,7 @@ Both routes require RequireAuth followed by LoadUser. The [tournament API contra
 
 Listing passes CurrentUser.ID and CurrentUser.SelectedTournamentID from handler to service. TournamentService normalizes omitted/empty status or lowercase all to no status filter and marks selected rows without another user read. Other status values match exactly; unknown values return an empty list. TournamentRepository uses one parameterized query, ordered by created_at DESC then id DESC.
 
-The optional is_participate boolean combines with the tournament-status filter using AND. True requires an active tournament_participants row for the current user; false requires its absence; omission imposes no participation restriction. Not-paid and blocked rows are not participation. The repository uses correlated EXISTS/NOT EXISTS in the listing query, with no per-tournament reads and no changes to counts or selection semantics. Query parameters cannot override the authenticated user ID.
+The optional is_participate boolean combines with the tournament-status filter using AND. True requires an active tournament_participants row for the current user; false requires its absence; omission imposes no participation restriction. Not-paid and blocked rows are not participation. The repository uses correlated EXISTS/NOT EXISTS in the listing query, with no per-tournament reads and no changes to counts or selection semantics. Filters are read only from the JSON body; query parameters are ignored. An empty body or `{}` applies no filters. Request fields cannot override the authenticated user ID.
 
 Prize joins for places 1/2/3 each match at most one row by the composite key. Active participant counts are grouped before joining and count distinct user IDs, preventing multiplied rows. The query filters participation status, not account status. Missing prize rules stay null and absent active participants yield zero. A null selection, including a missing profile, makes all selection flags false.
 
@@ -55,4 +55,4 @@ The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as
 
 From `backend/`: `go test -race -mod=readonly -count=1 ./internal/handler -run 'TestGetAllTournaments|TestSelectTournament|TestGetUserInfo'`, with disposable `PREDITTO_AUTH_TEST_DSN` for database scenarios.
 
-[List tests](../../backend/internal/handler/tournament_test.go) cover combined status/participation filtering, omitted and invalid filters, active versus not-paid/blocked membership, ordering, aggregation, nullable fields, selection and identity isolation. [Selection tests](../../backend/internal/handler/select_tournament_test.go) cover invalid IDs, missing profiles/tournaments, nil repository writes, repeated selection, forced write failure and snapshot consistency. Seed changes require the relevant [tournament](../../backend/seeds/test/tournaments_postgres_test.go) and [participant tests](../../backend/seeds/test/tournament_participants_postgres_test.go) with `PREDITTO_SEED_TEST_DSN`; see [Go limitations](../commands/topics/go.md).
+[List tests](../../backend/internal/handler/tournament_test.go) cover combined status/participation filtering, omitted and invalid JSON filters, ignored query parameters, active versus not-paid/blocked membership, ordering, aggregation, nullable fields, selection and identity isolation. [Selection tests](../../backend/internal/handler/select_tournament_test.go) cover invalid IDs, missing profiles/tournaments, nil repository writes, repeated selection, forced write failure and snapshot consistency. Seed changes require the relevant [tournament](../../backend/seeds/test/tournaments_postgres_test.go) and [participant tests](../../backend/seeds/test/tournament_participants_postgres_test.go) with `PREDITTO_SEED_TEST_DSN`; see [Go limitations](../commands/topics/go.md).

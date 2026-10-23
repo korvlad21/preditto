@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -158,14 +157,9 @@ func TestGetAllTeamsPostgres(t *testing.T) {
 		{"lowercase all", "", `{"country":"all"}`, empty},
 		{"whitespace preserved", "", `{"country":" TST "}`, empty},
 		{"SQL injection", "", `{"country":"TST' OR 1=1 --"}`, empty},
-		{"query country", "?country=GBR", "", []map[string]any{all[1]}},
-		{"empty query country", "?country=", "", all},
-		{"query all", "?country=ALL", "", all},
-		{"query unknown", "?country=XYZ", "", empty},
-		{"query SQL injection", "?country=" + url.QueryEscape("TST' OR 1=1 --"), "", empty},
-		{"JSON overrides query", "?country=GBR", `{"country":"TST"}`, []map[string]any{all[0], all[2]}},
-		{"empty JSON overrides query", "?country=GBR", `{"country":""}`, all},
-		{"query with empty object", "?country=GBR", `{}`, []map[string]any{all[1]}},
+		{"query country ignored", "?country=GBR", "", all},
+		{"query with empty object ignored", "?country=GBR", `{}`, all},
+		{"JSON filter with ignored query", "?country=GBR", `{"country":"TST"}`, []map[string]any{all[0], all[2]}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			w := teamRequest(api, tc.query, tc.body)

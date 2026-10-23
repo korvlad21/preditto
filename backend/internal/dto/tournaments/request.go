@@ -1,8 +1,8 @@
 package tournaments
 
 type GetAllTournamentsRequest struct {
-	Status        string `form:"status"`
-	IsParticipate *bool  `form:"is_participate"`
+	Status        string `json:"status"`
+	IsParticipate *bool  `json:"is_participate"`
 }
 
 type SelectTournamentRequest struct {

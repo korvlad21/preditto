@@ -3,8 +3,8 @@
 All responses follow the [shared API contract and client migration guide](responses.md).
 
 `POST /api/teams/get_all_teams` is public and returns a team array in `data.teams`,
-ordered by `name`. The optional `country` parameter can be supplied in a JSON body
-or the query string. A JSON `country` value takes precedence when both are supplied.
+ordered by `name`. The optional `country` parameter is read only from the JSON body.
+Query parameters are ignored. Send `Content-Type: application/json`.
 An empty body or `{}` is valid.
 
 Omitted `country`, `""`, and `"ALL"` return every team. Other values match

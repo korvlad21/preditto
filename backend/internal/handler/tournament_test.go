@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -46,8 +46,9 @@ func tournamentAPI(t *testing.T, db *sql.DB, observers ...gin.HandlerFunc) (*gin
 	return api, tokens, users
 }
 
-func tournamentRequest(api http.Handler, token, query string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/api/tournaments/get_all_tournaments"+query, nil)
+func tournamentRequest(api http.Handler, token, body string, query ...string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/api/tournaments/get_all_tournaments"+strings.Join(query, ""), strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -140,10 +141,10 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 	all[1]["prize_second_place"] = float64(0)
 	all[2]["count_participant"] = float64(1)
 
-	check := func(t *testing.T, token, query string, want []map[string]any) {
+	check := func(t *testing.T, token, body string, want []map[string]any, query ...string) {
 		t.Helper()
 		before := users.calls
-		w := tournamentRequest(api, token, query)
+		w := tournamentRequest(api, token, body, query...)
 		if w.Code != http.StatusOK {
 			t.Fatalf("status = %d: %s", w.Code, w.Body.String())
 		}
@@ -167,61 +168,67 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 	}
 	empty := []map[string]any{}
 	for _, tc := range []struct {
-		name, query string
-		want        []map[string]any
+		name, body string
+		want       []map[string]any
 	}{
-		{"omitted status", "", all},
-		{"empty status", "?status=", all},
-		{"all", "?status=all", all},
-		{"active", "?status=active", all[:1]},
-		{"planned", "?status=planned", all[1:2]},
-		{"finished", "?status=finished", all[2:3]},
-		{"cancelled", "?status=cancelled", all[3:4]},
-		{"unknown status", "?status=unknown", empty},
-		{"case sensitive", "?status=ALL", empty},
-		{"whitespace preserved", "?status=" + url.QueryEscape(" active "), empty},
-		{"SQL injection", "?status=" + url.QueryEscape("active' OR 1=1 --"), empty},
-		{"selection cannot be overridden", "?user_id=82&selected_tournament_id=202", all},
-		{"participating", "?is_participate=true", all[:1]},
-		{"not participating", "?is_participate=false", all[1:]},
-		{"participating active", "?status=active&is_participate=true", all[:1]},
-		{"not participating active", "?status=active&is_participate=false", empty},
-		{"blocked is not participating", "?status=planned&is_participate=true", empty},
-		{"blocked included in nonparticipants", "?status=planned&is_participate=false", all[1:2]},
-		{"not paid is not participating", "?status=cancelled&is_participate=true", empty},
-		{"not paid included in nonparticipants", "?status=cancelled&is_participate=false", all[3:4]},
-		{"other user's participation excluded", "?status=finished&is_participate=true", empty},
-		{"other user's participation is not own", "?status=finished&is_participate=false", all[2:3]},
-		{"all participating", "?status=all&is_participate=true", all[:1]},
-		{"all not participating", "?status=all&is_participate=false", all[1:]},
-		{"empty status participating", "?status=&is_participate=true", all[:1]},
-		{"empty status not participating", "?status=&is_participate=false", all[1:]},
-		{"unknown status participating", "?status=unknown&is_participate=true", empty},
-		{"unknown status not participating", "?status=unknown&is_participate=false", empty},
-		{"participation user cannot be overridden", "?user_id=82&is_participate=true", all[:1]},
+		{"no body", "", all},
+		{"omitted status", `{}`, all},
+		{"null participation", `{"is_participate":null}`, all},
+		{"empty status", `{"status":""}`, all},
+		{"all", `{"status":"all"}`, all},
+		{"active", `{"status":"active"}`, all[:1]},
+		{"planned", `{"status":"planned"}`, all[1:2]},
+		{"finished", `{"status":"finished"}`, all[2:3]},
+		{"cancelled", `{"status":"cancelled"}`, all[3:4]},
+		{"unknown status", `{"status":"unknown"}`, empty},
+		{"case sensitive", `{"status":"ALL"}`, empty},
+		{"whitespace preserved", `{"status":" active "}`, empty},
+		{"SQL injection", `{"status":"active' OR 1=1 --"}`, empty},
+		{"selection cannot be overridden", `{"user_id":82,"selected_tournament_id":202}`, all},
+		{"participating", `{"is_participate":true}`, all[:1]},
+		{"not participating", `{"is_participate":false}`, all[1:]},
+		{"participating active", `{"status":"active","is_participate":true}`, all[:1]},
+		{"not participating active", `{"status":"active","is_participate":false}`, empty},
+		{"blocked is not participating", `{"status":"planned","is_participate":true}`, empty},
+		{"blocked included in nonparticipants", `{"status":"planned","is_participate":false}`, all[1:2]},
+		{"not paid is not participating", `{"status":"cancelled","is_participate":true}`, empty},
+		{"not paid included in nonparticipants", `{"status":"cancelled","is_participate":false}`, all[3:4]},
+		{"other user's participation excluded", `{"status":"finished","is_participate":true}`, empty},
+		{"other user's participation is not own", `{"status":"finished","is_participate":false}`, all[2:3]},
+		{"all participating", `{"status":"all","is_participate":true}`, all[:1]},
+		{"all not participating", `{"status":"all","is_participate":false}`, all[1:]},
+		{"empty status participating", `{"status":"","is_participate":true}`, all[:1]},
+		{"empty status not participating", `{"status":"","is_participate":false}`, all[1:]},
+		{"unknown status participating", `{"status":"unknown","is_participate":true}`, empty},
+		{"unknown status not participating", `{"status":"unknown","is_participate":false}`, empty},
+		{"participation user cannot be overridden", `{"user_id":82,"is_participate":true}`, all[:1]},
 	} {
-		t.Run(tc.name, func(t *testing.T) { check(t, pair.AccessToken, tc.query, tc.want) })
+		t.Run(tc.name, func(t *testing.T) { check(t, pair.AccessToken, tc.body, tc.want) })
 	}
 
-	t.Run("invalid participation filter", func(t *testing.T) {
-		assertError(t, tournamentRequest(api, pair.AccessToken, "?is_participate=invalid"), http.StatusBadRequest, "INVALID_REQUEST")
-	})
+	for _, body := range []string{`{`, `[]`, `{"status":123}`, `{"status":true}`, `{"is_participate":"true"}`, `{"is_participate":"invalid"}`, `{"is_participate":1}`, `{"is_participate":{}}`} {
+		t.Run("invalid JSON filter "+body, func(t *testing.T) {
+			assertError(t, tournamentRequest(api, pair.AccessToken, body), http.StatusBadRequest, "INVALID_REQUEST")
+		})
+	}
+	check(t, pair.AccessToken, `{}`, all, "?status=active&is_participate=true")
+	check(t, pair.AccessToken, `{"status":"planned","is_participate":false}`, all[1:2], "?status=active&is_participate=invalid")
 
 	// Relax uniqueness only in this disposable schema to exercise DISTINCT.
 	execSQL(t, db, `ALTER TABLE tournament_participants DROP CONSTRAINT uq_tournament_participants_tournament_user;
 		INSERT INTO tournament_participants (tournament_id, user_id, status) VALUES (201, 81, 'active')`)
 	check(t, pair.AccessToken, "", all)
 
-	check(t, pair.AccessToken, "?is_participate=true", all[:1])
-	check(t, pair.AccessToken, "?is_participate=false", all[1:])
+	check(t, pair.AccessToken, `{"is_participate":true}`, all[:1])
+	check(t, pair.AccessToken, `{"is_participate":false}`, all[1:])
 
 	execSQL(t, db, `UPDATE user_info SET selected_tournament_id = 202 WHERE user_id = 81`)
 	all[0]["is_selected_tournament"] = false
 	all[1]["is_selected_tournament"] = true
 	check(t, pair.AccessToken, "", all)
-	check(t, pair.AccessToken, "?status=active", all[:1])
-	check(t, pair.AccessToken, "?is_participate=true", all[:1])
-	check(t, pair.AccessToken, "?is_participate=false", all[1:])
+	check(t, pair.AccessToken, `{"status":"active"}`, all[:1])
+	check(t, pair.AccessToken, `{"is_participate":true}`, all[:1])
+	check(t, pair.AccessToken, `{"is_participate":false}`, all[1:])
 	execSQL(t, db, `UPDATE user_info SET selected_tournament_id = NULL WHERE user_id = 81`)
 	all[1]["is_selected_tournament"] = false
 	check(t, pair.AccessToken, "", all)
@@ -231,20 +238,20 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	check(t, otherPair.AccessToken, "?user_id=81", all)
-	check(t, otherPair.AccessToken, "?user_id=81&is_participate=true", []map[string]any{all[0], all[2]})
-	check(t, otherPair.AccessToken, "?is_participate=false", []map[string]any{all[1], all[3], all[4]})
+	check(t, otherPair.AccessToken, `{"user_id":81}`, all)
+	check(t, otherPair.AccessToken, `{"user_id":81,"is_participate":true}`, []map[string]any{all[0], all[2]})
+	check(t, otherPair.AccessToken, `{"is_participate":false}`, []map[string]any{all[1], all[3], all[4]})
 	noParticipationPair, _, err := tokens.GeneratePair(84)
 	if err != nil {
 		t.Fatal(err)
 	}
-	check(t, noParticipationPair.AccessToken, "?is_participate=true", empty)
-	check(t, noParticipationPair.AccessToken, "?is_participate=false", all)
+	check(t, noParticipationPair.AccessToken, `{"is_participate":true}`, empty)
+	check(t, noParticipationPair.AccessToken, `{"is_participate":false}`, all)
 
 	execSQL(t, db, `DELETE FROM tournament_participants; DELETE FROM tournament_prize_rules; DELETE FROM tournaments`)
 	check(t, pair.AccessToken, "", empty)
-	check(t, pair.AccessToken, "?is_participate=true", empty)
-	check(t, pair.AccessToken, "?is_participate=false", empty)
+	check(t, pair.AccessToken, `{"is_participate":true}`, empty)
+	check(t, pair.AccessToken, `{"is_participate":false}`, empty)
 	execSQL(t, db, `DROP TABLE tournament_prize_rules`)
 	assertError(t, tournamentRequest(api, pair.AccessToken, ""), http.StatusInternalServerError, "INTERNAL_ERROR")
 	execSQL(t, db, `DELETE FROM users WHERE id = 81`)

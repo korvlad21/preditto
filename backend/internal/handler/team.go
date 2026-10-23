@@ -42,11 +42,6 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 
 func (h *TeamHandler) GetAllTeams(c *gin.Context) {
 	var req teamsdto.GetAllTeamsRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
-		return
-	}
-
 	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return

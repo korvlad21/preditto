@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -72,7 +73,7 @@ func (h *TournamentHandler) GetAllTournaments(c *gin.Context) {
 		return
 	}
 	var req tournamentsdto.GetAllTournamentsRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}

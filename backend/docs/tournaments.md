@@ -5,30 +5,33 @@ All responses follow the [shared API contract and client migration guide](respon
 `POST /api/tournaments/get_all_tournaments` requires an access token in
 `Authorization: Bearer <access_token>` and returns an array in `data.tournaments` ordered by
 `created_at DESC, id DESC`. No matches, including an empty table, return `data.tournaments: []` with HTTP 200.
-No request body is required. GET is not registered and returns HTTP 404.
+Filters are read only from the JSON body; query parameters are ignored.
+Send `Content-Type: application/json`. An empty body or `{}` applies no filters.
+GET is not registered and returns HTTP 404.
 
-The optional query parameter `status` matches `tournaments.status` exactly.
+The optional JSON field `status` matches `tournaments.status` exactly.
 Omitted `status`, an empty value, and `all` apply no tournament-status restriction,
 including rows with a null status. Other values are case-sensitive and are not trimmed;
 unknown values return an empty array. For example:
 
-```text
-POST /api/tournaments/get_all_tournaments?status=active
+```json
+{"status":"active"}
 ```
 
-The optional boolean query parameter `is_participate` filters by the authenticated
+The optional boolean JSON field `is_participate` filters by the authenticated
 user's participation. `true` includes only tournaments with a matching
 `tournament_participants` row for that user and `status = 'active'`; `false`
 includes only tournaments without such a row. `not_paid` and `blocked` do not
-count as participation. Omitting the parameter applies no participation filter.
+count as participation. Omitting the field or passing `null` applies no participation filter.
 Both filters combine with AND, for example:
 
-```text
-POST /api/tournaments/get_all_tournaments?status=active&is_participate=true
+```json
+{"status":"active","is_participate":true}
 ```
 
 The user ID comes from `middleware.CurrentUser(c)` and cannot be overridden by
-query parameters. Invalid boolean values return HTTP 400 (`INVALID_REQUEST`).
+request fields. Malformed JSON or incompatible field types return HTTP 400
+(`INVALID_REQUEST`); booleans must be `true` or `false`, not strings.
 
 Each object contains exactly these fields:
 
@@ -63,7 +66,7 @@ Participation filtering uses a correlated `EXISTS` or `NOT EXISTS` in that same
 query, matching the current user and active participation status without changing
 the participant counts or response fields.
 The model is the response shape, following the teams API pattern; the request
-DTO only binds the query string.
+DTO only binds the JSON body.
 
 Invalid authentication returns HTTP 401 (`UNAUTHORIZED`); a missing user returns
 404 (`USER_NOT_FOUND`). Binding errors return 400 (`INVALID_REQUEST`), and
