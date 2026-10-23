@@ -12,6 +12,7 @@ const (
 	UsernameAlreadyExists  = "USERNAME_ALREADY_EXISTS"
 	EmailAlreadyExists     = "EMAIL_ALREADY_EXISTS"
 	FavoriteTeamNotFound   = "FAVORITE_TEAM_NOT_FOUND"
+	TeamNotFound           = "TEAM_NOT_FOUND"
 	UserNotFound           = "USER_NOT_FOUND"
 	UserInfoNotFound       = "USER_INFO_NOT_FOUND"
 	TournamentIDRequired   = "TOURNAMENT_ID_REQUIRED"

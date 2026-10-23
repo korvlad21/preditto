@@ -39,6 +39,7 @@ Unknown codes should use a generic localized error fallback.
 | `/api/auth/logout` | 200 | Omitted |
 | `/api/user/get_user_info` | 200 | Existing account and profile fields |
 | `/api/teams/get_all_teams` | 200 | `{"teams":[...]}` |
+| `/api/teams/get_team` | 200 | `{"team":{...}}` |
 | `/api/teams/get_all_countries` | 200 | `{"countries":[...]}` |
 | `/api/tournaments/get_all_tournaments` | 200 | `{"tournaments":[...]}` |
 | `/api/tournaments/select_tournament` | 200 | Omitted |

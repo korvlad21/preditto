@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	teamsdto "preditto/internal/dto/teams"
+	"preditto/internal/repository"
 	"preditto/internal/response"
 	"preditto/internal/service"
 )
@@ -18,6 +19,25 @@ type TeamHandler struct {
 
 func NewTeamHandler(service *service.TeamService) *TeamHandler {
 	return &TeamHandler{service: service}
+}
+
+func (h *TeamHandler) GetTeam(c *gin.Context) {
+	var req teamsdto.GetTeamRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
+		return
+	}
+	team, err := h.service.GetTeam(c.Request.Context(), req.ID)
+	if errors.Is(err, repository.ErrNotFound) {
+		response.AbortError(c, http.StatusNotFound, response.TeamNotFound)
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
+		return
+	}
+	response.Success(c, http.StatusOK, gin.H{"team": team})
 }
 
 func (h *TeamHandler) GetAllTeams(c *gin.Context) {

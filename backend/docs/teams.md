@@ -57,6 +57,51 @@ require `PREDITTO_AUTH_TEST_DSN` pointing to a PostgreSQL test database:
 go test -mod=readonly ./internal/handler -run '^TestGetAllTeamsPostgres$' -count=1
 ```
 
+## Single team
+
+`POST /api/teams/get_team` is public and requires a JSON body containing `id`,
+a positive signed 64-bit integer. Query parameters do not supply or override it.
+
+Request:
+
+```json
+{"id":11}
+```
+
+HTTP 200 response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "team": {
+      "id": 11,
+      "name": "British team",
+      "short_name": "BRI",
+      "slug": "british-team",
+      "country": "GBR",
+      "logo_url": "/logos/teams/british-team.svg"
+    }
+  }
+}
+```
+
+The response reuses `model.Team`, including nullable `short_name` and `logo_url`.
+Missing, null, non-positive, out-of-range or incorrectly typed IDs and malformed
+JSON return HTTP 400 with `{"success":false,"error":"INVALID_REQUEST"}`.
+A missing team returns HTTP 404 with `{"success":false,"error":"TEAM_NOT_FOUND"}`.
+Database failures return HTTP 500 with `INTERNAL_ERROR`, without database details.
+
+`TeamHandler.GetTeam` validates `GetTeamRequest`, then calls `TeamService.GetTeam`
+and `TeamRepository.GetTeam`. The repository performs one parameterized query
+with `WHERE id = $1` and maps `sql.ErrNoRows` to the shared `repository.ErrNotFound`.
+It shares the six-column projection with the list query.
+
+Run `go test -mod=readonly ./internal/handler -run '^TestGetTeam' -count=1`
+from `backend/`. PostgreSQL cases require `PREDITTO_AUTH_TEST_DSN`; they cover
+exact fields, nullability, full int64 IDs, JSON-body selection and missing teams.
+Validation, method and database-error checks also run without PostgreSQL.
+
 ## Countries
 
 `POST /api/teams/get_all_countries` is public and requires no request parameters

@@ -15,6 +15,10 @@ func NewTeamService(repo *repository.TeamRepository) *TeamService {
 	return &TeamService{repo: repo}
 }
 
+func (s *TeamService) GetTeam(ctx context.Context, id int64) (model.Team, error) {
+	return s.repo.GetTeam(ctx, id)
+}
+
 func (s *TeamService) GetAllTeams(ctx context.Context, country string) ([]model.Team, error) {
 	if country == "ALL" {
 		country = ""

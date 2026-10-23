@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"preditto/internal/model"
@@ -14,6 +15,19 @@ type TeamRepository struct {
 
 func NewTeamRepository(db *sql.DB) *TeamRepository {
 	return &TeamRepository{db: db}
+}
+
+func (r *TeamRepository) GetTeam(ctx context.Context, id int64) (model.Team, error) {
+	var team model.Team
+	err := r.db.QueryRowContext(ctx, `SELECT id, name, short_name, slug, country, logo_url FROM teams WHERE id = $1`, id).
+		Scan(&team.ID, &team.Name, &team.ShortName, &team.Slug, &team.Country, &team.LogoURL)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Team{}, ErrNotFound
+	}
+	if err != nil {
+		return model.Team{}, fmt.Errorf("get team: %w", err)
+	}
+	return team, nil
 }
 
 func (r *TeamRepository) GetAllTeams(ctx context.Context, country string) ([]model.Team, error) {

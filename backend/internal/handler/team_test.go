@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,89 @@ import (
 	"preditto/internal/router"
 	"preditto/internal/service"
 )
+
+func getTeamRequest(api http.Handler, query, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/api/teams/get_team"+query, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	return w
+}
+
+func TestGetTeamInvalidRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	api := router.New()
+	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(nil), handler.NewCountryHandler(nil))
+	for _, body := range []string{
+		``, `{}`, `null`, `{`, `[]`, `{"id":null}`, `{"id":0}`, `{"id":-1}`,
+		`{"id":"5"}`, `{"id":1.5}`, `{"id":true}`, `{"id":{}}`, `{"id":[]}`,
+		`{"id":9223372036854775808}`, `{"id":"5 OR 1=1"}`,
+	} {
+		t.Run(body, func(t *testing.T) {
+			assertError(t, getTeamRequest(api, "", body), http.StatusBadRequest, "INVALID_REQUEST")
+		})
+	}
+	assertError(t, getTeamRequest(api, "?id=5", `{}`), http.StatusBadRequest, "INVALID_REQUEST")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/teams/get_team?id=5", nil))
+	assertError(t, w, http.StatusNotFound, "NOT_FOUND")
+}
+
+func TestGetTeamDatabaseError(t *testing.T) {
+	db, err := sql.Open("postgres", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	gin.SetMode(gin.TestMode)
+	api := router.New()
+	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(service.NewTeamService(repository.NewTeamRepository(db))), handler.NewCountryHandler(nil))
+	w := getTeamRequest(api, "", `{"id":5}`)
+	assertError(t, w, http.StatusInternalServerError, "INTERNAL_ERROR")
+	if strings.Contains(w.Body.String(), "database is closed") {
+		t.Fatalf("database error leaked: %s", w.Body.String())
+	}
+}
+
+func TestGetTeamPostgres(t *testing.T) {
+	db := postgres(t)
+	execSQL(t, db, `
+		INSERT INTO teams (id, name, short_name, slug, country, logo_url) VALUES
+			(9223372036854775807, 'Another test team', 'ATT', 'another-test-team', 'TST', '/logos/teams/another-test-team.svg');
+	`)
+	gin.SetMode(gin.TestMode)
+	api := router.New()
+	router.RegisterTeamRoutes(api.Group("/api"), handler.NewTeamHandler(service.NewTeamService(repository.NewTeamRepository(db))), handler.NewCountryHandler(nil))
+	for _, tc := range []struct {
+		name, body string
+		want       string
+	}{
+		{"nullable fields", `{"id":5}`, `{"id":5,"name":"Test team","short_name":null,"slug":"test-team","country":"TST","logo_url":null}`},
+		{"full int64 ID", `{"id":9223372036854775807}`, `{"id":9223372036854775807,"name":"Another test team","short_name":"ATT","slug":"another-test-team","country":"TST","logo_url":"/logos/teams/another-test-team.svg"}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := getTeamRequest(api, "?id=999", tc.body)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d: %s", w.Code, w.Body.String())
+			}
+			var got, want map[string]json.RawMessage
+			if err := json.Unmarshal(successData(t, w, "team"), &got); err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal([]byte(tc.want), &want); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("team = %s, want %s", w.Body.String(), tc.want)
+			}
+		})
+	}
+	assertError(t, getTeamRequest(api, "", `{"id":999}`), http.StatusNotFound, "TEAM_NOT_FOUND")
+	execSQL(t, db, `DELETE FROM teams`)
+	assertError(t, getTeamRequest(api, "", `{"id":5}`), http.StatusNotFound, "TEAM_NOT_FOUND")
+}
 
 func teamRequest(api http.Handler, query, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/api/teams/get_all_teams"+query, strings.NewReader(body))
