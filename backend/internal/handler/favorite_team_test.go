@@ -53,6 +53,13 @@ func favoriteTeamRequest(api http.Handler, token, query, body string) *httptest.
 	return w
 }
 
+func assertNoFavoriteTeam(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+	if w.Code != http.StatusOK || string(successData(t, w, "team")) != "null" {
+		t.Fatalf("expected successful null team: %d %s", w.Code, w.Body.String())
+	}
+}
+
 func TestGetFavoriteTeamAuthAndMissingFavorite(t *testing.T) {
 	users := &favoriteTeamLoader{user: model.UserInfo{ID: 81}}
 	api, tokens := favoriteTeamAPI(t, nil, users)
@@ -66,7 +73,7 @@ func TestGetFavoriteTeamAuthAndMissingFavorite(t *testing.T) {
 	if users.calls != 0 {
 		t.Fatal("unauthenticated request loaded user")
 	}
-	assertError(t, favoriteTeamRequest(api, pair.AccessToken, "?id=5", `{"favorite_team_id":5}`), http.StatusNotFound, "FAVORITE_TEAM_NOT_FOUND")
+	assertNoFavoriteTeam(t, favoriteTeamRequest(api, pair.AccessToken, "?id=5", `{"favorite_team_id":5}`))
 	if users.calls != 1 {
 		t.Fatalf("user loads = %d, want 1", users.calls)
 	}
@@ -108,9 +115,9 @@ func TestGetFavoriteTeamPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertError(t, favoriteTeamRequest(api, other.AccessToken, "?user_id=81", ""), http.StatusNotFound, "FAVORITE_TEAM_NOT_FOUND")
+	assertNoFavoriteTeam(t, favoriteTeamRequest(api, other.AccessToken, "?user_id=81", ""))
 	execSQL(t, db, `UPDATE user_info SET favorite_team_id = NULL WHERE user_id = 81`)
-	assertError(t, favoriteTeamRequest(api, pair.AccessToken, "", ""), http.StatusNotFound, "FAVORITE_TEAM_NOT_FOUND")
+	assertNoFavoriteTeam(t, favoriteTeamRequest(api, pair.AccessToken, "", ""))
 
 	// A team may disappear after LoadUser has captured its ID.
 	id := int64(999)

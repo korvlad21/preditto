@@ -14,7 +14,7 @@ Owns team/country reference-data reads, seed identities and logo URL conventions
 
 The [teams/countries API contract](../../backend/docs/teams.md) owns exact response fields and errors. Both lists use name ordering and return empty arrays rather than null. No secondary sort is specified for equal names. The three endpoints above are public.
 
-`POST /api/teams/get_favorite_team` is protected by RequireAuth and LoadUser. It takes no parameters and uses FavoriteTeamID from the shared CurrentUser snapshot, already loaded from user_info. No second profile query is made. It reuses the GetTeam handler's retrieval/response helper and existing service/repository lookup; success returns data.team. A null favorite (including a missing profile) returns FAVORITE_TEAM_NOT_FOUND; a missing referenced team returns TEAM_NOT_FOUND, both with HTTP 404. See the [favorite-team contract](../../backend/docs/teams.md#favorite-team).
+`POST /api/teams/get_favorite_team` is protected by RequireAuth and LoadUser. It takes no parameters and uses FavoriteTeamID from the shared CurrentUser snapshot, already loaded from user_info. No second profile query is made. It reuses the GetTeam handler's retrieval/response helper and existing service/repository lookup; success returns data.team. A null favorite (including a missing profile) returns HTTP 200 with success true and data.team null; a missing referenced team returns HTTP 404 TEAM_NOT_FOUND. See the [favorite-team contract](../../backend/docs/teams.md#favorite-team).
 
 ## Business and query behavior
 

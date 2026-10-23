@@ -38,7 +38,7 @@ func (h *TeamHandler) GetFavoriteTeam(c *gin.Context) {
 		return
 	}
 	if user.FavoriteTeamID == nil {
-		response.AbortError(c, http.StatusNotFound, response.FavoriteTeamNotFound)
+		response.Success(c, http.StatusOK, gin.H{"team": nil})
 		return
 	}
 	h.getTeam(c, *user.FavoriteTeamID)

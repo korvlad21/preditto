@@ -117,12 +117,16 @@ There is one team lookup when a favorite ID is present, and none when it is null
 
 HTTP 200 uses exactly the same `data.team` shape as `get_team`, including nullable
 `short_name` and `logo_url`. Responses use `Cache-Control: no-store`.
+When `favorite_team_id` is null (including a missing profile), HTTP 200 returns:
+
+```json
+{"success":true,"data":{"team":null}}
+```
 
 | HTTP status | Error | Meaning |
 | --- | --- | --- |
 | 401 | `UNAUTHORIZED` | Missing, invalid or expired access token |
 | 404 | `USER_NOT_FOUND` | The authenticated account no longer exists |
-| 404 | `FAVORITE_TEAM_NOT_FOUND` | No favorite is selected, including a missing profile |
 | 404 | `TEAM_NOT_FOUND` | The team referenced by the loaded snapshot no longer exists |
 | 500 | `INTERNAL_ERROR` | Database failure or missing current-user context |
 
