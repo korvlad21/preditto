@@ -92,11 +92,11 @@ func (r *UserRepository) FindUserByLogin(ctx context.Context, login string) (mod
 func (r *UserRepository) GetUserInfo(ctx context.Context, id int64) (model.UserInfo, error) {
 	var user model.UserInfo
 	err := r.query.QueryRowContext(ctx, `
-		SELECT u.id, u.username, u.email, u.status,
+		SELECT u.id, u.username, u.email, u.status, u.created_at,
 			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id, i.selected_tournament_id
 		FROM users u LEFT JOIN user_info i ON i.user_id = u.id
 		WHERE u.id = $1
-	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.Status,
+	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.Status, &user.CreatedAt,
 		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID, &user.SelectedTournamentID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.UserInfo{}, ErrNotFound

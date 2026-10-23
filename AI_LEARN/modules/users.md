@@ -8,6 +8,8 @@ Owns account/profile persistence, the request's current-user snapshot, selected 
 
 `POST /api/user/get_user_info` returns the authenticated account/profile with HTTP 200. It takes no user selector; request/query fields cannot select another account. Exact fields, errors and examples are in the [user contract](../../backend/docs/user.md). Registration/login and token policy belong to [auth](auth.md); tournament selection coordination belongs to [tournaments](tournaments.md).
 
+The response includes the account creation timestamp from `users.created_at` through `UserInfo.CreatedAt`. The existing joined query loads it into the shared snapshot without additional database queries, including when no profile exists.
+
 ## Current-user snapshot
 
 `RequireAuth` establishes UserIDKey; `LoadUser` then calls UserService.GetUserInfo once and stores a shared `*model.UserInfo` in Gin context. `UserHandler` reads `middleware.CurrentUser` without another database query. The chain is attached in [main.go](../../backend/cmd/api/main.go) and shared with tournament routes.

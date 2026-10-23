@@ -91,9 +91,9 @@ func TestGetUserInfoDatabaseError(t *testing.T) {
 func TestGetUserInfoPostgres(t *testing.T) {
 	db := postgres(t)
 	execSQL(t, db, `
-		INSERT INTO users (id, username, email, password_hash, status) VALUES
-			(81, 'new_user', 'new_user@example.com', 'private-password-hash', 'ACTIVE'),
-			(82, 'other_user', 'other_user@example.com', 'other-password-hash', 'ACTIVE');
+		INSERT INTO users (id, username, email, password_hash, status, created_at) VALUES
+			(81, 'new_user', 'new_user@example.com', 'private-password-hash', 'ACTIVE', '2026-01-02 03:04:05.123456'),
+			(82, 'other_user', 'other_user@example.com', 'other-password-hash', 'ACTIVE', '2026-02-03 04:05:06');
 		INSERT INTO user_info (user_id, first_name, last_name, avatar_url, favorite_team_id)
 		VALUES (81, 'Vladislav', 'Korobkin', '/avatars/81.png', 5);
 	`)
@@ -103,7 +103,8 @@ func TestGetUserInfoPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string]any{
-		"id": float64(81), "username": "new_user", "email": "new_user@example.com", "status": "ACTIVE",
+		"created_at": "2026-01-02T03:04:05.123456Z",
+		"id":         float64(81), "username": "new_user", "email": "new_user@example.com", "status": "ACTIVE",
 		"first_name": "Vladislav", "last_name": "Korobkin", "avatar_url": "/avatars/81.png", "favorite_team_id": float64(5), "selected_tournament_id": nil,
 	}
 	check := func(t *testing.T, token, query, body string, want map[string]any) {
@@ -175,7 +176,8 @@ func TestGetUserInfoPostgres(t *testing.T) {
 	}
 	t.Run("another authenticated user", func(t *testing.T) {
 		check(t, otherPair.AccessToken, "?user_id=81", "", map[string]any{
-			"id": float64(82), "username": "other_user", "email": "other_user@example.com", "status": "ACTIVE",
+			"created_at": "2026-02-03T04:05:06Z",
+			"id":         float64(82), "username": "other_user", "email": "other_user@example.com", "status": "ACTIVE",
 			"first_name": nil, "last_name": nil, "avatar_url": nil, "favorite_team_id": nil, "selected_tournament_id": nil,
 		})
 	})

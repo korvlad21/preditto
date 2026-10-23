@@ -22,6 +22,7 @@ Example HTTP 200 response:
     "username": "new_user",
     "email": "new_user@example.com",
     "status": "ACTIVE",
+    "created_at": "2026-01-02T03:04:05.123456Z",
     "first_name": "Vladislav",
     "last_name": "Korobkin",
     "avatar_url": null,
@@ -30,6 +31,10 @@ Example HTTP 200 response:
   }
 }
 ```
+
+`created_at` is the account creation timestamp from `users.created_at`, serialized
+as an RFC 3339 string with fractional seconds when present. It is loaded in the
+existing query and remains available when the profile is missing.
 
 Status is returned as stored in `users`, without case conversion. The five profile
 fields preserve SQL NULL as JSON `null`, and empty strings remain empty strings.
@@ -48,7 +53,7 @@ not immediately invalidate an issued access token; no new role checks are added.
 `RegisterTournamentRoutes` receives the same protected group. Public auth and team routes
 remain on their public groups. `LoadUser` reuses `UserService` and the `UserRepository`
 in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
-selects the nine response columns; it never
+selects the ten response columns; it never
 reads password hashes. `model.UserInfo` is the response shape because the existing
 auth `model.User` does not preserve nullable names or include avatars.
 

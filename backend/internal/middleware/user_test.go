@@ -53,7 +53,7 @@ func TestLoadUser(t *testing.T) {
 				if id != 81 {
 					t.Fatalf("user ID = %d", id)
 				}
-				return model.UserInfo{ID: id}, tc.err
+				return model.UserInfo{ID: id, CreatedAt: time.Date(2026, 1, 2, 3, 4, 5, 123456000, time.UTC)}, tc.err
 			})), func(c *gin.Context) {
 				downstream = true
 				user, ok := middleware.CurrentUser(c)
@@ -93,6 +93,9 @@ func TestLoadUser(t *testing.T) {
 			}
 			if tc.status == 200 && !strings.Contains(w.Body.String(), `"selected_tournament_id":202`) {
 				t.Fatal("handler did not use updated context")
+			}
+			if tc.status == 200 && body["data"].(map[string]any)["created_at"] != "2026-01-02T03:04:05.123456Z" {
+				t.Fatal("handler did not preserve account creation timestamp")
 			}
 		})
 	}
