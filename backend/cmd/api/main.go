@@ -66,8 +66,10 @@ func run() error {
 	tournamentService := service.NewTournamentService(repository.NewTournamentRepository(db), users)
 	apirouter.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(tournamentService))
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
+	teamHandler := handler.NewTeamHandler(teamService)
 	countryService := service.NewCountryService(repository.NewCountryRepository(db))
-	apirouter.RegisterTeamRoutes(router.Group("/api"), handler.NewTeamHandler(teamService), handler.NewCountryHandler(countryService))
+	apirouter.RegisterTeamRoutes(router.Group("/api"), teamHandler, handler.NewCountryHandler(countryService))
+	apirouter.RegisterProtectedTeamRoutes(protected, teamHandler)
 
 	router.GET("/", gin.WrapF(helloHandler.Index))
 	router.GET("/hello", gin.WrapF(helloHandler.Hello))

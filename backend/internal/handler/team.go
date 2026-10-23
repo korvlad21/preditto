@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	teamsdto "preditto/internal/dto/teams"
+	"preditto/internal/middleware"
 	"preditto/internal/repository"
 	"preditto/internal/response"
 	"preditto/internal/service"
@@ -27,7 +28,24 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
-	team, err := h.service.GetTeam(c.Request.Context(), req.ID)
+	h.getTeam(c, req.ID)
+}
+
+func (h *TeamHandler) GetFavoriteTeam(c *gin.Context) {
+	user, ok := middleware.CurrentUser(c)
+	if !ok {
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
+		return
+	}
+	if user.FavoriteTeamID == nil {
+		response.AbortError(c, http.StatusNotFound, response.FavoriteTeamNotFound)
+		return
+	}
+	h.getTeam(c, *user.FavoriteTeamID)
+}
+
+func (h *TeamHandler) getTeam(c *gin.Context, id int64) {
+	team, err := h.service.GetTeam(c.Request.Context(), id)
 	if errors.Is(err, repository.ErrNotFound) {
 		response.AbortError(c, http.StatusNotFound, response.TeamNotFound)
 		return

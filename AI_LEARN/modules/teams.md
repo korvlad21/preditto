@@ -12,7 +12,9 @@ Owns team/country reference-data reads, seed identities and logo URL conventions
 | `/api/teams/get_team` | Required positive int64 id in JSON; returns data.team or TEAM_NOT_FOUND |
 | `/api/teams/get_all_countries` | No required parameters/body; returns data.countries |
 
-The [teams/countries API contract](../../backend/docs/teams.md) owns exact response fields and errors. Both lists use name ordering and return empty arrays rather than null. No secondary sort is specified for equal names. All three endpoints are public.
+The [teams/countries API contract](../../backend/docs/teams.md) owns exact response fields and errors. Both lists use name ordering and return empty arrays rather than null. No secondary sort is specified for equal names. The three endpoints above are public.
+
+`POST /api/teams/get_favorite_team` is protected by RequireAuth and LoadUser. It takes no parameters and uses FavoriteTeamID from the shared CurrentUser snapshot, already loaded from user_info. No second profile query is made. It reuses the GetTeam handler's retrieval/response helper and existing service/repository lookup; success returns data.team. A null favorite (including a missing profile) returns FAVORITE_TEAM_NOT_FOUND; a missing referenced team returns TEAM_NOT_FOUND, both with HTTP 404. See the [favorite-team contract](../../backend/docs/teams.md#favorite-team).
 
 ## Business and query behavior
 
@@ -26,7 +28,7 @@ Nullable team short_name and logo_url remain JSON null when absent. The country 
 
 | Sources | Responsibility |
 | --- | --- |
-| [router/team.go](../../backend/internal/router/team.go) | All three public routes |
+| [router/team.go](../../backend/internal/router/team.go) | Three public routes and separate protected favorite-team registration |
 | [team handler](../../backend/internal/handler/team.go), [country handler](../../backend/internal/handler/country.go) | Binding and response/error mapping |
 | [team service](../../backend/internal/service/team.go), [country service](../../backend/internal/service/country.go) | Filter normalization and forwarding |
 | [team repository](../../backend/internal/repository/team.go), [country repository](../../backend/internal/repository/country.go) | Parameterized reads and name ordering |
@@ -44,7 +46,9 @@ Team upserts restore name, abbreviation, country and logo_url while preserving I
 
 ## Verification
 
-From `backend/`: `go test -race -mod=readonly -count=1 ./internal/handler -run 'TestGetTeam|TestGetAllTeams|TestGetAllCountries'`. Database scenarios need disposable `PREDITTO_AUTH_TEST_DSN`.
+From `backend/`: `go test -race -mod=readonly -count=1 ./internal/handler -run 'TestGetTeam|TestGetFavoriteTeam|TestGetAllTeams|TestGetAllCountries'`. Database scenarios need disposable `PREDITTO_AUTH_TEST_DSN`.
+
+[Favorite-team tests](../../backend/internal/handler/favorite_team_test.go) cover authentication, one snapshot load, missing context/favorite/profile/team/user, ignored selectors, response parity with GetTeam and database errors.
 
 GetTeam tests cover required/body-only input, positive int64 validation, exact response fields, nullability, missing teams, unsupported methods and database-error secrecy.
 

@@ -102,6 +102,35 @@ from `backend/`. PostgreSQL cases require `PREDITTO_AUTH_TEST_DSN`; they cover
 exact fields, nullability, full int64 IDs, JSON-body selection and missing teams.
 Validation, method and database-error checks also run without PostgreSQL.
 
+## Favorite team
+
+`POST /api/teams/get_favorite_team` requires an access JWT in
+`Authorization: Bearer <access_token>`. No body or parameters are required;
+request fields cannot choose a user or team.
+
+`RequireAuth` followed by `LoadUser` loads the current account/profile once.
+The handler reads `middleware.CurrentUser(c).FavoriteTeamID`, already selected
+from `user_info.favorite_team_id`, without querying the profile again.
+It shares team retrieval, error mapping and response formatting with `GetTeam`
+through the existing `TeamService.GetTeam` and `TeamRepository.GetTeam` methods.
+There is one team lookup when a favorite ID is present, and none when it is null.
+
+HTTP 200 uses exactly the same `data.team` shape as `get_team`, including nullable
+`short_name` and `logo_url`. Responses use `Cache-Control: no-store`.
+
+| HTTP status | Error | Meaning |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | Missing, invalid or expired access token |
+| 404 | `USER_NOT_FOUND` | The authenticated account no longer exists |
+| 404 | `FAVORITE_TEAM_NOT_FOUND` | No favorite is selected, including a missing profile |
+| 404 | `TEAM_NOT_FOUND` | The team referenced by the loaded snapshot no longer exists |
+| 500 | `INTERNAL_ERROR` | Database failure or missing current-user context |
+
+`RegisterProtectedTeamRoutes` is wired to the shared protected group in
+`cmd/api/main.go`. The other team routes remain public.
+Run `go test -mod=readonly ./internal/handler -run '^TestGetFavoriteTeam' -count=1`
+from `backend/`, with `PREDITTO_AUTH_TEST_DSN` for PostgreSQL scenarios.
+
 ## Countries
 
 `POST /api/teams/get_all_countries` is public and requires no request parameters
