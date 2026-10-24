@@ -7,7 +7,7 @@ Select documentation by the behavior being changed, not only by the directory na
 | Register/login, passwords, JWT, refresh/logout, sessions | [Auth](auth.md) | Users for transactional account/profile/role writes |
 | Account/profile storage, get_user_info, CurrentUser/LoadUser, role assignments | [Users](users.md) | Auth for identity; teams for favorites; tournaments for selection |
 | Teams, countries, country filters, team logos and reference seeds | [Teams and countries](teams.md) | Users for favorite-team references; asset inventory for logos |
-| Tournament lists/status, selected tournament, participant counts, prizes and tournament seeds | [Tournaments](tournaments.md) | Users for profile writes/snapshot; auth for access identity |
+| Tournament lists/status, selected tournament, participant counts, prizes, stages and tournament seeds | [Tournaments](tournaments.md) | Users for profile writes/snapshot; auth for access identity |
 
 For selection changes read users and tournaments; for registration changes read auth and users. For common response or middleware changes, read [architecture](../architecture.md) and affected module contracts. Frontend currently has only starter UI and static assets: use [its README](../../frontend/README.md), plus the relevant backend module when adding integration.
 

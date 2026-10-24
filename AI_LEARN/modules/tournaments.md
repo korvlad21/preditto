@@ -4,7 +4,7 @@ Reviewed: 2026-10-22, source/schema inspection and targeted tournament/user-info
 
 ## Purpose and API
 
-Owns tournament listing, user selection coordination and participant/prize projections. Read this for filters, selection, counts, prizes or tournament seeds.
+Owns tournament listing, user selection coordination, participant/prize projections and stage persistence. Read this for filters, selection, counts, prizes, stages or tournament seeds.
 
 | Protected POST route | Successful result |
 | --- | --- |
@@ -39,9 +39,12 @@ Selection is not membership or payment and imposes no tournament-status restrict
 | [tournaments, migration 10](../../backend/migrations/000010_create_tournaments.up.sql) | Unique slug; nullable status, dates, cost and currency; allowed non-null statuses are planned/active/finished/cancelled |
 | [tournament_participants, migration 11](../../backend/migrations/000011_create_tournament_participants.up.sql) | Unique tournament/user pair; required active/not_paid/blocked status; indexes by user and tournament/status |
 | [tournament_prize_rules, migration 12](../../backend/migrations/000012_create_tournament_prize_rules.up.sql) | Primary key tournament/place; each percentage between 0 and 100 |
+| [tournament_stages, migration 13](../../backend/migrations/000013_create_tournament_stages.up.sql) | Required tournament FK without cascading deletion; unique tournament/code; positive sequence_no; nonnegative outcome/exact-score points; nullable prediction window with close >= open when both are set; index by tournament/sequence |
 | [user_info, migration 4](../../backend/migrations/000004_create_user_info.up.sql) | Nullable selected_tournament_id; migration 10 adds its FK with ON DELETE SET NULL |
 
 Participant and prize-rule references do not declare cascading deletion. The selection FK alone does not make tournament deletion unrestricted. Unlike users/user_info, tournaments has no automatic updated_at trigger; the seed upsert sets it explicitly. The schema does not require a positive prize place, a total percentage of 95/100, ordered dates or nonnegative cost; do not claim these constraints exist.
+
+Migration 13 stores stage status and stage_kind as required VARCHAR(20) fields with CHECK constraints: active/planned/finished/cancelled and group/round/play-off respectively. It creates no PostgreSQL enum types. Stage timestamps use TIMESTAMP(6); created_at/updated_at default to CURRENT_TIMESTAMP without an update trigger. Stage sequence numbers need not be unique within a tournament. Rollback drops only the stage table, without CASCADE. Stages currently have no application model, API or seeds.
 
 ## Seeds, dependencies and limits
 
@@ -52,6 +55,8 @@ The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as
 [Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. Join/leave, payment, predictions, scoring, payouts and application frontend integration are not implemented.
 
 ## Verification
+
+Stage schema verified on 2026-10-24 in disposable PostgreSQL 18.6: all thirteen migration pairs applied, rolled back and reapplied; stage columns/defaults, allowed status/kind values, indexes, FK, unique code and check constraints exercised. Migration 13 rollback preserved tournament data.
 
 From `backend/`: `go test -race -mod=readonly -count=1 ./internal/handler -run 'TestGetAllTournaments|TestSelectTournament|TestGetUserInfo'`, with disposable `PREDITTO_AUTH_TEST_DSN` for database scenarios.
 
