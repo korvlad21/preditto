@@ -54,7 +54,7 @@ The [tournament](../../backend/seeds/development/tournaments.go), [participant](
 
 The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as an active participant. The [seed guide](../../backend/seeds/README.md) owns the three configured tournament datasets, dates, costs and counts. Each currently allocates 95% in prize rules; this is dataset configuration, not an enforced general rule. SQL stores DECIMAL, seeds pass decimal strings, and the response model reads cost/percentages into *float64. Exact monetary calculations are not implemented.
 
-[Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. Join/leave, payment, predictions, scoring, payouts and application frontend integration are not implemented.
+[Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. [Predictions](predictions.md) references participants without cascading deletion and documents the current tournament-consistency limitation. Join/leave, payment, prediction submission, scoring, payouts and application frontend integration are not implemented.
 
 ## Verification
 

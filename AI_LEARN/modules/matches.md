@@ -22,7 +22,7 @@ Both migration directions are transactional. Rollback drops only matches; its in
 
 [Tournaments](tournaments.md) owns stages; [teams](teams.md) owns the shared team directory. Despite their names, home_tournament_team_id and away_tournament_team_id reference teams directly. No tournament_teams table exists, and these FKs do not establish membership in the stage's tournament. The column names intentionally retain the supplied schema contract.
 
-Match storage does not implement predictions, scoring rules or tournament roster management.
+[Predictions](predictions.md) references matches without cascading deletion; a referenced match cannot be deleted until its predictions are removed. Match storage does not implement prediction submission, scoring rules or tournament roster management.
 
 ## Verification
 

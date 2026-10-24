@@ -9,10 +9,11 @@ Select documentation by the behavior being changed, not only by the directory na
 | Teams, countries, country filters, team logos and reference seeds | [Teams and countries](teams.md) | Users for favorite-team references; asset inventory for logos |
 | Tournament lists/status, selected tournament, participant counts, prizes, stages and tournament seeds | [Tournaments](tournaments.md) | Users for profile writes/snapshot; auth for access identity |
 | Match schema, stage/team references, scores, match status and schedule indexes | [Matches](matches.md) | Tournaments for stages; teams for the shared team directory |
+| Prediction schema, participant/match uniqueness, predicted scores, result fields and tournament consistency | [Predictions](predictions.md) | Tournaments for participants/stages; matches for match references |
 
 For selection changes read users and tournaments; for registration changes read auth and users. For common response or middleware changes, read [architecture](../architecture.md) and affected module contracts. Frontend currently has only starter UI and static assets: use [its README](../../frontend/README.md), plus the relevant backend module when adding integration.
 
-Countries remain in teams; participation and prize rules remain in tournaments; roles remain in users. Split them only when independent behavior and task routing justify it. Predictions, payments and scoring have no implemented modules yet.
+Countries remain in teams; participation and prize rules remain in tournaments; roles remain in users. Split them only when independent behavior and task routing justify it. Predictions currently implement persistence only; payments and scoring have no implemented modules yet.
 
 ## Adding or splitting documentation
 

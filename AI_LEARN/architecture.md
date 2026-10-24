@@ -31,8 +31,9 @@ Use the [module index](modules/index.md) to select sources and tests.
 | [Teams](modules/teams.md) | Team/country reference data and logo paths | Country FK and frontend static assets |
 | [Tournaments](modules/tournaments.md) | Listing, selection coordination, participant/prize projections | User profile selection and authenticated snapshot |
 | [Matches](modules/matches.md) | Match schema, scores, status and schedule storage | Tournament stages and shared team references |
+| [Predictions](modules/predictions.md) | Predicted scores and stored calculation results | Tournament participants and matches |
 
-Countries share the teams document. Participation and prize rules belong to tournaments. Role tables and assignment belong to users; an authorization policy layer is not implemented. Predictions, match scoring, payments, payouts, tournament join/leave endpoints and application frontend screens are not implemented. Do not infer these features from names, costs or seed data.
+Countries share the teams document. Participation and prize rules belong to tournaments. Role tables and assignment belong to users; an authorization policy layer is not implemented. Prediction submission, match scoring, payments, payouts, tournament join/leave endpoints and application frontend screens are not implemented. Predictions currently have schema only. Do not infer these features from names, costs or seed data.
 
 ## Shared request and transaction behavior
 
@@ -48,6 +49,6 @@ Public error-code strings are centralized in [response/error.go](../backend/inte
 
 ## Persistence and verification boundaries
 
-The current schema has fourteen migration pairs and fourteen application tables. Module documents explain important relationships; SQL remains authoritative for exact types and constraints. Existing baseline migrations 4 and 10 were revised for selected tournament storage: an already applied older baseline will not be replayed by normal `up`. See [active constraints](system_state.md).
+The current schema has fifteen migration pairs and fifteen application tables. Module documents explain important relationships; SQL remains authoritative for exact types and constraints. Existing baseline migrations 4 and 10 were revised for selected tournament storage: an already applied older baseline will not be replayed by normal `up`. See [active constraints](system_state.md).
 
 Source review establishes implementation behavior, not deployed state. PostgreSQL HTTP tests require `PREDITTO_AUTH_TEST_DSN`; seed tests require `PREDITTO_SEED_TEST_DSN`. Without them, integration tests skip. Use the [command index](commands/index.md) for checks and the known seed race limitation. Local toolchain, database versions, credentials and runtime observations belong only in ignored `AI_USER_LEARN`.
