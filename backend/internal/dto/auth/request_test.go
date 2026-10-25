@@ -46,7 +46,8 @@ func TestRememberMeJSON(t *testing.T) {
 	for _, raw := range []string{`{}`, `{"remember_me":null}`, `{"remember_me":true}`, `{"remember_me":false}`, `{"remember_me":"true"}`, `{"remember_me":1}`, `{"remember_me":{}}`} {
 		for _, req := range []any{&RegisterRequest{}, &LoginRequest{}} {
 			err := json.Unmarshal([]byte(raw), req)
-			valid := raw == `{}` || raw == `{"remember_me":null}` || raw == `{"remember_me":true}` || raw == `{"remember_me":false}`
+			_, registration := req.(*RegisterRequest)
+			valid := registration || raw == `{}` || raw == `{"remember_me":null}` || raw == `{"remember_me":true}` || raw == `{"remember_me":false}`
 			if (err == nil) != valid {
 				t.Fatalf("%T %s: %v", req, raw, err)
 			}

@@ -58,7 +58,8 @@ func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest)
 			return err
 		}
 		var err error
-		pair, err = s.issue(ctx, tx, user.ID, req.RememberMe)
+		rememberMe := false
+		pair, err = s.issue(ctx, tx, user.ID, &rememberMe)
 		return err
 	})
 	if err != nil {

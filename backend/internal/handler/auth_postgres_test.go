@@ -129,16 +129,27 @@ func call(t *testing.T, api http.Handler, path string, body any) *httptest.Respo
 
 func register(t *testing.T, api http.Handler) authdto.AuthResponse {
 	t.Helper()
-	return registerWithRememberMe(t, api, nil)
-}
-
-func registerWithRememberMe(t *testing.T, api http.Handler, mode *bool) authdto.AuthResponse {
-	t.Helper()
-	req := registration()
-	req.RememberMe = mode
-	w := call(t, api, "register", req)
+	w := call(t, api, "register", registration())
 	if w.Code != 201 {
 		t.Fatalf("register: %d %s", w.Code, w.Body.String())
+	}
+	var result authdto.AuthResponse
+	if err := json.Unmarshal(successData(t, w, ""), &result); err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+func loginWithRememberMe(t *testing.T, api http.Handler, mode *bool) authdto.AuthResponse {
+	t.Helper()
+	registered := register(t, api)
+	if w := call(t, api, "logout", authdto.RefreshRequest{RefreshToken: registered.RefreshToken}); w.Code != 200 {
+		t.Fatalf("logout registration: %d", w.Code)
+	}
+	req := registration()
+	w := call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: req.Password, RememberMe: mode})
+	if w.Code != 200 {
+		t.Fatalf("login: %d %s", w.Code, w.Body.String())
 	}
 	var result authdto.AuthResponse
 	if err := json.Unmarshal(successData(t, w, ""), &result); err != nil {
@@ -411,12 +422,12 @@ func TestRotationRollbackPostgres(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			db := postgres(t)
 			api, tokens := testAPI(t, db)
-			user := registerWithRememberMe(t, api, mode)
+			user := loginWithRememberMe(t, api, mode)
 			claims, err := tokens.ParseRefreshToken(user.RefreshToken)
 			if err != nil {
 				t.Fatal(err)
 			}
-			execSQL(t, db, `ALTER TABLE refresh_tokens ADD CONSTRAINT reject_new_session CHECK (id = '`+claims.ID+`')`)
+			execSQL(t, db, `ALTER TABLE refresh_tokens ADD CONSTRAINT reject_new_session CHECK (revoked_at IS NOT NULL OR id = '`+claims.ID+`')`)
 			assertError(t, call(t, api, "refresh", authdto.RefreshRequest{RefreshToken: user.RefreshToken}), 500, "INTERNAL_ERROR")
 			var revoked bool
 			if err := db.QueryRow(`SELECT revoked_at IS NOT NULL FROM refresh_tokens WHERE id=$1`, claims.ID).Scan(&revoked); err != nil {
@@ -440,7 +451,7 @@ func TestConcurrentRotationPostgres(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			db := postgres(t)
 			api, _ := testAPI(t, db)
-			user := registerWithRememberMe(t, api, mode)
+			user := loginWithRememberMe(t, api, mode)
 			var wg sync.WaitGroup
 			start := make(chan struct{})
 			codes := make(chan int, 8)
@@ -481,7 +492,8 @@ func TestConcurrentRotationPostgres(t *testing.T) {
 			if err := db.QueryRow(`SELECT count(*) FILTER (WHERE revoked_at IS NULL),count(*) FROM refresh_tokens`).Scan(&active, &total); err != nil {
 				t.Fatal(err)
 			}
-			if active != 1 || total != 2 {
+			// Includes the revoked initial registration session.
+			if active != 1 || total != 3 {
 				t.Fatalf("active=%d total=%d", active, total)
 			}
 
@@ -535,8 +547,19 @@ func TestRememberMePostgres(t *testing.T) {
 			db := postgres(t)
 			api, tokens := testAPI(t, db)
 			req := registration()
-			req.RememberMe = tc.mode
-			w := call(t, api, "register", req)
+			encoded, err := json.Marshal(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var body map[string]any
+			if err := json.Unmarshal(encoded, &body); err != nil {
+				t.Fatal(err)
+			}
+			// Registration must ignore even an explicit request for a long session.
+			if tc.mode != nil {
+				body["remember_me"] = *tc.mode
+			}
+			w := call(t, api, "register", body)
 			if w.Code != 201 {
 				t.Fatalf("register: %d %s", w.Code, w.Body.String())
 			}
@@ -544,16 +567,16 @@ func TestRememberMePostgres(t *testing.T) {
 			if err := json.Unmarshal(successData(t, w, ""), &registered); err != nil {
 				t.Fatal(err)
 			}
-			check := func(raw string) *auth.Claims {
+			check := func(raw string, mode *bool, ttl time.Duration) *auth.Claims {
 				t.Helper()
 				claims, err := tokens.ParseRefreshToken(raw)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if (claims.RememberMe == nil) != (tc.mode == nil) || (tc.mode != nil && *claims.RememberMe != *tc.mode) {
+				if (claims.RememberMe == nil) != (mode == nil) || (mode != nil && *claims.RememberMe != *mode) {
 					t.Fatal("mode changed")
 				}
-				if claims.ExpiresAt.Sub(claims.IssuedAt.Time) != tc.ttl {
+				if claims.ExpiresAt.Sub(claims.IssuedAt.Time) != ttl {
 					t.Fatal("wrong refresh TTL")
 				}
 				var expires time.Time
@@ -565,8 +588,8 @@ func TestRememberMePostgres(t *testing.T) {
 				}
 				return claims
 			}
-			check(registered.RefreshToken)
-			// Both entry points must propagate the chosen mode.
+			check(registered.RefreshToken, &short, testConfig().ShortRefreshTTL)
+			// Login can choose a mode independently of the short registration session.
 			w = call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: req.Password, RememberMe: tc.mode})
 			if w.Code != 200 {
 				t.Fatalf("login: %d", w.Code)
@@ -575,12 +598,20 @@ func TestRememberMePostgres(t *testing.T) {
 			if err := json.Unmarshal(successData(t, w, ""), &loggedIn); err != nil {
 				t.Fatal(err)
 			}
-			check(loggedIn.RefreshToken)
-			for _, raw := range []string{registered.RefreshToken, loggedIn.RefreshToken} {
+			check(loggedIn.RefreshToken, tc.mode, tc.ttl)
+			for _, session := range []struct {
+				raw  string
+				mode *bool
+				ttl  time.Duration
+			}{
+				{registered.RefreshToken, &short, testConfig().ShortRefreshTTL},
+				{loggedIn.RefreshToken, tc.mode, tc.ttl},
+			} {
+				raw := session.raw
 				for i := 0; i < 2; i++ {
-					old := check(raw)
+					old := check(raw, session.mode, session.ttl)
 					// A body field cannot change the signed mode during refresh.
-					w = call(t, api, "refresh", map[string]any{"refresh_token": raw, "remember_me": tc.mode == nil || !*tc.mode})
+					w = call(t, api, "refresh", map[string]any{"refresh_token": raw, "remember_me": session.mode == nil || !*session.mode})
 					if w.Code != 200 {
 						t.Fatalf("refresh: %d %s", w.Code, w.Body.String())
 					}
@@ -588,7 +619,7 @@ func TestRememberMePostgres(t *testing.T) {
 					if err := json.Unmarshal(successData(t, w, ""), &pair); err != nil {
 						t.Fatal(err)
 					}
-					next := check(pair.RefreshToken)
+					next := check(pair.RefreshToken, session.mode, session.ttl)
 					if old.ID == next.ID {
 						t.Fatal("JTI reused")
 					}
@@ -610,10 +641,8 @@ func TestRememberMePostgres(t *testing.T) {
 
 func TestRememberMeInvalidRequests(t *testing.T) {
 	api, _ := testAPI(t, nil)
-	for _, path := range []string{"register", "login"} {
-		for _, invalid := range []any{"true", "false", 0, 1, []bool{true}, map[string]bool{"value": true}} {
-			body := map[string]any{"username": "remember-user", "first_name": "First", "last_name": "Last", "email": "remember@example.com", "password": "password", "password_confirmation": "password", "login": "remember-user", "remember_me": invalid}
-			assertError(t, call(t, api, path, body), 400, "INVALID_REQUEST")
-		}
+	for _, invalid := range []any{"true", "false", 0, 1, []bool{true}, map[string]bool{"value": true}} {
+		body := map[string]any{"login": "remember-user", "password": "password", "remember_me": invalid}
+		assertError(t, call(t, api, "login", body), 400, "INVALID_REQUEST")
 	}
 }

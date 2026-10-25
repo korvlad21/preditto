@@ -86,7 +86,7 @@ Request bodies are limited to 16 KiB. DTO validation and malformed JSON return 4
 
 ## Remember Me
 
-Registration and login accept optional JSON `remember_me`:
+Login accepts optional JSON `remember_me`:
 
 | Value | Refresh lifetime |
 | --- | --- |
@@ -99,6 +99,11 @@ For example, login accepts
 Strings, numbers, arrays and objects for this field return 400 `INVALID_REQUEST`.
 Access lifetime, response envelopes and `expires_in` (access lifetime in seconds)
 are unchanged. No frontend or cookie storage is implemented by this API.
+
+Registration always selects `remember_me = false` on the backend and issues a
+short refresh token. The registration DTO has no `remember_me` field; if a client
+sends it, it is ignored like other unknown fields. This intentionally changes
+registration without the field from a long session to a short session.
 
 The selected mode is embedded in the signed refresh JWT, never trusted from the
 refresh request body. Rotation copies the verified mode to the new token and
@@ -215,8 +220,8 @@ Content-Type: application/json
 The TokenManager requires HS256, a valid signature using the refresh secret,
 expiration, issued-at time, positive user subject, nonempty JTI, and
 `token_type = refresh`. JWTs contain `sub`, `iat`, `exp`, `jti`, and
-`token_type`. Refresh JWTs additionally contain `remember_me` when explicitly
-selected at registration/login; access JWTs do not. Both JTIs are generated
+`token_type`. Refresh JWTs additionally contain `remember_me`: false for registration, or the
+explicitly selected login mode; access JWTs do not. Both JTIs are generated
 independently with `crypto/rand`.
 
 Within one transaction the service locks and checks the user, then locks the
