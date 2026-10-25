@@ -1,0 +1,333 @@
+/* Shared styles for auth pages (login, registration, password recovery). */
+
+/* .auth-theme carries the tokens into portals rendered outside .auth-page. */
+.auth-page,
+.auth-theme {
+  --auth-card-bg: rgba(8, 14, 45, 0.72);
+  --auth-accent: #2f6bff;
+  --auth-accent-2: #7b5cff;
+  --auth-link: #3fa9ff;
+  --auth-text: #fff;
+  --auth-text-muted: #a9b1e0;
+  --auth-text-soft: #c7cbe6;
+  --auth-input-bg: #0a1030;
+  --auth-border: rgba(255, 255, 255, 0.15);
+  --auth-error: #ff4d6a;
+
+  /* Override the site-wide purple accent inside auth pages. */
+  --accent: var(--auth-accent);
+  --accent-border: var(--auth-accent);
+  --text-h: var(--auth-text);
+
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Hide the #root side borders over the background image. */
+#root:has(.auth-page) {
+  border-color: transparent;
+}
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--auth-text-soft);
+
+  /* Full-viewport background, independent of the #root width. */
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(
+        ellipse at center,
+        rgba(2, 6, 25, 0) 40%,
+        rgba(2, 6, 25, 0.55) 100%
+      ),
+      linear-gradient(rgba(5, 8, 30, 0.25), rgba(5, 8, 30, 0.45)),
+      url('/preditto-auth-background.png') center / cover no-repeat;
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  margin: 24px 0;
+  padding: 28px 36px;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--auth-card-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(59, 107, 255, 0.55);
+  border-radius: 16px;
+  box-shadow:
+    0 0 40px rgba(47, 107, 255, 0.25),
+    inset 0 0 20px rgba(47, 107, 255, 0.08);
+
+  h1 {
+    margin: 16px 0 6px;
+    font-family: inherit;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: 1.2;
+    color: var(--auth-text);
+  }
+}
+
+.auth-subtitle {
+  max-width: 360px;
+  margin: 0 auto;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--auth-text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+/* :where() keeps specificity low so page variants can resize inputs. */
+:where(.auth-form) input:not([type='checkbox']),
+.auth-input {
+  width: 100%;
+  height: 50px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  background: var(--auth-input-bg);
+  color: var(--auth-text);
+  font: inherit;
+  font-size: 16px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
+  &::placeholder {
+    color: #8e95c2;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--auth-accent);
+    box-shadow:
+      0 0 0 3px rgba(47, 107, 255, 0.25),
+      0 0 18px rgba(47, 107, 255, 0.35);
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--auth-error);
+  }
+}
+
+/* Input with a leading icon and an optional trailing button. */
+.auth-field__control {
+  position: relative;
+}
+
+:where(.auth-form) .auth-field__control input:not([type='checkbox']) {
+  padding: 0 48px 0 50px;
+}
+
+.auth-field__icon {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  color: var(--auth-text-soft);
+  pointer-events: none;
+}
+
+.auth-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--auth-text-soft);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--auth-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+    outline-offset: 0;
+  }
+}
+
+/* Gradient primary button with an optional trailing arrow and spinner. */
+.auth-submit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1f4fff, #2e6bff);
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter 0.2s,
+    box-shadow 0.2s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 0 24px rgba(47, 107, 255, 0.5);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.auth-submit__arrow {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+}
+
+.auth-spinner {
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-spin 0.8s linear infinite;
+}
+
+/* Announced to screen readers; shown visually only with reduced motion. */
+.auth-loading-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.form-error {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--auth-error);
+}
+
+.auth-alert {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 77, 106, 0.5);
+  border-radius: 10px;
+  background: rgba(255, 77, 106, 0.12);
+  color: #ffc2cc;
+  font-size: 14px;
+}
+
+.auth-switch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  font-size: 15px;
+  white-space: nowrap;
+  color: var(--auth-text-soft);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--auth-border);
+  }
+
+  a {
+    /* --auth-accent is below 4.5:1 on the card; the lighter link blue passes. */
+    color: var(--auth-link);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-spinner {
+    display: none;
+  }
+
+  .auth-loading-text {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 22px 16px;
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+  }
+
+  :where(.auth-form) input:not([type='checkbox']),
+  .auth-input {
+    height: 48px;
+    /* 16px+ prevents iOS zoom on focus. */
+    font-size: 16px;
+  }
+
+  .auth-submit {
+    height: 48px;
+  }
+
+  .auth-switch {
+    font-size: 14px;
+    white-space: normal;
+  }
+}

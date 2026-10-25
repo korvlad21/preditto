@@ -1,0 +1,71 @@
+/* Shared field, toggle and submit styles live in styles/auth.css. */
+
+/* Pulled toward the password field, with extra room before the button. */
+.auth-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -4px 0 4px;
+  font-size: 15px;
+}
+
+.auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--auth-text);
+  cursor: pointer;
+}
+
+.auth-checkbox {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 1px solid var(--auth-border);
+  border-radius: 5px;
+  background: var(--auth-input-bg);
+  color: #fff;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+  }
+
+  input:checked + & {
+    border-color: var(--auth-accent);
+    background: var(--auth-accent);
+
+    svg {
+      opacity: 1;
+    }
+  }
+
+  input:focus-visible + & {
+    outline: 2px solid var(--auth-link);
+    outline-offset: 2px;
+  }
+}
+
+.auth-forgot {
+  color: var(--auth-link);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-options {
+    font-size: 14px;
+  }
+}

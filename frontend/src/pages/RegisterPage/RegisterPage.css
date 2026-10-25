@@ -1,0 +1,152 @@
+/* Registration variant of the shared auth card (styles/auth.css). */
+
+.auth-card.auth-card--register {
+  max-width: 520px;
+  padding: 22px 32px;
+  transition: transform 0.3s;
+
+  h1 {
+    margin: 12px 0 4px;
+    font-size: 24px;
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+  }
+
+  .auth-submit {
+    height: 46px;
+    font-size: 17px;
+  }
+}
+
+.register-extras {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-top: 16px;
+  text-align: left;
+
+  .avatar-upload__tile {
+    height: 112px;
+    gap: 4px;
+  }
+
+  .avatar-upload__circle {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 2px;
+  }
+
+  .avatar-upload__title {
+    font-size: 14px;
+  }
+
+  .avatar-upload__preview {
+    width: 76px;
+    height: 76px;
+  }
+
+  .favorite-team-button {
+    height: 56px;
+  }
+}
+
+.auth-form.auth-form--compact {
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.auth-form--compact {
+  .auth-field__control input:not([type='checkbox']) {
+    height: 42px;
+    padding: 0 44px 0 46px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  .auth-field__icon {
+    left: 14px;
+    width: 20px;
+    height: 20px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .auth-field__toggle {
+    right: 3px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .form-error {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  .auth-alert,
+  .auth-submit {
+    margin-top: 4px;
+  }
+}
+
+/* Centered footer without the divider lines used on the login page. */
+.auth-switch.auth-switch--plain {
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+
+  &::before,
+  &::after {
+    content: none;
+  }
+
+  a {
+    font-weight: 500;
+  }
+}
+
+/* Make room for the team picker docked on the right. */
+@media (min-width: 1200px) {
+  .auth-page--picker-open .auth-card--register {
+    /* Half the card width: its right edge lands on the viewport center. */
+    transform: translateX(-260px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card.auth-card--register {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-card.auth-card--register {
+    padding: 20px 16px;
+
+    h1 {
+      font-size: 22px;
+    }
+
+    .auth-submit {
+      height: 44px;
+    }
+  }
+
+  .register-extras {
+    grid-template-columns: 1fr;
+
+    .avatar-upload__tile {
+      height: 104px;
+    }
+  }
+
+  .auth-form--compact .auth-field__control input:not([type='checkbox']) {
+    /* 16px+ prevents iOS zoom on focus. */
+    font-size: 16px;
+  }
+}
