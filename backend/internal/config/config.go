@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Postgres PostgresConfig
-	Auth     AuthConfig
+	Environment string
+	Postgres    PostgresConfig
+	Auth        AuthConfig
 }
 
 type PostgresConfig struct {
@@ -30,7 +31,7 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return Config{Postgres: postgres, Auth: auth}, nil
+	return Config{Environment: os.Getenv("APP_ENV"), Postgres: postgres, Auth: auth}, nil
 }
 
 // LoadPostgres keeps database-only tools independent of API signing secrets.

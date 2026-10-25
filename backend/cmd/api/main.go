@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,6 +20,14 @@ import (
 	"preditto/internal/service"
 )
 
+// @title Preditto API
+// @version 1.0
+// @description REST API for authentication, current users, teams, countries and tournaments. /api responses use success/data or success/error envelopes. Empty success omits data; empty lists are []; nullable fields stay null. Unsupported API methods/paths return 404 NOT_FOUND. Demo and health routes use their own response shapes.
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter Bearer followed by a space and your access_token from register/login. Refresh tokens are accepted only in refresh/logout JSON bodies.
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -43,20 +52,36 @@ func run() error {
 		port = "8080"
 	}
 
+	router, err := newRouter(db, cfg)
+	if err != nil {
+		return err
+	}
+
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	log.Printf("HTTP server listening on %s", server.Addr)
+	return server.ListenAndServe()
+}
+
+// newRouter keeps route composition shared by the server and Swagger coverage tests.
+func newRouter(db *sql.DB, cfg config.Config) (*gin.Engine, error) {
 	router := apirouter.New()
 	if err := router.SetTrustedProxies(nil); err != nil {
-		return err
+		return nil, err
 	}
 
 	helloHandler := handler.NewHelloHandler()
 	tokens, err := auth.NewTokenManager(cfg.Auth)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	users := repository.NewUserRepository(db)
 	authService, err := service.NewAuthService(repository.NewAuthRepository(db), users, tokens)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
 	userService := service.NewUserService(users)
@@ -73,15 +98,17 @@ func run() error {
 
 	router.GET("/", gin.WrapF(helloHandler.Index))
 	router.GET("/hello", gin.WrapF(helloHandler.Hello))
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	router.GET("/health", health)
+	apirouter.RegisterSwaggerRoutes(router, cfg.Environment)
+	return router, nil
+}
 
-	server := &http.Server{
-		Addr:              ":" + port,
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-	log.Printf("HTTP server listening on %s", server.Addr)
-	return server.ListenAndServe()
+// health reports process responsiveness, not database readiness.
+// @Summary Process health
+// @Tags System
+// @Produce json
+// @Success 200 {object} apidocs.Health
+// @Router /health [get]
+func health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

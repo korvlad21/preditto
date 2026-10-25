@@ -37,3 +37,17 @@ The ordinary full suite with both DSNs passed in that historical run. Removing `
 ## Driver initialization lesson
 
 Do not assume `sql.Open` validates all driver configuration or connects. Inspect the selected driver and [database initialization](../../../backend/internal/database/postgres.go), including connector validation, PingContext and connection timeout propagation. This historical failure was repaired; it is not a current startup defect. [Original evidence](../../archive/command-history.md#go-failure-20260912-001).
+
+## Swagger generation and drift checks
+
+From the repository root, run `make swagger` after API annotation/schema changes
+and `make swagger-check` before completion. The latter compares temporary output
+and tests actual route coverage, security metadata and environment gating without
+PostgreSQL. See the [Swagger guide](../../../backend/docs/swagger.md).
+
+Verified generator lessons: scan actual Go package directories discovered with
+`go list`, rather than the package-less `internal/` directory; otherwise aliased
+DTO imports can fail with `cannot find type definition`. Pin `--packageName swagger`
+when generating in a temporary directory: swag otherwise derives the package
+name from the random directory, causing drift (and invalid Go for dotted names).
+The Makefile applies both corrections; validate them with `make swagger-check`.

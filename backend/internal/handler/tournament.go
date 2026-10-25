@@ -23,6 +23,20 @@ func NewTournamentHandler(service *service.TournamentService) *TournamentHandler
 	return &TournamentHandler{service: service}
 }
 
+// SelectTournament select the current user tournament.
+// @Summary Select the current user tournament
+// @Tags Tournaments
+// @Description Requires an existing profile and tournament, without membership or status restrictions. Repeated selection succeeds. Success omits data. Cache-Control: no-store.
+// @Accept json
+// @Param request body tournamentsdto.SelectTournamentRequest true "JSON request body"
+// @Produce json
+// @Success 200 {object} apidocs.EmptySuccess
+// @Failure 401 {object} apidocs.Error "UNAUTHORIZED (missing, invalid or expired access token)"
+// @Failure 400 {object} apidocs.Error "TOURNAMENT_ID_REQUIRED (missing/null id), INVALID_TOURNAMENT_ID (nonpositive, wrong type or overflow), INVALID_REQUEST (invalid body)"
+// @Failure 404 {object} apidocs.Error "USER_NOT_FOUND, USER_INFO_NOT_FOUND or TOURNAMENT_NOT_FOUND"
+// @Failure 500 {object} apidocs.Error "TOURNAMENT_UPDATE_FAILED or INTERNAL_ERROR"
+// @Security BearerAuth
+// @Router /api/tournaments/select_tournament [post]
 func (h *TournamentHandler) SelectTournament(c *gin.Context) {
 	user, ok := middleware.CurrentUser(c)
 	if !ok {
@@ -66,6 +80,20 @@ func (h *TournamentHandler) SelectTournament(c *gin.Context) {
 	response.Success(c, http.StatusOK, nil)
 }
 
+// GetAllTournaments list tournaments.
+// @Summary List tournaments
+// @Tags Tournaments
+// @Description Empty body or {} applies no filters. Omitted/empty status or lowercase all disables status filtering; other values match exactly (unknown values return []). is_participate considers only active participation; null/omission disables that filter. Filters combine with AND. Query parameters and user selectors are ignored. Ordered by created_at DESC then id DESC. Empty results are []. Cache-Control: no-store.
+// @Accept json
+// @Param request body tournamentsdto.GetAllTournamentsRequest false "JSON request body"
+// @Produce json
+// @Success 200 {object} apidocs.Success{data=apidocs.TournamentsData}
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST"
+// @Failure 401 {object} apidocs.Error "UNAUTHORIZED (missing, invalid or expired access token)"
+// @Failure 404 {object} apidocs.Error "USER_NOT_FOUND"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Security BearerAuth
+// @Router /api/tournaments/get_all_tournaments [post]
 func (h *TournamentHandler) GetAllTournaments(c *gin.Context) {
 	user, ok := middleware.CurrentUser(c)
 	if !ok {

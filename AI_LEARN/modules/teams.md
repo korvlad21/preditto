@@ -16,6 +16,8 @@ The [teams/countries API contract](../../backend/docs/teams.md) owns exact respo
 
 `POST /api/teams/get_favorite_team` is protected by RequireAuth and LoadUser. It takes no parameters and uses FavoriteTeamID from the shared CurrentUser snapshot, already loaded from user_info. No second profile query is made. It reuses the GetTeam handler's retrieval/response helper and existing service/repository lookup; success returns data.team. A null favorite (including a missing profile) returns HTTP 200 with success true and data.team null; a missing referenced team returns HTTP 404 TEAM_NOT_FOUND. See the [favorite-team contract](../../backend/docs/teams.md#favorite-team).
 
+Team/country handler Swagger annotations reuse the teams request DTOs and Team/Country models; the favorite-team container explicitly allows null. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
+
 ## Business and query behavior
 
 GetTeam validates a required positive int64 ID in the JSON body. TeamService forwards it to TeamRepository.GetTeam, which uses one parameterized primary-key lookup and the same projection as the list. A missing row maps to repository.ErrNotFound and HTTP 404 TEAM_NOT_FOUND; invalid input uses INVALID_REQUEST. The response contains one Team in data.team, preserving nullable fields.

@@ -9,6 +9,7 @@ Scope, context routing and documentation maintenance are defined once in [AGENTS
 - User/profile/role persistence belongs to UserRepository; refresh-session persistence belongs to AuthRepository. Within auth transactions, use the callback-scoped repositories so all writes share the same transaction.
 - Protected endpoints needing CurrentUser must run RequireAuth before LoadUser. Reuse the request snapshot and update it only after a successful write.
 - Follow the [response contract](../../backend/docs/responses.md): shared envelopes/error constants, omitted nil success data, empty list arrays, and preserved nullable fields. Do not expose database errors or credentials.
+- Follow the mandatory [Swagger maintenance rule](../../AI_LEARN/index.md#api-documentation-maintenance) for every API creation, change or deletion.
 - Reuse domain constants from the relevant model files. Check actual SQL constraints before treating a constant as enforced policy.
 - Preserve migration up/down symmetry and dependency order. Use a new migration for changes to an applied/shared schema; do not assume editing old SQL changes existing databases.
 - Register seed steps in dependency order in the existing transaction. Preserve repeat-run identity and rollback behavior; do not confuse seed examples with business constraints.
