@@ -1,11 +1,19 @@
 import { useId } from 'react'
 import './BrandLogo.css'
 
-function BrandLogo() {
+type BrandLogoProps = {
+  size?: 'md' | 'sm'
+}
+
+function BrandLogo({ size = 'md' }: BrandLogoProps) {
   const gradientId = useId()
 
   return (
-    <div className="brand-logo" role="img" aria-label="Preditto">
+    <div
+      className={size === 'sm' ? 'brand-logo brand-logo--sm' : 'brand-logo'}
+      role="img"
+      aria-label="Preditto"
+    >
       <svg
         className="brand-logo__mark"
         viewBox="0 0 56 62"

@@ -12,7 +12,7 @@ Select documentation by the behavior being changed, not only by the directory na
 | Prediction schema, participant/match uniqueness, predicted scores, result fields and tournament consistency | [Predictions](predictions.md) | Tournaments for participants/stages; matches for match references |
 | Participant stage rankings, stage/cumulative positions, totals and leaderboard indexes | [Rankings](rankings.md) | Tournaments for participants/stages; predictions for result semantics |
 
-For selection changes read users and tournaments; for registration changes read auth and users. For common response or middleware changes, read [architecture](../architecture.md) and affected module contracts. Frontend currently has routing, an empty home page and unwired login/registration forms: use [its README](../../frontend/README.md), plus the relevant backend module when adding integration.
+For selection changes read users and tournaments; for registration changes read auth and users. For common response or middleware changes, read [architecture](../architecture.md) and affected module contracts. Frontend currently has routing, a home page, login/registration UI with mocked auth calls and a team picker backed by the real teams API: use [its README](../../frontend/README.md), plus the relevant backend module when adding integration.
 
 Countries remain in teams; participation and prize rules remain in tournaments; roles remain in users. Split them only when independent behavior and task routing justify it. Predictions currently implement persistence only; payments and scoring have no implemented modules yet.
 

@@ -1,14 +1,16 @@
 # Preditto frontend
 
-React and TypeScript application built with Vite. [src/main.tsx](src/main.tsx) mounts [src/App.tsx](src/App.tsx) inside a React Router `BrowserRouter`. App renders the routes (there is no shared header): `/` (empty home page), `/login`, `/register` and the `/forgot-password` placeholder; unknown paths redirect to `/`.
+React and TypeScript application built with Vite. [src/main.tsx](src/main.tsx) mounts [src/App.tsx](src/App.tsx) inside a React Router `BrowserRouter`. App renders the routes (there is no shared header): `/home` (home page with a login button; `/` redirects there), `/login`, `/register` and the `/forgot-password` placeholder; unknown paths redirect to `/home`.
 
 Layout: each page lives in its own folder, `src/pages/<Page>/<Page>.tsx` with its `<Page>.css` next to it when it has page-specific styles. Reusable components follow the same pattern in `src/components/<Component>/`. Styles shared by all auth pages (design tokens, stadium background, card, form, footer) are in [src/styles/auth.css](src/styles/auth.css); the `visually-hidden` utility is in `src/index.css`. CSS is global (not scoped), so keep class names page-prefixed or shared deliberately.
 
-The login and registration forms mirror backend `LoginRequest`/`RegisterRequest` field names and limits with client-side validation only. Login calls `login()` from [src/api/auth.ts](src/api/auth.ts), which currently resolves a mock `AuthResponse`; registration submission is a no-op. There is no real API client, token storage or tournament UI yet.
+[src/api/client.ts](src/api/client.ts) posts JSON to relative `/api` paths, unwraps the response envelope and throws `ApiError` (HTTP status + error code). [src/api/teams.ts](src/api/teams.ts) loads teams and countries from the real API (one shared request per page load). Backend shapes are typed in `src/types`; Russian country labels for codes from the seed are in [src/data/countries.ts](src/data/countries.ts).
+
+The login and registration forms apply backend `LoginRequest`/`RegisterRequest` limits client-side (username 3–50 `[a-zA-Z0-9_.-]`, names ≤ 100, password 8–72). `login()` and `register()` in [src/api/auth.ts](src/api/auth.ts) still resolve mock `AuthResponse`s; `register()` already builds the snake_case backend body, and the page maps 409 `USERNAME_ALREADY_EXISTS`/`EMAIL_ALREADY_EXISTS` to field errors. On success, login redirects to `/home` and registration to `/login` (tokens from registration are not stored; the user signs in explicitly). The avatar is chosen and previewed client-side only (PNG/JPEG/WebP, ≤ 5 MB): the backend has no upload endpoint. The favorite team is picked in `TeamPickerModal` (portal with focus trap, search and country filter); team logos come from `logo_url` with an initials fallback. There is no token storage or tournament UI yet.
 
 ## Local development and checks
 
-From `frontend/`, use Node/npm compatible with [package.json](package.json) and the lockfile. The repository's container toolchain is defined in [DockerFile](DockerFile). Compose sets `VITE_USE_POLLING=true`, which enables file-watch polling in [vite.config.ts](vite.config.ts) because bind mounts from Windows hosts do not deliver file events into the container.
+From `frontend/`, use Node/npm compatible with [package.json](package.json) and the lockfile. The repository's container toolchain is defined in [DockerFile](DockerFile). Bind mounts from Windows hosts do not deliver file events into the container and file-watch polling is not configured, so the Compose dev server may keep serving stale modules after edits; restart the frontend container (`docker compose restart frontend`) to pick them up.
 
 ```sh
 npm ci

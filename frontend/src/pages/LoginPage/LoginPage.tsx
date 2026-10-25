@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { login as loginRequest } from '../../api/auth.ts'
 import BrandLogo from '../../components/BrandLogo/BrandLogo.tsx'
 import {
@@ -43,6 +43,7 @@ function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const loginRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -61,21 +62,22 @@ function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      // TODO: POST /api/auth/login { login, password, remember }; store tokens and redirect.
+      // TODO: POST /api/auth/login { login, password, remember }; store tokens.
       await loginRequest({ login, password, remember })
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : 'Не удалось войти. Попробуйте ещё раз',
       )
-    } finally {
       setIsSubmitting(false)
+      return
     }
+    navigate('/home', { replace: true })
   }
 
   return (
     <section className="page auth-page">
       <div className="auth-card">
-        <BrandLogo />
+        <BrandLogo size="sm" />
         <h1>Авторизация</h1>
         <p className="auth-subtitle">
           Войдите в свой аккаунт, чтобы продолжить пользоваться платформой

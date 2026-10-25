@@ -16,7 +16,7 @@ Preditto has a Go HTTP backend and a React/TypeScript/Vite frontend. The backend
 | Models and DTOs | Models include response projections and constants; request DTOs carry binding rules. They are not a complete domain-object or ORM layer |
 | Database startup | [Compose](../docker-compose.yaml) waits for PostgreSQL health, migration success, seed success, then starts the API |
 | Seed CLI | [cmd/seed](../backend/cmd/seed/main.go) uses database-only configuration and the transactional [development runner](../backend/seeds/development/seed.go) |
-| Frontend | [main.tsx](../frontend/src/main.tsx) mounts [App.tsx](../frontend/src/App.tsx), with React Router pages for home, login and registration (no API client yet); see [frontend setup](../frontend/README.md) |
+| Frontend | [main.tsx](../frontend/src/main.tsx) mounts [App.tsx](../frontend/src/App.tsx), with React Router pages for home, login and registration; a small `/api` client loads teams/countries, while login/registration calls are still mocked; see [frontend setup](../frontend/README.md) |
 
 The API process does not run migrations or seeds. `/health` checks process responsiveness, not database readiness. Host setup and environment requirements are in the [root README](../README.md); migration and seed procedures live in their respective [migration guide](../backend/migrations/README.md) and [seed guide](../backend/seeds/README.md).
 

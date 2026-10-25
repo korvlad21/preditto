@@ -1,0 +1,351 @@
+.team-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  background: rgba(2, 6, 25, 0.4);
+}
+
+.team-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100vw - 32px);
+  /* Fixed height so filtering does not resize and re-center the dialog. */
+  height: min(760px, 100dvh - 48px);
+  max-height: calc(100dvh - 48px);
+  padding: 28px 24px 24px;
+  box-sizing: border-box;
+  background: var(--auth-card-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(59, 107, 255, 0.55);
+  border-radius: 16px;
+  box-shadow:
+    0 0 40px rgba(47, 107, 255, 0.25),
+    inset 0 0 20px rgba(47, 107, 255, 0.08);
+  color: var(--auth-text-soft);
+  text-align: center;
+}
+
+.team-picker__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--auth-text-soft);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--auth-text);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+  }
+}
+
+.team-picker__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+
+  h2 {
+    margin: 14px 0 6px;
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: normal;
+    line-height: 1.25;
+    color: var(--auth-text);
+  }
+
+  p {
+    max-width: 400px;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--auth-text-muted);
+  }
+}
+
+.team-picker__emblem {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--auth-accent);
+  border-radius: 50%;
+  background: rgba(47, 107, 255, 0.15);
+  color: var(--auth-accent);
+
+  svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.team-picker__search {
+  position: relative;
+  margin-top: 20px;
+
+  .auth-input {
+    height: 48px;
+    padding: 0 44px 0 48px;
+    border-radius: 8px;
+    font-size: 16px;
+
+    /* Custom clear button replaces the native one. */
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
+}
+
+.team-picker__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  color: var(--auth-text-soft);
+  pointer-events: none;
+}
+
+.team-picker__clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--auth-text-soft);
+  transform: translateY(-50%);
+  cursor: pointer;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: var(--auth-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+  }
+}
+
+.team-picker__chips {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 2px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.team-picker__chip {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--auth-text-soft);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(59, 107, 255, 0.6);
+  }
+
+  &[aria-pressed='true'] {
+    border-color: var(--auth-accent);
+    background: var(--auth-accent);
+    color: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+    outline-offset: 1px;
+  }
+}
+
+.team-picker__body {
+  flex: 1;
+  min-height: 0;
+  margin: 14px -4px 16px;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.team-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.team-picker__team {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 104px;
+  padding: 8px 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--auth-border);
+  border-radius: 10px;
+  background: rgba(10, 16, 48, 0.7);
+  color: var(--auth-text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background-color 0.2s;
+
+  &:hover {
+    border-color: rgba(59, 107, 255, 0.6);
+  }
+
+  /* Inset ring renders the 2px border without shifting the layout. */
+  &[aria-pressed='true'] {
+    border-color: var(--auth-accent);
+    background: rgba(47, 107, 255, 0.15);
+    box-shadow:
+      inset 0 0 0 1px var(--auth-accent),
+      0 0 16px rgba(47, 107, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+    outline-offset: 2px;
+  }
+}
+
+.team-picker__team-name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.team-picker__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--auth-accent);
+  color: #fff;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.team-picker__status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 40px 0;
+  font-size: 15px;
+  color: var(--auth-text-muted);
+}
+
+.team-picker__retry {
+  padding: 8px 16px;
+  border: 1px solid var(--auth-accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--auth-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--auth-link);
+  }
+}
+
+.team-picker__confirm.auth-submit {
+  flex: none;
+  height: 56px;
+  font-size: 20px;
+}
+
+/* Docked to the right of the registration card, overlapping its edge by 40px. */
+@media (min-width: 1200px) {
+  .team-picker--beside {
+    position: fixed;
+    top: 50%;
+    left: calc(50% - 40px);
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 600px) {
+  .team-picker-overlay {
+    padding: 0;
+  }
+
+  .team-picker {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 24px 16px 16px;
+    border: none;
+    border-radius: 0;
+  }
+
+  .team-picker__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 380px) {
+  .team-picker__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
