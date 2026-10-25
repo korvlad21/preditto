@@ -1,6 +1,6 @@
 # Auth
 
-Reviewed: 2026-10-22, source/schema and test-scenario inspection; no new runtime tests in this documentation change.
+Reviewed: 2026-10-25, forced-short registration and targeted auth/HTTP tests against disposable PostgreSQL; rollback scenarios passed with race detection and affected-package vet passed.
 
 ## Purpose and API
 
@@ -20,6 +20,7 @@ Exact fields, validation bounds, errors and examples live in the [auth contract]
 - Registration validates the DTO, hashes the password with bcrypt, creates an ACTIVE account and profile, assigns the existing participant role by code, and persists the first refresh session. Database uniqueness and favorite-team constraints remain authoritative; IDs are obtained from the database.
 - Login accepts username or email with case-sensitive lookup. Unknown users still trigger a bcrypt comparison; wrong-password and unknown-user responses are identical. Only ACTIVE accounts may log in or refresh.
 - Access and refresh JWTs use HS256 with different configured secrets, independent random JTIs, and distinct token types. Parsing requires the expected type/signature, expiration, issued-at time, positive user subject and nonempty JTI.
+- Registration always issues a short refresh session with signed `remember_me = false`; its DTO has no mode field and client-supplied `remember_me` is ignored. Login accepts optional `remember_me`: true uses configured long refresh TTL (720h in the example), false uses short TTL (12h default), and omission/null preserves legacy behavior. A signed refresh claim carries the mode through rotation; refresh body fields cannot override it. Access TTL and response fields are unchanged. Existing JWTs without the claim remain supported; no schema migration is needed.
 - Refresh is single-use rotation: revoke the old session and store a replacement atomically. The client must serialize refresh requests and replace its pair after success; a committed rotation cannot be retried with the old credential.
 - Logout revokes only the submitted session. Repeating logout for a still-unexpired revoked session succeeds. A blocked account may log out. Access tokens remain valid until expiry; logout or blocking does not immediately revoke them.
 
@@ -45,10 +46,10 @@ Registration commits account, profile, role assignment and refresh session toget
 
 ## Dependencies and limits
 
-[Config](../../backend/internal/config/config.go) requires distinct secrets of at least 32 bytes and valid TTLs; the [database-only seed CLI](../../backend/cmd/seed/main.go) does not require JWT settings. Registration needs a provisioned participant role. There is no access blacklist, token-family compromise detection, refresh cleanup scheduler, or role/permission authorization middleware. Existing access-token authentication does not enforce account status on every request. See users for the separate database snapshot middleware.
+[Config](../../backend/internal/config/config.go) requires distinct secrets of at least 32 bytes and valid access/short-refresh/long-refresh TTLs; the [database-only seed CLI](../../backend/cmd/seed/main.go) does not require JWT settings. Registration needs a provisioned participant role. There is no access blacklist, token-family compromise detection, refresh cleanup scheduler, or role/permission authorization middleware. Existing access-token authentication does not enforce account status on every request. See users for the separate database snapshot middleware.
 
 ## Verification
 
 From `backend/`, run `go test -race -mod=readonly -count=1 ./internal/auth ./internal/dto/auth ./internal/middleware ./internal/router ./internal/handler` for changes spanning auth behavior. Narrow the package/filter when the affected scope permits; use the [Go guide](../commands/topics/go.md) for prerequisites.
 
-[HTTP integration tests](../../backend/internal/handler/auth_postgres_test.go) require a disposable `PREDITTO_AUTH_TEST_DSN`. They cover validation, uniqueness, nonsequential IDs, registration rollback at profile/role/session stages, login secrecy and blocking, refresh rejection/rollback, concurrent rotation, logout and migration 9 rollback. Token and middleware tests cover algorithm, signature, type, claim and header validation. Passing a run without the DSN does not verify database behavior.
+[HTTP integration tests](../../backend/internal/handler/auth_postgres_test.go) require a disposable `PREDITTO_AUTH_TEST_DSN`. They cover validation, uniqueness, nonsequential IDs, registration rollback at profile/role/session stages, login secrecy and blocking, refresh rejection/rollback, concurrent rotation, logout and migration 9 rollback. Remember Me tests cover configured expiration boundaries, signed-mode tampering, invalid JSON types, forced-short registration (including ignored client overrides) and login mode selection, repeated rotation, ignored refresh-body overrides and persisted expiration. Rollback and concurrent rotation tests exercise legacy, short and remembered modes. Token and middleware tests cover algorithm, signature, type, claim and header validation. Passing a run without the DSN does not verify database behavior.

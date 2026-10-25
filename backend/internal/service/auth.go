@@ -58,7 +58,8 @@ func (s *AuthService) Register(ctx context.Context, req authdto.RegisterRequest)
 			return err
 		}
 		var err error
-		pair, err = s.issue(ctx, tx, user.ID)
+		rememberMe := false
+		pair, err = s.issue(ctx, tx, user.ID, &rememberMe)
 		return err
 	})
 	if err != nil {
@@ -96,7 +97,7 @@ func (s *AuthService) Login(ctx context.Context, req authdto.LoginRequest) (auth
 			return ErrUserBlocked
 		}
 		user = current
-		pair, err = s.issue(ctx, tx, user.ID)
+		pair, err = s.issue(ctx, tx, user.ID, req.RememberMe)
 		return err
 	})
 	if err != nil {
@@ -134,7 +135,7 @@ func (s *AuthService) Refresh(ctx context.Context, raw string) (authdto.TokenRes
 		if err := tx.RevokeRefreshToken(ctx, session.ID); err != nil {
 			return err
 		}
-		pair, err = s.issue(ctx, tx, user.ID)
+		pair, err = s.issue(ctx, tx, user.ID, claims.RememberMe)
 		return err
 	})
 	if err != nil {
@@ -173,8 +174,8 @@ func (s *AuthService) session(ctx context.Context, tx *repository.AuthRepository
 	return session, nil
 }
 
-func (s *AuthService) issue(ctx context.Context, tx *repository.AuthRepository, userID int64) (authdto.TokenResponse, error) {
-	pair, session, err := s.tokens.GeneratePair(userID)
+func (s *AuthService) issue(ctx context.Context, tx *repository.AuthRepository, userID int64, rememberMe *bool) (authdto.TokenResponse, error) {
+	pair, session, err := s.tokens.GeneratePair(userID, rememberMe)
 	if err != nil {
 		return authdto.TokenResponse{}, err
 	}

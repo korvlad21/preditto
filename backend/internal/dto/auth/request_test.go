@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -38,5 +39,18 @@ func TestRegisterValidation(t *testing.T) {
 				t.Fatalf("valid=%v, want %v", got, tc.valid)
 			}
 		})
+	}
+}
+
+func TestRememberMeJSON(t *testing.T) {
+	for _, raw := range []string{`{}`, `{"remember_me":null}`, `{"remember_me":true}`, `{"remember_me":false}`, `{"remember_me":"true"}`, `{"remember_me":1}`, `{"remember_me":{}}`} {
+		for _, req := range []any{&RegisterRequest{}, &LoginRequest{}} {
+			err := json.Unmarshal([]byte(raw), req)
+			_, registration := req.(*RegisterRequest)
+			valid := registration || raw == `{}` || raw == `{"remember_me":null}` || raw == `{"remember_me":true}` || raw == `{"remember_me":false}`
+			if (err == nil) != valid {
+				t.Fatalf("%T %s: %v", req, raw, err)
+			}
+		}
 	}
 }

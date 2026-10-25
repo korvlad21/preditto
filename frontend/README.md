@@ -30,4 +30,32 @@ There is no test script configured. Validate UI changes in the browser as well a
 
 [vite.config.ts](vite.config.ts) sets publicDir to `images`. Files under `images/logos/teams` are served as `/logos/teams/<slug>.svg`, and copied to that public path in the build. Use the [logo inventory](../docs/assets/team-logos.md) for provenance and maintenance; no duplicate asset list is needed here.
 
-Compose supplies VITE_API_URL, but current frontend code does not read it. No Vite proxy or backend CORS middleware is configured; unmatched API OPTIONS requests receive the normal API 404. When adding browser integration, explicitly choose a same-origin proxy or appropriate CORS handling and use the [shared API contract](../backend/docs/responses.md) plus the relevant [module](../AI_LEARN/modules/index.md). Do not assume supplying an environment variable wires up requests.
+The Vite development server proxies `/api` requests to the Go backend, preserving
+the path (including `/api`), query, method, body and Authorization header. Use
+relative URLs in React so requests go through the frontend origin:
+
+```ts
+const response = await fetch('/api/user/get_user_info', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${accessToken}` },
+})
+const result = await response.json()
+```
+
+The actual route is `/api/user/get_user_info`, not `/api/users/get_user_info`.
+Use the [shared API contract](../backend/docs/responses.md) and relevant
+[module](../AI_LEARN/modules/index.md) for other endpoints and response handling.
+Token storage and automatic refresh are not implemented by the proxy.
+
+Local `npm run dev` uses `http://localhost:8080` by default. Override it with
+`API_PROXY_TARGET` in the process environment or `frontend/.env.local`.
+Compose supplies `API_PROXY_TARGET=http://backend:8080`, using the backend
+service name inside the Docker network. This variable is read only by the Vite
+configuration and is not exposed as a `VITE_*` browser variable. Restart the dev
+server after environment changes; recreate the frontend container when changing
+its Compose environment.
+
+These same-origin browser requests do not require backend CORS. Direct browser
+requests to a separate backend origin still do. The proxy is enabled only for
+the development server, not builds or `vite preview`. Production hosting must
+route `/api/...` to Go separately, for example through Nginx on the same domain.

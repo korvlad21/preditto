@@ -38,12 +38,13 @@ func setAuthEnv(t *testing.T) {
 	t.Setenv("JWT_REFRESH_SECRET", strings.Repeat("r", 32))
 	t.Setenv("JWT_ACCESS_TOKEN_TTL", "15m")
 	t.Setenv("JWT_REFRESH_TOKEN_TTL", "720h")
+	t.Setenv("JWT_REFRESH_TOKEN_SHORT_TTL", "")
 }
 
 func TestAuthConfig(t *testing.T) {
 	setAuthEnv(t)
 	cfg, err := loadAuth()
-	if err != nil || cfg.AccessTTL != 15*time.Minute || cfg.RefreshTTL != 720*time.Hour {
+	if err != nil || cfg.AccessTTL != 15*time.Minute || cfg.RefreshTTL != 720*time.Hour || cfg.ShortRefreshTTL != 12*time.Hour {
 		t.Fatalf("unexpected auth configuration: %v", err)
 	}
 	for _, tc := range []struct{ key, value string }{
@@ -54,6 +55,10 @@ func TestAuthConfig(t *testing.T) {
 		{"JWT_ACCESS_TOKEN_TTL", "2h"}, {"JWT_ACCESS_TOKEN_TTL", "1500ms"},
 		{"JWT_REFRESH_TOKEN_TTL", "15m"}, {"JWT_REFRESH_TOKEN_TTL", "1m"},
 		{"JWT_REFRESH_TOKEN_TTL", ""},
+		{"JWT_REFRESH_TOKEN_SHORT_TTL", "bad"}, {"JWT_REFRESH_TOKEN_SHORT_TTL", "0s"},
+		{"JWT_REFRESH_TOKEN_SHORT_TTL", "-1h"}, {"JWT_REFRESH_TOKEN_SHORT_TTL", "15m"},
+		{"JWT_REFRESH_TOKEN_SHORT_TTL", "720h"}, {"JWT_REFRESH_TOKEN_SHORT_TTL", "721h"},
+		{"JWT_REFRESH_TOKEN_SHORT_TTL", "3600001ms"},
 	} {
 		t.Run(tc.key+"/"+tc.value, func(t *testing.T) {
 			setAuthEnv(t)
@@ -62,6 +67,16 @@ func TestAuthConfig(t *testing.T) {
 				t.Fatal("invalid configuration accepted")
 			}
 		})
+	}
+}
+
+func TestShortRefreshTTLOverride(t *testing.T) {
+	setAuthEnv(t)
+	t.Setenv("JWT_REFRESH_TOKEN_SHORT_TTL", "6h")
+	t.Setenv("JWT_REFRESH_TOKEN_TTL", "480h")
+	cfg, err := loadAuth()
+	if err != nil || cfg.ShortRefreshTTL != 6*time.Hour || cfg.RefreshTTL != 480*time.Hour {
+		t.Fatalf("custom refresh TTLs not loaded: %v", err)
 	}
 }
 

@@ -26,11 +26,11 @@ func (f userLoader) GetUserInfo(ctx context.Context, id int64) (model.UserInfo, 
 
 func TestLoadUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	tokens, err := auth.NewTokenManager(config.AuthConfig{AccessSecret: strings.Repeat("a", 32), RefreshSecret: strings.Repeat("r", 32), AccessTTL: time.Minute, RefreshTTL: time.Hour})
+	tokens, err := auth.NewTokenManager(config.AuthConfig{AccessSecret: strings.Repeat("a", 32), RefreshSecret: strings.Repeat("r", 32), AccessTTL: time.Minute, RefreshTTL: time.Hour, ShortRefreshTTL: 30 * time.Minute})
 	if err != nil {
 		t.Fatal(err)
 	}
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

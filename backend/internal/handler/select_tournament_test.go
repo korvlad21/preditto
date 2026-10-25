@@ -65,7 +65,7 @@ func TestSelectTournamentValidation(t *testing.T) {
 
 func TestSelectTournamentRequiresAuth(t *testing.T) {
 	api, tokens, users := tournamentAPI(t, nil)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestSelectTournamentPostgres(t *testing.T) {
 		c.Next()
 		after, _ = middleware.CurrentUser(c)
 	})
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

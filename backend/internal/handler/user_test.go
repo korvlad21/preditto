@@ -44,7 +44,7 @@ func userRequest(api http.Handler, token, query, body string) *httptest.Response
 
 func TestGetUserInfoRequiresAuth(t *testing.T) {
 	api, tokens := userAPI(t, nil)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestGetUserInfoDatabaseError(t *testing.T) {
 		t.Fatal(err)
 	}
 	api, tokens := userAPI(t, db)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 		VALUES (81, 'Vladislav', 'Korobkin', '/avatars/81.png', 5);
 	`)
 	api, tokens := userAPI(t, db)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 		check(t, pair.AccessToken, "", "", want)
 	})
 
-	otherPair, _, err := tokens.GeneratePair(82)
+	otherPair, _, err := tokens.GeneratePair(82, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

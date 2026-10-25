@@ -63,7 +63,7 @@ func assertNoFavoriteTeam(t *testing.T, w *httptest.ResponseRecorder) {
 func TestGetFavoriteTeamAuthAndMissingFavorite(t *testing.T) {
 	users := &favoriteTeamLoader{user: model.UserInfo{ID: 81}}
 	api, tokens := favoriteTeamAPI(t, nil, users)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestGetFavoriteTeamPostgres(t *testing.T) {
 		INSERT INTO user_info (user_id, favorite_team_id) VALUES (81, 5);
 	`)
 	api, tokens := favoriteTeamAPI(t, db, service.NewUserService(repository.NewUserRepository(db)))
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestGetFavoriteTeamPostgres(t *testing.T) {
 			t.Fatalf("favorite response differs from get_team: %s", w.Body.String())
 		}
 	}
-	other, _, err := tokens.GeneratePair(82)
+	other, _, err := tokens.GeneratePair(82, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

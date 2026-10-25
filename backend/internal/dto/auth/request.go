@@ -31,8 +31,9 @@ func (r RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	Login    string `json:"login" binding:"required,max=255"`
-	Password string `json:"password" binding:"required"`
+	Login      string `json:"login" binding:"required,max=255"`
+	Password   string `json:"password" binding:"required"`
+	RememberMe *bool  `json:"remember_me,omitempty"`
 }
 
 type RefreshRequest struct {
