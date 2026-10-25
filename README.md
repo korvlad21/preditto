@@ -6,7 +6,7 @@ Go/Gin/PostgreSQL backend with a React/TypeScript/Vite frontend. The API impleme
 
 From the project root, copy [.env.example](.env.example) to an untracked `.env` and configure all values. PostgreSQL requires POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB and POSTGRES_SSLMODE. Inside Compose, the database host is normally `postgres`.
 
-Set two independent JWT_ACCESS_SECRET and JWT_REFRESH_SECRET values, each at least 32 bytes. For example, run `openssl rand -hex 32` separately for each secret. Keep secrets out of commits and command output shared in documentation. JWT_ACCESS_TOKEN_TTL must be whole seconds between 1s and 1h; JWT_REFRESH_TOKEN_TTL must be whole seconds and longer. The example uses 15m and 720h.
+Set two independent JWT_ACCESS_SECRET and JWT_REFRESH_SECRET values, each at least 32 bytes. For example, run `openssl rand -hex 32` separately for each secret. Keep secrets out of commits and command output shared in documentation. JWT_ACCESS_TOKEN_TTL must be whole seconds between 1s and 1h; JWT_REFRESH_TOKEN_TTL must be whole seconds and longer. JWT_REFRESH_TOKEN_SHORT_TTL defaults to 12h and must be longer than access TTL but shorter than JWT_REFRESH_TOKEN_TTL. The example uses 15m access, 12h short refresh and 720h remembered/legacy refresh. See [Remember Me](backend/docs/auth.md#remember-me) for optional request behavior.
 
 ```sh
 docker compose config --quiet

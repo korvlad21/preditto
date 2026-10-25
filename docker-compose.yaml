@@ -21,6 +21,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
       JWT_ACCESS_TOKEN_TTL: ${JWT_ACCESS_TOKEN_TTL:-15m}
       JWT_REFRESH_TOKEN_TTL: ${JWT_REFRESH_TOKEN_TTL:-720h}
+      JWT_REFRESH_TOKEN_SHORT_TTL: ${JWT_REFRESH_TOKEN_SHORT_TTL:-12h}
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${APP_PORT}/health || exit 1"]
       interval: 10s

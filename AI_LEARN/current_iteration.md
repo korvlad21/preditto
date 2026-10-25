@@ -1,19 +1,37 @@
 # Current iteration
 
-Date: 2026-10-22
+Date: 2026-10-25
 
 ## Outcome
 
-Reorganized AI documentation around [AGENTS.md](../AGENTS.md), one coding-conventions file, three conditional workflows, [architecture](architecture.md) and four [functional modules](modules/index.md). Module maintenance is mandatory for implementation changes that alter documented facts, including automatic documentation/index registration for new modules. Analysis-only tasks explicitly leave files unchanged.
+Implemented backend-only Remember Me for registration and login. Explicit false
+selects configurable short refresh lifetime (12h default); true selects the existing
+long lifetime (720h in the environment example). Omission/null preserves legacy
+behavior. The signed refresh claim carries the mode through the existing atomic
+rotation path; access tokens and public response envelopes are unchanged. Existing
+refresh tokens remain supported, with no database migration or frontend changes.
 
-Consolidated overlapping research/memory rules and command navigators, preserving dated command evidence in [the archive](archive/command-history.md). Updated setup, frontend, seed, migration and auth guidance against current source. Historical reference targets were repaired; current state now contains only active risks and next steps. No application code, migrations, seeds, dependencies or runtime configuration changed.
+The [auth module](modules/auth.md) and [API contract](../backend/docs/auth.md#remember-me)
+own behavior, configuration, compatibility details and source/test references.
 
 ## Verification
 
-Source/schema and existing test-scenario inspection covered all four modules and the shared backend/frontend boundaries. Strict UTF-8, local Markdown paths/anchors, module navigation, route/test-reference checks and git diff whitespace checks passed. The pre-edit SHA-256 baseline of 165 tracked non-Markdown files remained unchanged. Application tests, services, migrations and seeds were not executed for this documentation-only change; no deployed-state claims are made. External URLs were retained, not revalidated.
+Passed targeted race tests for auth, config, auth DTOs, handlers, middleware and
+router with PREDITTO_AUTH_TEST_DSN set to disposable PostgreSQL 18.6. Coverage
+includes both modes and legacy requests, expiration boundaries, invalid types,
+signed-mode tampering, repeated rotation, persisted expiration, ignored body
+overrides, logout, transaction rollback and concurrent refresh requests.
+Backend-wide go vet, Compose configuration validation, UTF-8, local documentation
+references, formatting and git diff whitespace checks passed. No deployed API or
+application database was used to validate the feature.
 
 ## Next step
 
-Use the module routing and maintenance rules on subsequent implementation tasks; update only facts affected by the task. Existing runtime/test limitations remain in [system state](system_state.md). This change introduces instruction-based maintenance, not a CI gate or proof of identical behavior across assistant products.
+Clients can opt in by sending a boolean remember_me on registration/login.
+Configure JWT_REFRESH_TOKEN_SHORT_TTL and JWT_REFRESH_TOKEN_TTL for deployment;
+short TTL must exceed access TTL and be less than long TTL. Client token storage
+is outside this backend change. Existing unrelated risks remain in
+[system state](system_state.md).
 
-Previous significant iteration: [UserRepository split](archive/2026-10-21-user-repository-split-iteration.md).
+The previous documentation reorganization is retained in AGENTS.md, the module
+and command indexes, and the conditional workflows; no additional archive is needed.

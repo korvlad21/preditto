@@ -15,12 +15,12 @@ import (
 
 func TestRequireAuth(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	cfg := config.AuthConfig{AccessSecret: strings.Repeat("a", 32), RefreshSecret: strings.Repeat("r", 32), AccessTTL: 15 * time.Minute, RefreshTTL: 720 * time.Hour}
+	cfg := config.AuthConfig{AccessSecret: strings.Repeat("a", 32), RefreshSecret: strings.Repeat("r", 32), AccessTTL: 15 * time.Minute, RefreshTTL: 720 * time.Hour, ShortRefreshTTL: 12 * time.Hour}
 	m, err := auth.NewTokenManager(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pair, _, err := m.GeneratePair(81)
+	pair, _, err := m.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

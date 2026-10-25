@@ -61,10 +61,11 @@ func LoadPostgres() (PostgresConfig, error) {
 }
 
 type AuthConfig struct {
-	AccessSecret  string
-	RefreshSecret string
-	AccessTTL     time.Duration
-	RefreshTTL    time.Duration
+	AccessSecret    string
+	RefreshSecret   string
+	AccessTTL       time.Duration
+	RefreshTTL      time.Duration
+	ShortRefreshTTL time.Duration
 }
 
 func loadAuth() (AuthConfig, error) {
@@ -85,6 +86,16 @@ func loadAuth() (AuthConfig, error) {
 		}
 		*field.value = value
 	}
+	// Preserve existing deployments that do not set the new short-session TTL.
+	shortTTL := os.Getenv("JWT_REFRESH_TOKEN_SHORT_TTL")
+	if shortTTL == "" {
+		shortTTL = "12h"
+	}
+	var err error
+	cfg.ShortRefreshTTL, err = time.ParseDuration(shortTTL)
+	if err != nil {
+		return AuthConfig{}, fmt.Errorf("JWT_REFRESH_TOKEN_SHORT_TTL must be a duration")
+	}
 	return cfg, cfg.Validate()
 }
 
@@ -100,6 +111,9 @@ func (c AuthConfig) Validate() error {
 	}
 	if c.RefreshTTL <= c.AccessTTL || c.RefreshTTL%time.Second != 0 {
 		return fmt.Errorf("JWT_REFRESH_TOKEN_TTL must be whole seconds and longer than the access TTL")
+	}
+	if c.ShortRefreshTTL <= c.AccessTTL || c.ShortRefreshTTL >= c.RefreshTTL || c.ShortRefreshTTL%time.Second != 0 {
+		return fmt.Errorf("JWT_REFRESH_TOKEN_SHORT_TTL must be whole seconds, longer than the access TTL and shorter than the refresh TTL")
 	}
 	return nil
 }

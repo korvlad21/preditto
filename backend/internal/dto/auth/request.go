@@ -17,6 +17,7 @@ type RegisterRequest struct {
 	Email                string `json:"email" binding:"required,email,max=255"`
 	Password             string `json:"password" binding:"required,min=8"`
 	PasswordConfirmation string `json:"password_confirmation" binding:"required,eqfield=Password"`
+	RememberMe           *bool  `json:"remember_me,omitempty"`
 	FavoriteTeamID       *int64 `json:"favorite_team_id" binding:"omitempty,gt=0"`
 }
 
@@ -31,8 +32,9 @@ func (r RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	Login    string `json:"login" binding:"required,max=255"`
-	Password string `json:"password" binding:"required"`
+	Login      string `json:"login" binding:"required,max=255"`
+	Password   string `json:"password" binding:"required"`
+	RememberMe *bool  `json:"remember_me,omitempty"`
 }
 
 type RefreshRequest struct {

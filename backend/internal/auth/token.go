@@ -18,7 +18,8 @@ import (
 var ErrInvalidToken = errors.New("invalid token")
 
 type Claims struct {
-	TokenType string `json:"token_type"`
+	TokenType  string `json:"token_type"`
+	RememberMe *bool  `json:"remember_me,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -43,13 +44,18 @@ func NewTokenManager(cfg config.AuthConfig) (*TokenManager, error) {
 }
 
 // GeneratePair returns the wire tokens and the only refresh data persisted to SQL.
-func (m *TokenManager) GeneratePair(userID int64) (authdto.TokenResponse, model.RefreshToken, error) {
+// A nil mode preserves legacy tokens; an explicit false selects the short TTL.
+func (m *TokenManager) GeneratePair(userID int64, rememberMe *bool) (authdto.TokenResponse, model.RefreshToken, error) {
 	now := m.now().UTC().Truncate(time.Second)
-	access, _, err := m.generate(userID, "access", m.cfg.AccessSecret, now, m.cfg.AccessTTL)
+	access, _, err := m.generate(userID, "access", m.cfg.AccessSecret, now, m.cfg.AccessTTL, nil)
 	if err != nil {
 		return authdto.TokenResponse{}, model.RefreshToken{}, err
 	}
-	refresh, claims, err := m.generate(userID, "refresh", m.cfg.RefreshSecret, now, m.cfg.RefreshTTL)
+	refreshTTL := m.cfg.RefreshTTL
+	if rememberMe != nil && !*rememberMe {
+		refreshTTL = m.cfg.ShortRefreshTTL
+	}
+	refresh, claims, err := m.generate(userID, "refresh", m.cfg.RefreshSecret, now, refreshTTL, rememberMe)
 	if err != nil {
 		return authdto.TokenResponse{}, model.RefreshToken{}, err
 	}
@@ -60,7 +66,7 @@ func (m *TokenManager) GeneratePair(userID int64) (authdto.TokenResponse, model.
 		}, nil
 }
 
-func (m *TokenManager) generate(userID int64, kind, secret string, now time.Time, ttl time.Duration) (string, Claims, error) {
+func (m *TokenManager) generate(userID int64, kind, secret string, now time.Time, ttl time.Duration, rememberMe *bool) (string, Claims, error) {
 	if userID <= 0 {
 		return "", Claims{}, ErrInvalidToken
 	}
@@ -68,7 +74,7 @@ func (m *TokenManager) generate(userID int64, kind, secret string, now time.Time
 	if _, err := rand.Read(random[:]); err != nil {
 		return "", Claims{}, err
 	}
-	claims := Claims{TokenType: kind, RegisteredClaims: jwt.RegisteredClaims{
+	claims := Claims{TokenType: kind, RememberMe: rememberMe, RegisteredClaims: jwt.RegisteredClaims{
 		Subject: strconv.FormatInt(userID, 10), ID: hex.EncodeToString(random[:]),
 		IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
 	}}

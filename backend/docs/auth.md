@@ -35,12 +35,16 @@ JWT_ACCESS_SECRET=<independent random secret, at least 32 bytes>
 JWT_REFRESH_SECRET=<different random secret, at least 32 bytes>
 JWT_ACCESS_TOKEN_TTL=15m
 JWT_REFRESH_TOKEN_TTL=720h
+JWT_REFRESH_TOKEN_SHORT_TTL=12h
 ```
 
 Generate each secret independently, for example with `openssl rand -hex 32`.
 Never commit actual secrets. `config.Load` validates the API configuration at
 startup: secrets must differ; TTLs must be positive whole seconds; access TTL
-cannot exceed one hour; refresh TTL must exceed access TTL. The seed CLI uses
+cannot exceed one hour; short refresh TTL must exceed access TTL and be shorter
+than the long refresh TTL. The short TTL defaults to `12h` when unset or empty.
+The existing `JWT_REFRESH_TOKEN_TTL` controls the long and legacy lifetime;
+Compose and the environment example use `720h` (30 days). The seed CLI uses
 `config.LoadPostgres` and does not require JWT secrets.
 
 Apply migration 000009 before running the API. Registration requires the existing
@@ -79,6 +83,32 @@ Request bodies are limited to 16 KiB. DTO validation and malformed JSON return 4
 - Favorite team: optional or null; when supplied, a positive existing team ID.
 - Username and email uniqueness follow the existing case-sensitive PostgreSQL
   constraints. Inputs are not silently lowercased or normalized.
+
+## Remember Me
+
+Registration and login accept optional JSON `remember_me`:
+
+| Value | Refresh lifetime |
+| --- | --- |
+| `true` | `JWT_REFRESH_TOKEN_TTL` (configured example: 720h / 30 days) |
+| `false` | `JWT_REFRESH_TOKEN_SHORT_TTL` (default: 12h) |
+| Omitted or `null` | Existing `JWT_REFRESH_TOKEN_TTL` behavior for compatibility |
+
+For example, login accepts
+`{"login":"korvlad21","password":"password","remember_me":false}`.
+Strings, numbers, arrays and objects for this field return 400 `INVALID_REQUEST`.
+Access lifetime, response envelopes and `expires_in` (access lifetime in seconds)
+are unchanged. No frontend or cookie storage is implemented by this API.
+
+The selected mode is embedded in the signed refresh JWT, never trusted from the
+refresh request body. Rotation copies the verified mode to the new token and
+uses the currently configured TTL for that mode, starting from issuance time.
+There is no absolute session lifetime cap. Existing refresh JWTs without the
+claim remain valid and retain legacy behavior during rotation. No schema change
+is needed: the existing stored hash binds the entire signed token, including
+its mode, to the session. Logout and single-use rotation retain their existing
+transactional behavior. Deploying this feature does not change the expiration
+of tokens already issued.
 
 ## Registration
 
@@ -184,8 +214,10 @@ Content-Type: application/json
 
 The TokenManager requires HS256, a valid signature using the refresh secret,
 expiration, issued-at time, positive user subject, nonempty JTI, and
-`token_type = refresh`. JWTs contain only `sub`, `iat`, `exp`, `jti`, and
-`token_type`. Both JTIs are generated independently with `crypto/rand`.
+`token_type = refresh`. JWTs contain `sub`, `iat`, `exp`, `jti`, and
+`token_type`. Refresh JWTs additionally contain `remember_me` when explicitly
+selected at registration/login; access JWTs do not. Both JTIs are generated
+independently with `crypto/rand`.
 
 Within one transaction the service locks and checks the user, then locks the
 refresh session with `FOR UPDATE` and checks its user, database and JWT expiration,

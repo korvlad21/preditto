@@ -59,7 +59,7 @@ func tournamentRequest(api http.Handler, token, body string, query ...string) *h
 
 func TestGetAllTournamentsRequiresAuth(t *testing.T) {
 	api, tokens, users := tournamentAPI(t, nil)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 			(202, 81, 'blocked'), (203, 82, 'active'), (204, 81, 'not_paid');
 	`)
 	api, tokens, users := tournamentAPI(t, db)
-	pair, _, err := tokens.GeneratePair(81)
+	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,14 +234,14 @@ func TestGetAllTournamentsPostgres(t *testing.T) {
 	check(t, pair.AccessToken, "", all)
 
 	execSQL(t, db, `UPDATE user_info SET selected_tournament_id = 201 WHERE user_id = 81`)
-	otherPair, _, err := tokens.GeneratePair(82)
+	otherPair, _, err := tokens.GeneratePair(82, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	check(t, otherPair.AccessToken, `{"user_id":81}`, all)
 	check(t, otherPair.AccessToken, `{"user_id":81,"is_participate":true}`, []map[string]any{all[0], all[2]})
 	check(t, otherPair.AccessToken, `{"is_participate":false}`, []map[string]any{all[1], all[3], all[4]})
-	noParticipationPair, _, err := tokens.GeneratePair(84)
+	noParticipationPair, _, err := tokens.GeneratePair(84, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
