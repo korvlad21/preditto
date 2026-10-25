@@ -38,6 +38,9 @@ The server binds all interfaces on port 8080 by default; APP_PORT overrides the 
 
 ## Documentation and checks
 
+- [Swagger UI and generation](backend/docs/swagger.md): set `APP_ENV=development`,
+  then open [Swagger UI](http://localhost:8080/swagger/index.html). Update with
+  `make swagger`; verify with `make swagger-check`. Other environments do not expose Swagger.
 - [Architecture and module navigation](AI_LEARN/index.md).
 - [AI contributor instructions](AGENTS.md).
 - [API response contract](backend/docs/responses.md), [auth](backend/docs/auth.md), [users](backend/docs/user.md), [teams/countries](backend/docs/teams.md), [tournaments](backend/docs/tournaments.md).

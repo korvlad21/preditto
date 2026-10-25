@@ -15,6 +15,7 @@ func postgresEnv() map[string]string {
 }
 
 func TestLoad(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
 	setAuthEnv(t)
 	for key, value := range postgresEnv() {
 		t.Setenv(key, value)
@@ -29,6 +30,9 @@ func TestLoad(t *testing.T) {
 	}
 	if cfg.Postgres != want {
 		t.Fatal("PostgreSQL configuration does not preserve environment values")
+	}
+	if cfg.Environment != "development" {
+		t.Fatal("APP_ENV was not loaded")
 	}
 }
 

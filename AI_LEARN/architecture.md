@@ -45,7 +45,15 @@ Countries share the teams document. Participation and prize rules belong to tour
 
 ## Shared request and transaction behavior
 
-All nine current `/api/*` endpoints use POST. Public auth/team routes and protected user/tournament routes are wired separately. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile snapshot per request. See [users](modules/users.md#current-user-snapshot) for its lifecycle and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
+All eleven current `/api/*` endpoints use POST. Public auth/team routes and protected user/tournament/favorite-team routes are wired separately. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile snapshot per request. See [users](modules/users.md#current-user-snapshot) for its lifecycle and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
+
+Swagger UI and its JSON specification are registered only for explicit
+`APP_ENV=development`, independently of Gin mode. The shared `newRouter` composition
+in main.go lets coverage tests compare actual routes with the generated document.
+Handler annotations reuse existing DTOs/models; anonymous envelopes are described
+in `internal/apidocs`. The single generated artifact is `docs/swagger/docs.go`.
+See the [Swagger guide](../backend/docs/swagger.md) for generation, dependencies,
+authorization and automated checks, and the [maintenance rule](index.md#api-documentation-maintenance).
 
 `AuthRepository.InTransaction` supplies auth and user repository instances backed by one `sql.Tx`. AuthService uses the callback instances for atomic registration and session issuance/rotation; see [auth transaction rules](modules/auth.md#transactions-and-concurrency). Ordinary profile reads and selection writes use UserRepository directly. No generic transaction manager is implemented.
 

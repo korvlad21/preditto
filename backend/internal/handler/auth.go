@@ -21,6 +21,18 @@ func NewAuthHandler(service *service.AuthService) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
+// Register register a user.
+// @Summary Register a user
+// @Tags Auth
+// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Always issues a short refresh session. Unknown fields, including remember_me, are ignored.
+// @Accept json
+// @Param request body authdto.RegisterRequest true "JSON request body"
+// @Produce json
+// @Success 201 {object} apidocs.Success{data=authdto.AuthResponse}
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST or FAVORITE_TEAM_NOT_FOUND"
+// @Failure 409 {object} apidocs.Error "USERNAME_ALREADY_EXISTS or EMAIL_ALREADY_EXISTS"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Router /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req authdto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,6 +51,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, result)
 }
 
+// Login log in with username or email.
+// @Summary Log in with username or email
+// @Tags Auth
+// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Case-sensitive login. remember_me=false selects short refresh lifetime; true selects long lifetime; omitted/null retains long legacy lifetime.
+// @Accept json
+// @Param request body authdto.LoginRequest true "JSON request body"
+// @Produce json
+// @Success 200 {object} apidocs.Success{data=authdto.AuthResponse}
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST"
+// @Failure 401 {object} apidocs.Error "INVALID_CREDENTIALS"
+// @Failure 403 {object} apidocs.Error "USER_BLOCKED"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Router /api/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req authdto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -53,6 +78,19 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.Success(c, http.StatusOK, result)
 }
 
+// Refresh rotate a refresh token.
+// @Summary Rotate a refresh token
+// @Tags Auth
+// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Single-use rotation. Replace both tokens after success. The signed session mode is preserved; body fields cannot override it.
+// @Accept json
+// @Param request body authdto.RefreshRequest true "JSON request body"
+// @Produce json
+// @Success 200 {object} apidocs.Success{data=authdto.TokenResponse}
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST"
+// @Failure 401 {object} apidocs.Error "INVALID_TOKEN"
+// @Failure 403 {object} apidocs.Error "USER_BLOCKED"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Router /api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req authdto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,6 +105,18 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	response.Success(c, http.StatusOK, result)
 }
 
+// Logout revoke a refresh session.
+// @Summary Revoke a refresh session
+// @Tags Auth
+// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Repeated logout of an unexpired revoked session succeeds. Blocked users may log out. Access tokens remain valid until expiry. Success omits data.
+// @Accept json
+// @Param request body authdto.RefreshRequest true "JSON request body"
+// @Produce json
+// @Success 200 {object} apidocs.EmptySuccess
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST"
+// @Failure 401 {object} apidocs.Error "INVALID_TOKEN"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Router /api/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req authdto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

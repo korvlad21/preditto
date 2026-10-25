@@ -10,6 +10,8 @@ Owns account/profile persistence, the request's current-user snapshot, selected 
 
 The response includes the account creation timestamp from `users.created_at` through `UserInfo.CreatedAt`. The existing joined query loads it into the shared snapshot without additional database queries, including when no profile exists.
 
+The user handler Swagger annotation reuses UserInfo, including its nullable profile fields. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
+
 ## Current-user snapshot
 
 `RequireAuth` establishes UserIDKey; `LoadUser` then calls UserService.GetUserInfo once and stores a shared `*model.UserInfo` in Gin context. `UserHandler` reads `middleware.CurrentUser` without another database query. The chain is attached in [main.go](../../backend/cmd/api/main.go) and shared with tournament routes.

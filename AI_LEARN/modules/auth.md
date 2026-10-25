@@ -15,6 +15,8 @@ Owns registration, credential verification, JWT issuance, refresh-session rotati
 
 Exact fields, validation bounds, errors and examples live in the [auth contract](../../backend/docs/auth.md), which uses the [shared response contract](../../backend/docs/responses.md). Routes are public, but refresh/logout validate the submitted refresh credential. Auth requests are limited to 16 KiB and responses have no-store/no-cache headers.
 
+Auth handler Swagger annotations reuse the auth request/response DTOs and User model. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
+
 ## Business behavior
 
 - Registration validates the DTO, hashes the password with bcrypt, creates an ACTIVE account and profile, assigns the existing participant role by code, and persists the first refresh session. Database uniqueness and favorite-team constraints remain authoritative; IDs are obtained from the database.

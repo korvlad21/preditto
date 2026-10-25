@@ -13,6 +13,8 @@ Owns tournament listing, user selection coordination, participant/prize projecti
 
 Both routes require RequireAuth followed by LoadUser. The [tournament API contract](../../backend/docs/tournaments.md) owns exact fields, error codes and examples, using the [shared response contract](../../backend/docs/responses.md).
 
+Tournament handler Swagger annotations reuse the tournament request DTOs and Tournament projection. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
+
 ## Execution and business rules
 
 Listing passes CurrentUser.ID and CurrentUser.SelectedTournamentID from handler to service. TournamentService normalizes omitted/empty status or lowercase all to no status filter and marks selected rows without another user read. Other status values match exactly; unknown values return an empty list. TournamentRepository uses one parameterized query, ordered by created_at DESC then id DESC.
