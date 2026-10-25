@@ -20,6 +20,13 @@ Preditto has a Go HTTP backend and a React/TypeScript/Vite frontend. The backend
 
 The API process does not run migrations or seeds. `/health` checks process responsiveness, not database readiness. Host setup and environment requirements are in the [root README](../README.md); migration and seed procedures live in their respective [migration guide](../backend/migrations/README.md) and [seed guide](../backend/seeds/README.md).
 
+During development, Vite forwards relative `/api` requests to Go without path
+rewriting. The default target is localhost:8080; Compose supplies the internal
+backend:8080 address through API_PROXY_TARGET. This development-only routing is
+disabled for build and preview and adds no backend CORS policy. Production must
+provide its own same-origin `/api` routing. Configuration and client examples
+live in the [frontend guide](../frontend/README.md#assets-and-api-integration).
+
 ## Functional boundaries
 
 Use the [module index](modules/index.md) to select sources and tests.
