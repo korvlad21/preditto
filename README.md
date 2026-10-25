@@ -1,6 +1,6 @@
 # Preditto
 
-Go/Gin/PostgreSQL backend with a React/TypeScript/Vite frontend. The API implements authentication, current-user profiles, teams/countries and tournament listing/selection. The frontend currently contains starter UI and static team logos, with no API client or authentication flow.
+Go/Gin/PostgreSQL backend with a React/TypeScript/Vite frontend. The API implements authentication, current-user profiles, teams/countries and tournament listing/selection. The frontend currently contains routing, an empty home page, unwired login/registration forms and static team logos, with no API client.
 
 ## Development with Docker Compose
 

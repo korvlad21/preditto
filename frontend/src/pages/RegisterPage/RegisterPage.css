@@ -1,0 +1,9 @@
+/* Registration keeps visible labels wrapping each input. */
+.auth-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--auth-text);
+}

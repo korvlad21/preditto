@@ -1,0 +1,30 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo__mark {
+  width: 56px;
+  height: 62px;
+  filter: drop-shadow(0 0 10px rgba(80, 110, 255, 0.7));
+}
+
+.brand-logo__text {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .brand-logo__mark {
+    width: 44px;
+    height: 50px;
+  }
+
+  .brand-logo__text {
+    font-size: 32px;
+  }
+}
