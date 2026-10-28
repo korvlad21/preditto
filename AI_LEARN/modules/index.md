@@ -5,6 +5,7 @@ Select documentation by the behavior being changed, not only by the directory na
 | Task triggers | Module | Related context |
 | --- | --- | --- |
 | Register/login, passwords, JWT, refresh/logout, sessions | [Auth](auth.md) | Users for transactional account/profile/role writes |
+| SMTP sending, mail settings, TLS, MIME, explicit test email | [Email sending](email.md) | Shared configuration and Compose; independent of auth/user persistence |
 | Account/profile storage, get_user_info, CurrentUser/LoadUser, role assignments | [Users](users.md) | Auth for identity; teams for favorites; tournaments for selection |
 | Teams, countries, country filters, team logos and reference seeds | [Teams and countries](teams.md) | Users for favorite-team references; asset inventory for logos |
 | Tournament lists/status, selected tournament, participant counts, prizes, stages and tournament seeds | [Tournaments](tournaments.md) | Users for profile writes/snapshot; auth for access identity |

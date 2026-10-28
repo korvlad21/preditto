@@ -11,6 +11,7 @@ type Config struct {
 	Environment string
 	Postgres    PostgresConfig
 	Auth        AuthConfig
+	Mail        MailConfig
 }
 
 type PostgresConfig struct {
@@ -31,7 +32,11 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return Config{Environment: os.Getenv("APP_ENV"), Postgres: postgres, Auth: auth}, nil
+	mail, err := LoadMail()
+	if err != nil {
+		return Config{}, err
+	}
+	return Config{Environment: os.Getenv("APP_ENV"), Postgres: postgres, Auth: auth, Mail: mail}, nil
 }
 
 // LoadPostgres keeps database-only tools independent of API signing secrets.

@@ -15,6 +15,7 @@ func postgresEnv() map[string]string {
 }
 
 func TestLoad(t *testing.T) {
+	t.Setenv("MAIL_ENABLED", "false")
 	t.Setenv("APP_ENV", "development")
 	setAuthEnv(t)
 	for key, value := range postgresEnv() {

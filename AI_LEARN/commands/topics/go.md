@@ -26,6 +26,21 @@ For formatting, inspect changed Go files with `gofmt -l`; write only files in sc
 - Tests create isolated schemas, apply migrations and clean up. Without the respective variable, database scenarios skip; package success alone does not prove integration coverage.
 - Full-suite integration verification requires both variables. Module documents link the relevant test files and narrower commands.
 
+## SMTP module checks
+
+From `backend/`, run:
+
+```sh
+go test -race -mod=readonly -count=1 ./internal/mailer ./internal/config ./cmd/mailtest
+go vet -mod=readonly ./internal/mailer ./internal/config ./cmd/mailtest
+```
+
+SMTP tests bind temporary loopback ports and use generated TLS certificates.
+They need no external credentials or database and do not contact Mail.ru. The
+explicit [mailtest command](../../../README.md#smtp-email) sends real mail only
+when invoked with enabled, complete configuration; do not use it as an automatic
+test with a developer's credentials.
+
 <a id="failure-20261017-001"></a>
 ## Known seed race limitation
 
