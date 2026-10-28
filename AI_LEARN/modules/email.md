@@ -40,8 +40,7 @@ the explicit CLI test command. Compose loads `.env`; Go reads process environmen
 
 | Source | Responsibility |
 | --- | --- |
-| [global.go](../../backend/internal/mailer/global.go) | Process-wide Configure/Send, atomic sender publication and disabled default |
-| [mailer.go](../../backend/internal/mailer/mailer.go) | Message, constructor, encrypted SMTP send and safe errors |
+| [mailer.go](../../backend/internal/mailer/mailer.go) | Message, process-wide Configure/Send, constructor, encrypted SMTP send and safe errors |
 | [mail.go](../../backend/internal/config/mail.go) | Independent `LoadMail`, validation, disabled default |
 | [config.go](../../backend/internal/config/config.go) | Includes `Mail` in API configuration; rejects invalid enabled settings |
 | [mailtest](../../backend/cmd/mailtest/main.go) | Explicit recipient, optional body flags, no DB/JWT dependency |
