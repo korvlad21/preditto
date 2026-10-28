@@ -69,3 +69,7 @@ Public error-code strings are centralized in [response/error.go](../backend/inte
 The current schema has sixteen migration pairs and sixteen application tables. Rankings currently have schema only; position calculation and points awarding are not implemented. Module documents explain important relationships; SQL remains authoritative for exact types and constraints. Existing baseline migrations 4 and 10 were revised for selected tournament storage: an already applied older baseline will not be replayed by normal `up`. See [active constraints](system_state.md).
 
 Source review establishes implementation behavior, not deployed state. PostgreSQL HTTP tests require `PREDITTO_AUTH_TEST_DSN`; seed tests require `PREDITTO_SEED_TEST_DSN`. Without them, integration tests skip. Use the [command index](commands/index.md) for checks and the known seed race limitation. Local toolchain, database versions, credentials and runtime observations belong only in ignored `AI_USER_LEARN`.
+
+Email uses a process-wide sender configured by `mailer.Configure` at API startup.
+Handlers and services call `mailer.Send` directly; the [email module](modules/email.md)
+owns its disabled default, concurrency behavior and test isolation rules.

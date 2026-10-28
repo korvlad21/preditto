@@ -40,14 +40,20 @@ the explicit CLI test command. Compose loads `.env`; Go reads process environmen
 
 | Source | Responsibility |
 | --- | --- |
+| [global.go](../../backend/internal/mailer/global.go) | Process-wide Configure/Send, atomic sender publication and disabled default |
 | [mailer.go](../../backend/internal/mailer/mailer.go) | Message, constructor, encrypted SMTP send and safe errors |
 | [mail.go](../../backend/internal/config/mail.go) | Independent `LoadMail`, validation, disabled default |
 | [config.go](../../backend/internal/config/config.go) | Includes `Mail` in API configuration; rejects invalid enabled settings |
 | [mailtest](../../backend/cmd/mailtest/main.go) | Explicit recipient, optional body flags, no DB/JWT dependency |
 | [Compose](../../docker-compose.yaml), [.env.example](../../.env.example) | Mail.ru defaults, backend-only mail environment and `tools`-profile CLI service |
 
-The API constructs the mailer once in `cmd/api/main.go` and injects it into
-`AuthHandler` through a small `EmailSender` interface. After successful login,
+The API calls `mailer.Configure(cfg.Mail)` once in `cmd/api/main.go`. Handlers
+and services call package-level `mailer.Send` without dependency injection.
+The atomic pointer makes publication and concurrent reads safe; each send takes
+a snapshot of its sender. Invalid configuration leaves the prior sender intact.
+Before configuration, sending returns `ErrDisabled`. Configuration is shared
+process state: tests must restore disabled settings and avoid parallel overrides.
+`mailer.New` remains available for private senders such as the CLI. After successful login,
 the handler sends to `result.User.Email` using the request context. Errors are
 logged but do not fail login; disabled mail is silently ignored. `LoadPostgres`
 remains independent of mail configuration.
@@ -72,6 +78,13 @@ outbound SMTP and domain setup appropriate to the provider. The local fixture
 tests do not establish delivery through Mail.ru or the configured deployment.
 
 ## Verification
+
+[Global sender tests](../../backend/internal/mailer/global_test.go) cover the
+unconfigured/disabled default, preserving the sender after invalid configuration,
+local TLS delivery through package-level Send, and concurrent Configure/Send.
+Handler PostgreSQL tests use disabled mail or a loopback TLS failure to verify
+that rejected login does not attempt sending and SMTP failure preserves tokens.
+
 
 [SMTP tests](../../backend/internal/mailer/mailer_test.go) use an isolated loopback
 server and trusted test certificate. They cover implicit TLS, mandatory STARTTLS,

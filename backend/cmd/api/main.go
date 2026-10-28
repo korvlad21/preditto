@@ -85,12 +85,10 @@ func newRouter(db *sql.DB, cfg config.Config) (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	sender, err := mailer.New(cfg.Mail)
-
-	if err != nil {
+	if err := mailer.Configure(cfg.Mail); err != nil {
 		return nil, err
 	}
-	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService, sender))
+	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
 	userService := service.NewUserService(users)
 	authMiddleware := []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(userService)}
 	protected := router.Group("/api", authMiddleware...)

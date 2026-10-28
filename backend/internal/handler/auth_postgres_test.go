@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -96,15 +96,10 @@ func testConfig() config.AuthConfig {
 
 func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	t.Helper()
-	sender, err := mailer.New(config.MailConfig{})
-	if err != nil {
+	if err := mailer.Configure(config.MailConfig{}); err != nil {
 		t.Fatal(err)
 	}
-	return testAPIWithMail(t, db, sender)
-}
-
-func testAPIWithMail(t *testing.T, db *sql.DB, sender handler.EmailSender) (*gin.Engine, *auth.TokenManager) {
-	t.Helper()
+	t.Cleanup(func() { _ = mailer.Configure(config.MailConfig{}) })
 	gin.SetMode(gin.TestMode)
 	tokens, err := auth.NewTokenManager(testConfig())
 	if err != nil {
@@ -115,7 +110,7 @@ func testAPIWithMail(t *testing.T, db *sql.DB, sender handler.EmailSender) (*gin
 		t.Fatal(err)
 	}
 	r := router.New()
-	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc, sender))
+	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc))
 	r.GET("/protected", middleware.RequireAuth(tokens), func(c *gin.Context) { c.JSON(200, gin.H{"user_id": c.GetInt64(middleware.UserIDKey)}) })
 	return r, tokens
 }
@@ -658,49 +653,53 @@ func TestRememberMeInvalidRequests(t *testing.T) {
 	}
 }
 
-// Never contact an external SMTP server in authentication tests.
-type recordingLoginMailer struct {
-	messages []mailer.Message
-	err      error
-}
-
-func (m *recordingLoginMailer) Send(ctx context.Context, message mailer.Message) error {
-	m.messages = append(m.messages, message)
-	return m.err
-}
-
+// A loopback listener aborts TLS before any credentials or message can be sent.
+// Global mail configuration tests must not run in parallel with other handlers.
 func TestLoginNotificationPostgres(t *testing.T) {
-	for _, fail := range []bool{false, true} {
-		t.Run(fmt.Sprintf("smtp_failure=%t", fail), func(t *testing.T) {
-			db := postgres(t)
-			sender := &recordingLoginMailer{}
-			if fail {
-				sender.err = errors.New("test SMTP failure")
+	db := postgres(t)
+	api, _ := testAPI(t, db)
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempts := make(chan struct{}, 4)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
 			}
-			api, _ := testAPIWithMail(t, db, sender)
-			req := registration()
-			assertStatus := func(w *httptest.ResponseRecorder, want int) {
-				t.Helper()
-				if w.Code != want {
-					t.Fatalf("status %d, want %d", w.Code, want)
-				}
-			}
-			assertStatus(call(t, api, "register", req), http.StatusCreated)
-			assertStatus(call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: "wrong-password"}), http.StatusUnauthorized)
-			if len(sender.messages) != 0 {
-				t.Fatal("registration or failed login sent email")
-			}
-			w := call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: req.Password})
-			assertStatus(w, http.StatusOK)
-			if len(sender.messages) != 1 || sender.messages[0].To != req.Email || sender.messages[0].Text == "" {
-				t.Fatal("login notification missing or wrong recipient")
-			}
-			var response struct {
-				Data authdto.AuthResponse `json:"data"`
-			}
-			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil || response.Data.AccessToken == "" || response.Data.RefreshToken == "" {
-				t.Fatal("notification affected login token response", err)
-			}
-		})
+			attempts <- struct{}{}
+			_ = conn.Close()
+		}
+	}()
+	t.Cleanup(func() { _ = listener.Close(); <-done })
+	err = mailer.Configure(config.MailConfig{
+		Enabled: true, Host: "127.0.0.1", Port: listener.Addr().(*net.TCPAddr).Port,
+		Username: "test", Password: "test", FromAddress: "sender@example.com",
+		TLSMode: "tls", AuthType: "plain", Timeout: time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := registration()
+	if w := call(t, api, "register", req); w.Code != http.StatusCreated {
+		t.Fatal(w.Code)
+	}
+	assertError(t, call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: "wrong-password"}), http.StatusUnauthorized, "INVALID_CREDENTIALS")
+	if len(attempts) != 0 {
+		t.Fatal("registration or rejected login attempted mail")
+	}
+	w := call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: req.Password})
+	if w.Code != http.StatusOK || len(attempts) != 1 {
+		t.Fatal("login must attempt mail and succeed despite SMTP failure", w.Code)
+	}
+	var response struct {
+		Data authdto.AuthResponse `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil || response.Data.AccessToken == "" || response.Data.RefreshToken == "" {
+		t.Fatal("notification affected login token response", err)
 	}
 }

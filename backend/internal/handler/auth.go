@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -16,18 +15,12 @@ import (
 	"preditto/internal/service"
 )
 
-// EmailSender is the email transport used for login notifications.
-type EmailSender interface {
-	Send(context.Context, mailer.Message) error
-}
-
 type AuthHandler struct {
 	service *service.AuthService
-	mailer  EmailSender
 }
 
-func NewAuthHandler(service *service.AuthService, sender EmailSender) *AuthHandler {
-	return &AuthHandler{service: service, mailer: sender}
+func NewAuthHandler(service *service.AuthService) *AuthHandler {
+	return &AuthHandler{service: service}
 }
 
 // Register register a user.
@@ -85,7 +78,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if err := h.mailer.Send(c.Request.Context(), mailer.Message{
+	if err := mailer.Send(c.Request.Context(), mailer.Message{
 		To:      result.User.Email,
 		Subject: "Вход в Preditto",
 		Text:    "Вы вошли в свой аккаунт Preditto.",

@@ -98,9 +98,14 @@ whole send, including greeting/authentication and message transfer. With
 
 To change provider, update host, port, TLS/auth modes, credentials and the
 provider-authorized sender. The application-facing message format remains the
-same. Future service integration can construct one sender with
-`mailer.New(cfg.Mail)` at the composition root and call
-`sender.Send(ctx, mailer.Message{To: address, Subject: subject, Text: text, HTML: html})`.
+same. The API configures a process-wide sender once at startup with
+`mailer.Configure(cfg.Mail)`. Any backend handler or service can import
+`preditto/internal/mailer` and call
+`mailer.Send(ctx, mailer.Message{To: address, Subject: subject, Text: text, HTML: html})`
+without a field, interface or constructor argument. Before configuration, sending
+returns `mailer.ErrDisabled`. Configuration is shared across the process; tests
+that change it must restore disabled settings and must not run in parallel.
+The CLI and isolated SMTP tests can still use `mailer.New` for a private sender.
 `To` is one mailbox; `Subject` and `Text` must be nonempty. HTML is optional and
 is sent as supplied; use escaped templates when inserting user data. Pass the
 caller's context. No connection is opened by the constructor.
