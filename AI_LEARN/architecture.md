@@ -34,7 +34,7 @@ Use the [module index](modules/index.md) to select sources and tests.
 | Module | Owns | Depends on |
 | --- | --- | --- |
 | [Auth](modules/auth.md) | Credentials, token issuance and refresh-session lifecycle | User persistence and participant-role assignment |
-| [Email sending](modules/email.md) | SMTP transport, MIME composition and explicit CLI testing | Shared configuration; no current API/business consumer |
+| [Email sending](modules/email.md) | SMTP transport, MIME composition and explicit CLI testing | Shared configuration; auth handler for login notifications |
 | [Users](modules/users.md) | Accounts, profiles, shared current-user snapshot and role persistence | Team and tournament references; auth establishes identity |
 | [Teams](modules/teams.md) | Team/country reference data and logo paths | Country FK and frontend static assets |
 | [Tournaments](modules/tournaments.md) | Listing, selection coordination, participant/prize projections | User profile selection and authenticated snapshot |

@@ -179,6 +179,12 @@ Content-Type: application/json
 registration, including the user and a newly persisted token pair. Each successful
 login creates an independent session.
 
+After the session commits, the login handler attempts a synchronous email
+notification to the account email when mail is enabled. SMTP failure or disabled
+mail does not change the HTTP 200 response or token pair. A send may delay the
+response up to the configured SMTP timeout (or request cancellation). Rejected
+login and registration do not send notifications.
+
 The repository looks up username or email using parameterized SQL. The service
 uses `bcrypt.CompareHashAndPassword`; unknown logins also run a bcrypt comparison
 against an unused hash to reduce the timing difference. Wrong passwords and

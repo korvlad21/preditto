@@ -9,15 +9,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"preditto/internal/auth"
 	"preditto/internal/config"
 	"preditto/internal/database"
 	"preditto/internal/handler"
+	"preditto/internal/mailer"
 	"preditto/internal/middleware"
 	"preditto/internal/repository"
 	apirouter "preditto/internal/router"
 	"preditto/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 // @title Preditto API
@@ -83,7 +85,12 @@ func newRouter(db *sql.DB, cfg config.Config) (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService))
+	sender, err := mailer.New(cfg.Mail)
+
+	if err != nil {
+		return nil, err
+	}
+	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService, sender))
 	userService := service.NewUserService(users)
 	authMiddleware := []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(userService)}
 	protected := router.Group("/api", authMiddleware...)

@@ -7,7 +7,7 @@ unit tests and vet passed. No real Mail.ru delivery was attempted.
 
 Owns SMTP transport and MIME composition for individual messages. Read this for
 mail configuration, TLS/authentication, SMTP errors or test sends. There is no
-HTTP API, database persistence or automatic business-triggered email. Account
+dedicated email HTTP API or database persistence. Successful login sends a notification from the auth handler. Account
 registration and credentials remain owned by [auth](auth.md).
 
 The [setup guide](../../README.md#smtp-email) contains environment settings and
@@ -46,11 +46,12 @@ the explicit CLI test command. Compose loads `.env`; Go reads process environmen
 | [mailtest](../../backend/cmd/mailtest/main.go) | Explicit recipient, optional body flags, no DB/JWT dependency |
 | [Compose](../../docker-compose.yaml), [.env.example](../../.env.example) | Mail.ru defaults, backend-only mail environment and `tools`-profile CLI service |
 
-The API currently loads mail configuration but has no consumer to inject a sender
-into. A future use case should construct it in `cmd/api/main.go` and pass it to
-the consuming service. `LoadPostgres` remains independent of mail configuration.
-Mail credentials are not passed to seeds, migrations or frontend. No schema or
-Swagger change is involved.
+The API constructs the mailer once in `cmd/api/main.go` and injects it into
+`AuthHandler` through a small `EmailSender` interface. After successful login,
+the handler sends to `result.User.Email` using the request context. Errors are
+logged but do not fail login; disabled mail is silently ignored. `LoadPostgres`
+remains independent of mail configuration.
+Mail credentials are not passed to seeds, migrations or frontend. No schema change is involved.
 
 ## Dependencies and limits
 

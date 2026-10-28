@@ -40,7 +40,9 @@ The server binds all interfaces on port 8080 by default; APP_PORT overrides the 
 
 The [mailer module](AI_LEARN/modules/email.md) sends plain-text messages with an
 optional HTML alternative. Sending is disabled by default. There is no public
-email endpoint and registration/authentication do not send messages.
+email endpoint. Successful login sends an email notification to the account
+address; delivery errors are logged without failing login. Registration does not
+send messages.
 
 Add the mail settings from [.env.example](.env.example) to your existing ignored
 `.env` (do not overwrite existing database/JWT values). For Mail.ru, including an
@@ -69,7 +71,8 @@ literal. Production should inject the same settings from deployment secrets.
 From the project root, send one explicit test message to an address you control:
 
 ```sh
-docker compose --profile tools run --rm --build --no-deps mailtest -to recipient@example.com
+docker compose --profile tools build mailtest
+docker compose --profile tools run --rm --no-deps mailtest -to recipient@example.com
 ```
 
 The tool reads the root `.env` through Compose, uses only mail configuration, and

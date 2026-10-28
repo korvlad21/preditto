@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -26,6 +27,7 @@ import (
 	"preditto/internal/config"
 	authdto "preditto/internal/dto/auth"
 	"preditto/internal/handler"
+	"preditto/internal/mailer"
 	"preditto/internal/middleware"
 	"preditto/internal/repository"
 	"preditto/internal/router"
@@ -94,6 +96,15 @@ func testConfig() config.AuthConfig {
 
 func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	t.Helper()
+	sender, err := mailer.New(config.MailConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return testAPIWithMail(t, db, sender)
+}
+
+func testAPIWithMail(t *testing.T, db *sql.DB, sender handler.EmailSender) (*gin.Engine, *auth.TokenManager) {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 	tokens, err := auth.NewTokenManager(testConfig())
 	if err != nil {
@@ -104,7 +115,7 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 		t.Fatal(err)
 	}
 	r := router.New()
-	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc))
+	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc, sender))
 	r.GET("/protected", middleware.RequireAuth(tokens), func(c *gin.Context) { c.JSON(200, gin.H{"user_id": c.GetInt64(middleware.UserIDKey)}) })
 	return r, tokens
 }
@@ -644,5 +655,52 @@ func TestRememberMeInvalidRequests(t *testing.T) {
 	for _, invalid := range []any{"true", "false", 0, 1, []bool{true}, map[string]bool{"value": true}} {
 		body := map[string]any{"login": "remember-user", "password": "password", "remember_me": invalid}
 		assertError(t, call(t, api, "login", body), 400, "INVALID_REQUEST")
+	}
+}
+
+// Never contact an external SMTP server in authentication tests.
+type recordingLoginMailer struct {
+	messages []mailer.Message
+	err      error
+}
+
+func (m *recordingLoginMailer) Send(ctx context.Context, message mailer.Message) error {
+	m.messages = append(m.messages, message)
+	return m.err
+}
+
+func TestLoginNotificationPostgres(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		t.Run(fmt.Sprintf("smtp_failure=%t", fail), func(t *testing.T) {
+			db := postgres(t)
+			sender := &recordingLoginMailer{}
+			if fail {
+				sender.err = errors.New("test SMTP failure")
+			}
+			api, _ := testAPIWithMail(t, db, sender)
+			req := registration()
+			assertStatus := func(w *httptest.ResponseRecorder, want int) {
+				t.Helper()
+				if w.Code != want {
+					t.Fatalf("status %d, want %d", w.Code, want)
+				}
+			}
+			assertStatus(call(t, api, "register", req), http.StatusCreated)
+			assertStatus(call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: "wrong-password"}), http.StatusUnauthorized)
+			if len(sender.messages) != 0 {
+				t.Fatal("registration or failed login sent email")
+			}
+			w := call(t, api, "login", authdto.LoginRequest{Login: req.Username, Password: req.Password})
+			assertStatus(w, http.StatusOK)
+			if len(sender.messages) != 1 || sender.messages[0].To != req.Email || sender.messages[0].Text == "" {
+				t.Fatal("login notification missing or wrong recipient")
+			}
+			var response struct {
+				Data authdto.AuthResponse `json:"data"`
+			}
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil || response.Data.AccessToken == "" || response.Data.RefreshToken == "" {
+				t.Fatal("notification affected login token response", err)
+			}
+		})
 	}
 }

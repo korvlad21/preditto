@@ -1,24 +1,33 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"preditto/internal/auth"
 	authdto "preditto/internal/dto/auth"
+	"preditto/internal/mailer"
 	"preditto/internal/repository"
 	"preditto/internal/response"
 	"preditto/internal/service"
 )
 
-type AuthHandler struct {
-	service *service.AuthService
+// EmailSender is the email transport used for login notifications.
+type EmailSender interface {
+	Send(context.Context, mailer.Message) error
 }
 
-func NewAuthHandler(service *service.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+type AuthHandler struct {
+	service *service.AuthService
+	mailer  EmailSender
+}
+
+func NewAuthHandler(service *service.AuthService, sender EmailSender) *AuthHandler {
+	return &AuthHandler{service: service, mailer: sender}
 }
 
 // Register register a user.
@@ -54,7 +63,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // Login log in with username or email.
 // @Summary Log in with username or email
 // @Tags Auth
-// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Case-sensitive login. remember_me=false selects short refresh lifetime; true selects long lifetime; omitted/null retains long legacy lifetime.
+// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Case-sensitive login. remember_me=false selects short refresh lifetime; true selects long lifetime; omitted/null retains long legacy lifetime. Successful login attempts an email notification when mail is enabled; delivery errors do not change the successful response.
 // @Accept json
 // @Param request body authdto.LoginRequest true "JSON request body"
 // @Produce json
@@ -74,6 +83,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		authError(c, err)
 		return
+	}
+
+	if err := h.mailer.Send(c.Request.Context(), mailer.Message{
+		To:      result.User.Email,
+		Subject: "Вход в Preditto",
+		Text:    "Вы вошли в свой аккаунт Preditto.",
+	}); err != nil && !errors.Is(err, mailer.ErrDisabled) {
+		log.Printf("login notification failed: %v", err)
 	}
 	response.Success(c, http.StatusOK, result)
 }

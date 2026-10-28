@@ -36,7 +36,7 @@ const docTemplate = `{
         },
         "/api/auth/login": {
             "post": {
-                "description": "Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Case-sensitive login. remember_me=false selects short refresh lifetime; true selects long lifetime; omitted/null retains long legacy lifetime.",
+                "description": "Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Case-sensitive login. remember_me=false selects short refresh lifetime; true selects long lifetime; omitted/null retains long legacy lifetime. Successful login attempts an email notification when mail is enabled; delivery errors do not change the successful response.",
                 "consumes": [
                     "application/json"
                 ],
