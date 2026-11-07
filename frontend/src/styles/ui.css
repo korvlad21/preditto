@@ -1,0 +1,179 @@
+/* Shared design tokens and primitives ("neon glass panels on dark navy").
+   Auth pages alias their --auth-* tokens to these (see auth.css). */
+
+:root {
+  --ui-accent: #2f6bff;
+  --ui-accent-2: #7b5cff;
+  --ui-link: #3fa9ff;
+  --ui-text: #fff;
+  --ui-text-muted: #a9b1e0;
+  --ui-text-soft: #c7cbe6;
+  --ui-panel-bg: rgba(8, 14, 45, 0.72);
+  --ui-border: rgba(255, 255, 255, 0.15);
+  --ui-border-accent: rgba(59, 107, 255, 0.55);
+  --ui-glow: 0 0 40px rgba(47, 107, 255, 0.25);
+  --ui-error: #ff4d6a;
+  --ui-font: 'Inter', system-ui, sans-serif;
+}
+
+/* Glass panel: header, cards, dropdowns. */
+.ui-panel {
+  background: var(--ui-panel-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--ui-border-accent);
+  border-radius: 16px;
+  box-shadow:
+    var(--ui-glow),
+    inset 0 0 20px rgba(47, 107, 255, 0.08);
+}
+
+/* Card heading row: title (+ actions); the full-width rule and the glowing accent
+   segment sit on its bottom edge. */
+.ui-section-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ui-border);
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 64px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--ui-accent), #3fd0ff);
+    box-shadow: 0 0 10px rgba(63, 169, 255, 0.6);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: inherit;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: 1.2;
+    color: var(--ui-text);
+  }
+}
+
+.ui-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 77, 106, 0.5);
+  border-radius: 10px;
+  background: rgba(255, 77, 106, 0.12);
+  color: #ffc2cc;
+  font-size: 15px;
+}
+
+.ui-alert--info {
+  border-color: rgba(63, 169, 255, 0.5);
+  background: rgba(63, 169, 255, 0.1);
+  color: #cfe8ff;
+}
+
+.ui-spinner {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ui-spin 0.8s linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Transient confirmation at the bottom of the viewport (above the mobile tab bar). */
+.ui-toast {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border: 1px solid var(--ui-border-accent);
+  border-radius: 12px;
+  background: rgba(8, 14, 45, 0.92);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--ui-glow);
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 500;
+  transform: translateX(-50%);
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #8ff0c8;
+  }
+
+  @media (max-width: 640px) {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Outline button/link with an optional leading icon. */
+.ui-button-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border: 1px solid var(--ui-accent);
+  border-radius: 10px;
+  background: rgba(47, 107, 255, 0.08);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+
+  svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: rgba(47, 107, 255, 0.18);
+    box-shadow: 0 0 18px rgba(47, 107, 255, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-link);
+    outline-offset: 2px;
+  }
+}

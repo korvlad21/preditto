@@ -1,18 +1,19 @@
 /* Shared styles for auth pages (login, registration, password recovery). */
 
-/* .auth-theme carries the tokens into portals rendered outside .auth-page. */
+/* .auth-theme carries the tokens into portals rendered outside .auth-page.
+   Shared values are aliases of the --ui-* tokens in ui.css. */
 .auth-page,
 .auth-theme {
-  --auth-card-bg: rgba(8, 14, 45, 0.72);
-  --auth-accent: #2f6bff;
-  --auth-accent-2: #7b5cff;
-  --auth-link: #3fa9ff;
-  --auth-text: #fff;
-  --auth-text-muted: #a9b1e0;
-  --auth-text-soft: #c7cbe6;
+  --auth-card-bg: var(--ui-panel-bg);
+  --auth-accent: var(--ui-accent);
+  --auth-accent-2: var(--ui-accent-2);
+  --auth-link: var(--ui-link);
+  --auth-text: var(--ui-text);
+  --auth-text-muted: var(--ui-text-muted);
+  --auth-text-soft: var(--ui-text-soft);
   --auth-input-bg: #0a1030;
-  --auth-border: rgba(255, 255, 255, 0.15);
-  --auth-error: #ff4d6a;
+  --auth-border: var(--ui-border);
+  --auth-error: var(--ui-error);
 
   /* Override the site-wide purple accent inside auth pages. */
   --accent: var(--auth-accent);

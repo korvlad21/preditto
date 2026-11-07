@@ -1,6 +1,9 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { login as loginRequest } from '../../api/auth.ts'
+import { ApiError } from '../../api/client.ts'
+import { saveTokens } from '../../api/tokens.ts'
+import { useCurrentUser } from '../../auth/currentUser.ts'
 import BrandLogo from '../../components/BrandLogo/BrandLogo.tsx'
 import {
   ArrowRightIcon,
@@ -33,6 +36,28 @@ function validate(login: string, password: string): FieldErrors {
   return errors
 }
 
+// RequireAuth passes { from } so the user returns to the protected page after login.
+// Only same-app paths are accepted.
+function returnPath(state: unknown): string {
+  const from = (state as { from?: unknown } | null)?.from
+  return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/'
+}
+
+// Error codes of POST /api/auth/login (backend/docs/auth.md#errors).
+function loginErrorMessage(error: unknown): string {
+  const code = error instanceof ApiError ? error.code : ''
+  switch (code) {
+    case 'INVALID_CREDENTIALS':
+      return 'Неверный логин или пароль'
+    case 'USER_BLOCKED':
+      return 'Аккаунт заблокирован'
+    case 'INVALID_REQUEST':
+      return 'Проверьте введённые данные'
+    default:
+      return 'Не удалось войти. Попробуйте ещё раз'
+  }
+}
+
 function LoginPage() {
   const [login, setLogin] = useState(devCredentials.login)
   const [password, setPassword] = useState(devCredentials.password)
@@ -44,6 +69,8 @@ function LoginPage() {
   const loginRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
+  const location = useLocation()
+  const { reload: reloadUser } = useCurrentUser()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -62,16 +89,15 @@ function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      // TODO: POST /api/auth/login { login, password, remember }; store tokens.
-      await loginRequest({ login, password, remember })
+      const response = await loginRequest({ login, password, remember })
+      saveTokens(response, remember)
     } catch (error) {
-      setServerError(
-        error instanceof Error ? error.message : 'Не удалось войти. Попробуйте ещё раз',
-      )
+      setServerError(loginErrorMessage(error))
       setIsSubmitting(false)
       return
     }
-    navigate('/home', { replace: true })
+    reloadUser()
+    navigate(returnPath(location.state), { replace: true })
   }
 
   return (

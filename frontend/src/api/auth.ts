@@ -1,10 +1,11 @@
 import type { AuthUser } from '../types/user.ts'
+import { apiPost } from './client.ts'
 
 // Shapes mirror backend dto/auth (LoginRequest, AuthResponse).
 export interface LoginPayload {
   login: string
   password: string
-  // Not part of backend LoginRequest yet; the API ignores unknown fields.
+  // Sent as remember_me: true selects the long refresh session, false the short one.
   remember: boolean
 }
 
@@ -51,51 +52,19 @@ function toRegisterRequest(payload: RegisterPayload): RegisterRequest {
   }
 }
 
-// TODO: replace the mock with `apiPost<AuthResponse>('/api/auth/register', request)`
-// from ./client.ts and upload payload.avatar once the backend accepts it.
-// Errors arrive as ApiError: 409 USERNAME_ALREADY_EXISTS / EMAIL_ALREADY_EXISTS, 400 INVALID_REQUEST.
+// POST /api/auth/register (201). The avatar is not sent: the backend has no upload endpoint yet.
+// Errors arrive as ApiError: 409 USERNAME_ALREADY_EXISTS / EMAIL_ALREADY_EXISTS,
+// 400 INVALID_REQUEST / FAVORITE_TEAM_NOT_FOUND.
 export function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const request = toRegisterRequest(payload)
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        access_token: 'mock-access-token',
-        refresh_token: 'mock-refresh-token',
-        token_type: 'Bearer',
-        expires_in: 900,
-        user: {
-          id: 0,
-          username: request.username,
-          email: request.email,
-          status: 'ACTIVE',
-          first_name: request.first_name,
-          last_name: request.last_name,
-          favorite_team_id: request.favorite_team_id ?? null,
-        },
-      })
-    }, 800)
-  })
+  return apiPost<AuthResponse>('/api/auth/register', toRegisterRequest(payload))
 }
 
-// TODO: send POST /api/auth/login once the API client (proxy or CORS) is wired up.
+// POST /api/auth/login (200). Errors arrive as ApiError: 401 INVALID_CREDENTIALS,
+// 403 USER_BLOCKED, 400 INVALID_REQUEST.
 export function login(payload: LoginPayload): Promise<AuthResponse> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        access_token: 'mock-access-token',
-        refresh_token: 'mock-refresh-token',
-        token_type: 'Bearer',
-        expires_in: 900,
-        user: {
-          id: 0,
-          username: payload.login,
-          email: '',
-          status: 'ACTIVE',
-          first_name: '',
-          last_name: '',
-          favorite_team_id: null,
-        },
-      })
-    }, 800)
+  return apiPost<AuthResponse>('/api/auth/login', {
+    login: payload.login,
+    password: payload.password,
+    remember_me: payload.remember,
   })
 }

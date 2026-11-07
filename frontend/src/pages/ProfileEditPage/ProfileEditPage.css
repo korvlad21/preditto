@@ -1,0 +1,193 @@
+/* .auth-theme on the card supplies the --auth-* tokens used by the shared form
+   components (AvatarUpload, FavoriteTeamButton, .auth-input) and the team picker. */
+.profile-edit {
+  width: 100%;
+  max-width: 1280px;
+  margin: 72px auto 0;
+  padding: 36px 40px 44px;
+  box-sizing: border-box;
+  color: var(--ui-text-soft);
+  font-family: var(--ui-font);
+}
+
+.profile-edit__status {
+  font-size: 16px;
+}
+
+.profile-edit__form {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px 40px;
+  align-items: start;
+}
+
+.profile-edit__avatar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .avatar-upload__tile {
+    height: 228px;
+  }
+
+  .avatar-upload__preview {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+.profile-edit__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+}
+
+.profile-edit__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  .form-error {
+    margin: 0;
+  }
+}
+
+.profile-edit__field--wide {
+  grid-column: 1 / -1;
+}
+
+.profile-edit__label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ui-text-soft);
+}
+
+.profile-edit__hint {
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+
+.profile-edit .auth-input[readonly] {
+  border-style: dashed;
+  background: rgba(10, 16, 48, 0.4);
+  color: var(--ui-text-muted);
+  cursor: default;
+}
+
+.profile-edit__team {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .favorite-team-button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.profile-edit__clear {
+  flex: none;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ui-text-soft);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(255, 77, 106, 0.6);
+    color: #ffc2cc;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-link);
+    outline-offset: 2px;
+  }
+}
+
+.profile-edit__notice,
+.profile-edit__actions {
+  grid-column: 1 / -1;
+}
+
+.profile-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.ui-button-outline.profile-edit__cancel {
+  height: 52px;
+  padding: 0 28px;
+}
+
+.profile-edit__save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 180px;
+  height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #1f4fff, #2e6bff);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter 0.2s,
+    box-shadow 0.2s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 0 24px rgba(47, 107, 255, 0.5);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-edit__form {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-edit__avatar .avatar-upload__tile {
+    height: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-edit {
+    margin-top: 24px;
+    padding: 24px 16px;
+  }
+
+  .profile-edit__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-edit__actions {
+    flex-direction: column-reverse;
+
+    > * {
+      width: 100%;
+    }
+  }
+}

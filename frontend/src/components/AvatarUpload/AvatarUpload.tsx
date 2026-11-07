@@ -13,7 +13,10 @@ const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const MAX_SIZE = 5 * 1024 * 1024
 
 type AvatarUploadProps = {
+  // Called with the chosen file, or null when the avatar (new or initial) is removed.
   onChange: (file: File | null) => void
+  // Existing avatar shown until it is replaced or removed (profile editing).
+  initialUrl?: string | null
 }
 
 function validateFile(file: File) {
@@ -26,8 +29,8 @@ function validateFile(file: File) {
   return ''
 }
 
-function AvatarUpload({ onChange }: AvatarUploadProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+function AvatarUpload({ onChange, initialUrl = null }: AvatarUploadProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialUrl)
   const [error, setError] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -105,7 +108,16 @@ function AvatarUpload({ onChange }: AvatarUploadProps) {
           onDrop={handleDrop}
         >
           {previewUrl ? (
-            <img className="avatar-upload__preview" src={previewUrl} alt="" />
+            <img
+              className="avatar-upload__preview"
+              src={previewUrl}
+              alt=""
+              referrerPolicy="no-referrer"
+              // An unusable initial URL (e.g. not an image) falls back to the upload tile.
+              onError={() => {
+                if (previewUrl === initialUrl) setPreviewUrl(null)
+              }}
+            />
           ) : (
             <>
               <span className="avatar-upload__circle" aria-hidden="true">

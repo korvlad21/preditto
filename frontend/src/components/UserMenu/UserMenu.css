@@ -1,0 +1,161 @@
+.user-menu {
+  position: relative;
+}
+
+.user-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 280px;
+  height: 52px;
+  padding: 0 16px 0 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: rgba(47, 107, 255, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-link);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.7;
+  }
+}
+
+.user-menu__button--login {
+  padding: 0 24px;
+  border-color: var(--ui-accent);
+  background: rgba(47, 107, 255, 0.12);
+}
+
+.user-menu__button--loading {
+  width: 160px;
+  cursor: default;
+  animation: user-menu-pulse 1.4s ease-in-out infinite;
+}
+
+.user-menu__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu__chevron {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--ui-text-soft);
+  transition: transform 0.2s;
+
+  .user-menu__button[aria-expanded='true'] & {
+    transform: rotate(180deg);
+  }
+}
+
+/* As wide as the button (at least), aligned to its right edge. */
+.user-menu__list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px;
+  border-radius: 12px;
+  list-style: none;
+}
+
+.user-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+
+  svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    color: var(--ui-text-soft);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(47, 107, 255, 0.12);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-link);
+    outline-offset: -2px;
+  }
+}
+
+@keyframes user-menu-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-menu__button--loading {
+    animation: none;
+  }
+
+  .user-menu__chevron {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .user-menu__button {
+    padding: 0 10px 0 6px;
+    gap: 6px;
+  }
+
+  .user-menu__button--login {
+    padding: 0 16px;
+  }
+
+  .user-menu__button--loading {
+    width: 80px;
+  }
+
+  .user-menu__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .user-menu__list {
+    min-width: 160px;
+  }
+}

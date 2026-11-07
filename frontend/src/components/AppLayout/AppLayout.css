@@ -1,0 +1,49 @@
+/* Lift the Vite template's #root framing (side borders, centered text) on app pages. */
+#root:has(.app-shell) {
+  border-color: transparent;
+  text-align: left;
+}
+
+.app-shell {
+  --text-h: var(--ui-text);
+
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  box-sizing: border-box;
+  color: var(--ui-text-soft);
+  font-family: var(--ui-font);
+  color-scheme: dark;
+
+  /* Full-viewport background. images/app-background.jpg (served at /app-background.jpg)
+     covers the gradients once it is added; until then the gradient waves show. */
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      url('/app-background.jpg') center / cover no-repeat,
+      radial-gradient(ellipse 55% 45% at 12% 18%, rgba(47, 107, 255, 0.35), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 88% 78%, rgba(123, 92, 255, 0.25), transparent 70%),
+      radial-gradient(ellipse 40% 30% at 65% 8%, rgba(47, 107, 255, 0.18), transparent 70%),
+      #030820;
+  }
+}
+
+.app-shell__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    /* Room for the fixed bottom tab bar (64px + its padding + safe area). */
+    padding: 12px 12px calc(96px + env(safe-area-inset-bottom));
+  }
+}

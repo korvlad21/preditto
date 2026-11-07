@@ -1,0 +1,201 @@
+.profile-card {
+  width: 100%;
+  max-width: 1280px;
+  margin: 72px auto 0;
+  padding: 36px 40px 44px;
+  box-sizing: border-box;
+  color: var(--ui-text-soft);
+}
+
+.ui-button-outline.profile-edit {
+  height: 56px;
+  padding: 0 22px;
+}
+
+.profile-card__body {
+  display: grid;
+  grid-template-columns: 228px 1fr;
+  align-items: center;
+  gap: 40px;
+}
+
+.profile-avatar {
+  border: 2px solid rgba(59, 107, 255, 0.7);
+  box-shadow: 0 0 24px rgba(47, 107, 255, 0.45);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-info__name {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+
+.profile-info__login {
+  margin-top: 4px;
+  font-size: 22px;
+  color: var(--ui-link);
+  overflow-wrap: anywhere;
+}
+
+.profile-info__date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  font-size: 18px;
+
+  svg {
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.profile-team {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.profile-team--empty {
+  display: block;
+  font-size: 16px;
+}
+
+.profile-team__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-team__label {
+  font-size: 16px;
+}
+
+.profile-team__name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+.profile-link {
+  color: var(--ui-link);
+  font-weight: 500;
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-link);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* Loading skeleton: circle + three bars with a soft pulse. */
+.profile-skeleton__avatar,
+.profile-skeleton__bar {
+  display: block;
+  background: rgba(169, 177, 224, 0.18);
+  animation: profile-pulse 1.4s ease-in-out infinite;
+}
+
+.profile-skeleton__avatar {
+  width: 228px;
+  height: 228px;
+  border-radius: 50%;
+}
+
+.profile-skeleton .profile-info {
+  gap: 18px;
+}
+
+.profile-skeleton__bar {
+  width: 45%;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.profile-skeleton__bar--wide {
+  width: 60%;
+  height: 36px;
+}
+
+.profile-skeleton__bar--narrow {
+  width: 30%;
+}
+
+@keyframes profile-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-skeleton__avatar,
+  .profile-skeleton__bar {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-card .ui-section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ui-button-outline.profile-edit {
+    width: 100%;
+  }
+
+  .profile-card__body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .profile-info {
+    align-items: center;
+  }
+
+  /* Overrides UserAvatar's inline size variable through the width/height themselves. */
+  .profile-avatar,
+  .profile-skeleton__avatar {
+    width: 160px;
+    height: 160px;
+  }
+
+  .profile-skeleton .profile-info {
+    width: 100%;
+  }
+
+  .profile-team {
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-card {
+    margin-top: 24px;
+    padding: 24px 16px;
+  }
+
+  .profile-info__name {
+    font-size: 28px;
+  }
+
+  .profile-info__login {
+    font-size: 18px;
+  }
+
+  .profile-info__date {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,21 @@
+.user-avatar {
+  flex: none;
+  width: var(--user-avatar-size);
+  height: var(--user-avatar-size);
+  box-sizing: border-box;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar--fallback {
+  display: block;
+  overflow: hidden;
+  background: rgba(169, 177, 224, 0.35);
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: #fff;
+  }
+}

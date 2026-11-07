@@ -73,7 +73,8 @@ function validate(values: FormValues): FieldErrors {
     errors.password = 'Введите пароль'
   } else if (values.password.length < 8) {
     errors.password = 'Минимум 8 символов'
-  } else if (values.password.length > 72) {
+  } else if (new TextEncoder().encode(values.password).length > 72) {
+    // The backend (bcrypt) limit is 72 UTF-8 bytes, not characters.
     errors.password = 'Не более 72 символов'
   }
 
@@ -152,6 +153,9 @@ function RegisterPage() {
             : { email: 'Этот email уже зарегистрирован' }
         setErrors(conflict)
         focusFirstError(conflict)
+      } else if (code === 'FAVORITE_TEAM_NOT_FOUND') {
+        setTeam(null)
+        setServerError('Выбранная команда не найдена, выберите другую')
       } else if (code === 'INVALID_REQUEST') {
         setServerError('Проверьте введённые данные')
       } else {

@@ -15,10 +15,18 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+// Network failures (backend/proxy unreachable) reject with the fetch TypeError, not ApiError.
+export async function apiPost<T>(
+  path: string,
+  body?: unknown,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
+  const headers: Record<string, string> = { ...extraHeaders }
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+
   const response = await fetch(path, {
     method: 'POST',
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 
