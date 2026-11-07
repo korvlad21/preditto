@@ -227,9 +227,7 @@ function LoginPage() {
           </button>
         </form>
 
-        <p className="auth-switch">
-          Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
-        </p>
+        <p className="auth-switch">Нет аккаунта? Обратитесь к администратору</p>
       </div>
     </section>
   )

@@ -5,7 +5,6 @@ import type {
   TournamentDto,
   TournamentStatus,
 } from '../types/tournament.ts'
-import { ApiError } from './client.ts'
 import { authPost } from './session.ts'
 
 function parseDate(value: string | null): Date | null {
@@ -84,14 +83,4 @@ export async function getAllTournaments(
 export function selectTournament(id: number): Promise<void> {
   const body: SelectTournamentRequest = { id }
   return authPost<void>('/api/tournaments/select_tournament', body)
-}
-
-// Error code thrown by clearSelectedTournament() until the backend exposes a reset.
-export const CLEAR_SELECTION_NOT_IMPLEMENTED = 'NOT_IMPLEMENTED'
-
-// TODO: the HTTP API cannot clear the selection yet: select_tournament requires a positive
-// id (the repository already supports writing NULL). Replace the body with the real call
-// once an endpoint or contract exists. Until then nothing is sent and nothing changes.
-export function clearSelectedTournament(): Promise<void> {
-  return Promise.reject(new ApiError(501, CLEAR_SELECTION_NOT_IMPLEMENTED))
 }

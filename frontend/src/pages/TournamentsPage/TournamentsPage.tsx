@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { ApiError } from '../../api/client.ts'
-import {
-  API_STATUS,
-  CLEAR_SELECTION_NOT_IMPLEMENTED,
-  clearSelectedTournament,
-  getAllTournaments,
-  selectTournament,
-} from '../../api/tournaments.ts'
+import { API_STATUS, getAllTournaments, selectTournament } from '../../api/tournaments.ts'
 import { useCurrentUser } from '../../auth/currentUser.ts'
 import { CalendarIcon, CheckIcon, TrophyIcon, UserIcon } from '../../components/Icons/Icons.tsx'
 import type {
@@ -89,7 +83,7 @@ function withCurrent(list: Tournament[], currentId: number | null): Tournament[]
   return list.map((t) => ({ ...t, isCurrent: t.id === currentId }))
 }
 
-type CardNotice = { kind: 'error' | 'info'; text: string }
+type CardNotice = { kind: 'error'; text: string }
 
 type CardProps = {
   tournament: Tournament
@@ -97,10 +91,9 @@ type CardProps = {
   isBusy: boolean
   disabled: boolean
   onSelect: (id: number) => void
-  onClear: (id: number) => void
 }
 
-function TournamentCard({ tournament: t, notice, isBusy, disabled, onSelect, onClear }: CardProps) {
+function TournamentCard({ tournament: t, notice, isBusy, disabled, onSelect }: CardProps) {
   const titleId = `tournament-${t.id}-title`
   const period = formatPeriod(t.startDate, t.endDate)
   const participants =
@@ -132,14 +125,7 @@ function TournamentCard({ tournament: t, notice, isBusy, disabled, onSelect, onC
       {t.type && <p className="tournament-card__type">{t.type}</p>}
 
       {notice && (
-        <div
-          className={
-            notice.kind === 'info'
-              ? 'ui-alert ui-alert--info tournament-card__alert'
-              : 'ui-alert tournament-card__alert'
-          }
-          role={notice.kind === 'error' ? 'alert' : 'status'}
-        >
+        <div className="ui-alert tournament-card__alert" role="alert">
           {notice.text}
         </div>
       )}
@@ -195,29 +181,20 @@ function TournamentCard({ tournament: t, notice, isBusy, disabled, onSelect, onC
         </div>
       )}
 
-      {/* The id lets focus return here after the selection is cleared. */}
-      <button
-        id={`tournament-${t.id}-action`}
-        type="button"
-        className={
-          t.isCurrent
-            ? 'tournament-card__action tournament-card__action--clear'
-            : 'tournament-card__action ui-button-outline'
-        }
-        disabled={disabled}
-        aria-busy={isBusy || undefined}
-        aria-describedby={titleId}
-        onClick={() => (t.isCurrent ? onClear(t.id) : onSelect(t.id))}
-      >
-        {isBusy && <span className="ui-spinner" aria-hidden="true" />}
-        {t.isCurrent
-          ? isBusy
-            ? 'Снимаем…'
-            : 'Снять выбор'
-          : isBusy
-            ? 'Выбираем…'
-            : 'Выбрать турнир'}
-      </button>
+      {/* The selection can only be changed to another tournament, not cleared. */}
+      {!t.isCurrent && (
+        <button
+          type="button"
+          className="tournament-card__action ui-button-outline"
+          disabled={disabled}
+          aria-busy={isBusy || undefined}
+          aria-describedby={titleId}
+          onClick={() => onSelect(t.id)}
+        >
+          {isBusy && <span className="ui-spinner" aria-hidden="true" />}
+          {isBusy ? 'Выбираем…' : 'Выбрать турнир'}
+        </button>
+      )}
     </li>
   )
 }
@@ -278,11 +255,11 @@ function TournamentsPage() {
 
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState<LoadResult | null>(null)
-  // Card whose select/clear request is in flight; all action buttons are disabled meanwhile.
+  // Card whose select request is in flight; all action buttons are disabled meanwhile.
   const [busyId, setBusyId] = useState<number | null>(null)
   const [cardNotices, setCardNotices] = useState<Record<number, CardNotice>>({})
   const [toast, setToast] = useState('')
-  // Element id to focus once it is rendered (badge after select, button after clear).
+  // Element id to focus once it is rendered (the current badge after select).
   const pendingFocus = useRef<string | null>(null)
   const latestKey = useRef('')
 
@@ -399,36 +376,6 @@ function TournamentsPage() {
     refreshList(key)
   }
 
-  // Not optimistic: the API cannot clear the selection yet, so the state changes only
-  // after a confirmed success.
-  const handleClear = async (id: number) => {
-    const key = requestKey
-    setBusyId(id)
-    setNotice(id, null)
-
-    try {
-      await clearSelectedTournament()
-    } catch (error) {
-      setBusyId(null)
-      if (handleUnauthorized(error)) return
-      const notImplemented =
-        error instanceof ApiError && error.code === CLEAR_SELECTION_NOT_IMPLEMENTED
-      setNotice(
-        id,
-        notImplemented
-          ? { kind: 'info', text: 'Снять выбор пока нельзя: API ещё не готово. Выбор не изменился.' }
-          : { kind: 'error', text: 'Не удалось снять выбор турнира' },
-      )
-      return
-    }
-
-    setBusyId(null)
-    updateList((list) => withCurrent(list, null))
-    pendingFocus.current = `tournament-${id}-action`
-    setToast('Выбор снят')
-    refreshList(key)
-  }
-
   const loaded = !isLoading && result?.status === 'ok' ? result.tournaments : null
   const tournaments =
     loaded && participation === 'current' ? loaded.filter((t) => t.isCurrent) : loaded
@@ -493,7 +440,6 @@ function TournamentsPage() {
               isBusy={busyId === tournament.id}
               disabled={busyId !== null}
               onSelect={handleSelect}
-              onClear={handleClear}
             />
           ))}
         </ul>

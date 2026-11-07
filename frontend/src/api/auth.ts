@@ -1,5 +1,6 @@
 import type { AuthUser } from '../types/user.ts'
 import { apiPost } from './client.ts'
+import { authPost } from './session.ts'
 
 // Shapes mirror backend dto/auth (LoginRequest, AuthResponse).
 export interface LoginPayload {
@@ -52,11 +53,13 @@ function toRegisterRequest(payload: RegisterPayload): RegisterRequest {
   }
 }
 
-// POST /api/auth/register (201). The avatar is not sent: the backend has no upload endpoint yet.
+// POST /api/auth/register (201). Only admins register users, so the request carries the
+// admin's access token; the created account's returned tokens must not be stored.
+// The avatar is not sent: the backend has no upload endpoint yet.
 // Errors arrive as ApiError: 409 USERNAME_ALREADY_EXISTS / EMAIL_ALREADY_EXISTS,
-// 400 INVALID_REQUEST / FAVORITE_TEAM_NOT_FOUND.
+// 400 INVALID_REQUEST / FAVORITE_TEAM_NOT_FOUND, 401 UNAUTHORIZED, 403 FORBIDDEN.
 export function register(payload: RegisterPayload): Promise<AuthResponse> {
-  return apiPost<AuthResponse>('/api/auth/register', toRegisterRequest(payload))
+  return authPost<AuthResponse>('/api/auth/register', toRegisterRequest(payload))
 }
 
 // POST /api/auth/login (200). Errors arrive as ApiError: 401 INVALID_CREDENTIALS,

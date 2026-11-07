@@ -1,15 +1,15 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { displayName, useCurrentUser } from '../../auth/currentUser.ts'
-import { ChevronDownIcon, LogoutIcon } from '../Icons/Icons.tsx'
+import { displayName, isAdmin, useCurrentUser } from '../../auth/currentUser.ts'
+import { ChevronDownIcon, LogoutIcon, UserIcon } from '../Icons/Icons.tsx'
 import UserAvatar from '../UserAvatar/UserAvatar.tsx'
 import './UserMenu.css'
 
-type MenuAction = 'logout'
+type MenuAction = 'register' | 'logout'
+type MenuItem = { action: MenuAction; label: string; icon: ReactNode }
 
-const MENU_ITEMS: { action: MenuAction; label: string; icon: ReactNode }[] = [
-  { action: 'logout', label: 'Выйти', icon: <LogoutIcon /> },
-]
+const REGISTER_ITEM: MenuItem = { action: 'register', label: 'Регистрация пользователя', icon: <UserIcon /> }
+const LOGOUT_ITEM: MenuItem = { action: 'logout', label: 'Выйти', icon: <LogoutIcon /> }
 
 // Menu button pattern (WAI-ARIA APG): arrows move between items, Esc closes and returns
 // focus to the button, Tab/outside click/selection close the menu.
@@ -52,6 +52,8 @@ function UserMenu() {
 
   const user = state.status === 'ready' ? state.user : null
   const name = user ? displayName(user) : 'Аккаунт'
+  // Registration is admin-only (roles from user_roles via get_user_info).
+  const menuItems = user && isAdmin(user) ? [REGISTER_ITEM, LOGOUT_ITEM] : [LOGOUT_ITEM]
 
   const openMenu = (index: number) => {
     setFocusIndex(index)
@@ -71,10 +73,15 @@ function UserMenu() {
   }
 
   const handleSelect = (action: MenuAction) => {
-    if (action === 'logout') void handleLogout()
+    if (action === 'logout') {
+      void handleLogout()
+    } else {
+      closeMenu(false)
+      navigate('/register')
+    }
   }
 
-  const lastIndex = MENU_ITEMS.length - 1
+  const lastIndex = menuItems.length - 1
 
   const handleButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'ArrowDown') {
@@ -134,7 +141,7 @@ function UserMenu() {
           aria-label="Меню пользователя"
           onKeyDown={handleMenuKeyDown}
         >
-          {MENU_ITEMS.map((item, index) => (
+          {menuItems.map((item, index) => (
             <li role="none" key={item.label}>
               <button
                 ref={(element) => {

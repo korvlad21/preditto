@@ -23,6 +23,13 @@ export function useCurrentUser(): CurrentUserContextValue {
   return value
 }
 
+// Role code of administrators (backend model.RoleCodeAdmin).
+export const ROLE_ADMIN = 'admin'
+
+export function isAdmin(user: User): boolean {
+  return user.roles.includes(ROLE_ADMIN)
+}
+
 // First and last name when present, otherwise the login.
 export function displayName(user: User): string {
   return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.login
