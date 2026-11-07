@@ -14,6 +14,21 @@ export interface AuthUser {
   favorite_team_id: number | null
 }
 
+// UI model of the signed-in user (header menu, profile page), built by getCurrentUser()
+// from UserInfo plus the favorite team resolved through the teams API.
+export interface User {
+  id: number
+  login: string
+  firstName?: string
+  lastName?: string
+  email: string
+  avatarUrl?: string | null
+  // RFC 3339 account creation timestamp.
+  createdAt: string
+  // null: no favorite team; undefined: the team could not be resolved (teams API failed).
+  favoriteTeam?: { id: number; name: string; logoUrl: string | null } | null
+}
+
 // model.UserInfo: `data` of POST /api/user/get_user_info (account + profile).
 export interface UserInfo {
   id: number

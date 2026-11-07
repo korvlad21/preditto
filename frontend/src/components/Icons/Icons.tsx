@@ -123,6 +123,65 @@ export function PlusIcon(props: IconProps) {
   )
 }
 
+export function HomeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 10.5 12 4l8.5 6.5" />
+      <path d="M5.5 9v10.5h4.5v-6h4v6h4.5V9" />
+    </Icon>
+  )
+}
+
+export function TrophyIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
+      <path d="M7.5 6H4.5v1.5A3 3 0 0 0 7.8 10.5" />
+      <path d="M16.5 6h3v1.5a3 3 0 0 1-3.3 3" />
+      <path d="M12 13.5V17" />
+      <path d="M8.5 20h7l-.8-3H9.3l-.8 3Z" />
+    </Icon>
+  )
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+      <path d="M13.5 6.5l4 4" />
+    </Icon>
+  )
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3v4" />
+      <path d="M16 3v4" />
+    </Icon>
+  )
+}
+
+export function LogoutIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M14 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H14" />
+      <path d="M10 12h10" />
+      <path d="M16.5 8.5 20 12l-3.5 3.5" />
+    </Icon>
+  )
+}
+
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Icon strokeWidth="2" {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </Icon>
+  )
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <Icon strokeWidth="3" {...props}>

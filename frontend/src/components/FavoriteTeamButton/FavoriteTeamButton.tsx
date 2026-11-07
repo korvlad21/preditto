@@ -5,7 +5,8 @@ import TeamLogo from '../TeamLogo/TeamLogo.tsx'
 import './FavoriteTeamButton.css'
 
 type FavoriteTeamButtonProps = {
-  team: Team | null
+  // Only the name and logo are shown, so a profile's team summary also fits.
+  team: Pick<Team, 'name' | 'logo_url'> | null
   onClick: () => void
   ref?: Ref<HTMLButtonElement>
 }
