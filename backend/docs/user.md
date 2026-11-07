@@ -27,7 +27,8 @@ Example HTTP 200 response:
     "last_name": "Korobkin",
     "avatar_url": null,
     "favorite_team_id": 5,
-    "selected_tournament_id": null
+    "selected_tournament_id": null,
+    "roles": ["participant"]
   }
 }
 ```
@@ -35,6 +36,12 @@ Example HTTP 200 response:
 `created_at` is the account creation timestamp from `users.created_at`, serialized
 as an RFC 3339 string with fractional seconds when present. It is loaded in the
 existing query and remains available when the profile is missing.
+
+`roles` contains all assigned role codes from `user_roles` joined to `roles`,
+ordered by code. It is always an array: users without assignments receive `[]`.
+Roles are loaded in the same SQL query as the account/profile, including when
+the profile is missing. Returning roles does not add authorization checks or
+change the registration/login response shapes.
 
 Status is returned as stored in `users`, without case conversion. The five profile
 fields preserve SQL NULL as JSON `null`, and empty strings remain empty strings.
@@ -52,8 +59,8 @@ not immediately invalidate an issued access token; no new role checks are added.
 `LoadUser`. `router.RegisterUserRoutes` receives a protected `/api` group;
 `RegisterTournamentRoutes` receives the same protected group. Public auth and team routes
 remain on their public groups. `LoadUser` reuses `UserService` and the `UserRepository`
-in `internal/repository/user.go`. A single parameterized `LEFT JOIN`
-selects the ten response columns; it never
+in `internal/repository/user.go`. A single parameterized query uses a `LEFT JOIN`
+for the profile and an `ARRAY` subquery for role codes; it never
 reads password hashes. `model.UserInfo` is the response shape because the existing
 auth `model.User` does not preserve nullable names or include avatars.
 
@@ -74,6 +81,7 @@ go test -mod=readonly ./internal/handler -run '^TestGetUserInfo' -count=1
 
 The PostgreSQL test reuses the isolated-schema fixture and requires
 `PREDITTO_AUTH_TEST_DSN` pointing to a PostgreSQL test database. It covers response
-fields, secrecy, NULL and empty values, missing profiles and users, and isolation
-between authenticated users. Authentication and database-error tests run without
+fields, secrecy, NULL and empty values, missing profiles and users, no/single/multiple
+roles, role ordering, role changes with the same token, and isolation between
+authenticated users. Authentication and database-error tests run without
 a live database.

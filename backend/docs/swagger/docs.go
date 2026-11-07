@@ -648,7 +648,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "No body or parameters required. Selectors are ignored. A missing profile leaves profile fields null. Cache-Control: no-store.",
+                "description": "No body or parameters required. Selectors are ignored. A missing profile leaves profile fields null. Roles are assigned role codes ordered by code, or an empty array if none. Cache-Control: no-store.",
                 "produces": [
                     "application/json"
                 ],
@@ -1194,6 +1194,13 @@ const docTemplate = `{
                 "last_name": {
                     "type": "string",
                     "x-nullable": true
+                },
+                "roles": {
+                    "description": "Assigned role codes, ordered by code; an empty array when no roles are assigned.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "selected_tournament_id": {
                     "type": "integer",

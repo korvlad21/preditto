@@ -18,7 +18,7 @@ func NewUserHandler() *UserHandler {
 // GetUserInfo get the current user.
 // @Summary Get the current user
 // @Tags Users
-// @Description No body or parameters required. Selectors are ignored. A missing profile leaves profile fields null. Cache-Control: no-store.
+// @Description No body or parameters required. Selectors are ignored. A missing profile leaves profile fields null. Roles are assigned role codes ordered by code, or an empty array if none. Cache-Control: no-store.
 // @Produce json
 // @Success 200 {object} apidocs.Success{data=model.UserInfo}
 // @Failure 401 {object} apidocs.Error "UNAUTHORIZED (missing, invalid or expired access token)"

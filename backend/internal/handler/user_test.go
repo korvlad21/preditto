@@ -96,6 +96,8 @@ func TestGetUserInfoPostgres(t *testing.T) {
 			(82, 'other_user', 'other_user@example.com', 'other-password-hash', 'ACTIVE', '2026-02-03 04:05:06');
 		INSERT INTO user_info (user_id, first_name, last_name, avatar_url, favorite_team_id)
 		VALUES (81, 'Vladislav', 'Korobkin', '/avatars/81.png', 5);
+		INSERT INTO roles (id, code, name) VALUES (92, 'admin', 'Admin'), (93, 'moderator', 'Moderator');
+		INSERT INTO user_roles (user_id, role_id) VALUES (82, 91);
 	`)
 	api, tokens := userAPI(t, db)
 	pair, _, err := tokens.GeneratePair(81, nil)
@@ -106,6 +108,7 @@ func TestGetUserInfoPostgres(t *testing.T) {
 		"created_at": "2026-01-02T03:04:05.123456Z",
 		"id":         float64(81), "username": "new_user", "email": "new_user@example.com", "status": "ACTIVE",
 		"first_name": "Vladislav", "last_name": "Korobkin", "avatar_url": "/avatars/81.png", "favorite_team_id": float64(5), "selected_tournament_id": nil,
+		"roles": []any{},
 	}
 	check := func(t *testing.T, token, query, body string, want map[string]any) {
 		t.Helper()
@@ -133,6 +136,22 @@ func TestGetUserInfoPostgres(t *testing.T) {
 			check(t, pair.AccessToken, tc.query, tc.body, want)
 		})
 	}
+
+	t.Run("single role", func(t *testing.T) {
+		execSQL(t, db, `INSERT INTO user_roles (user_id, role_id) VALUES (81, 91)`)
+		want["roles"] = []any{"participant"}
+		check(t, pair.AccessToken, "", "", want)
+	})
+	t.Run("all roles ordered by code", func(t *testing.T) {
+		execSQL(t, db, `INSERT INTO user_roles (user_id, role_id) VALUES (81, 93), (81, 92)`)
+		want["roles"] = []any{"admin", "moderator", "participant"}
+		check(t, pair.AccessToken, "?user_id=82", "", want)
+	})
+	t.Run("removed role visible with same token", func(t *testing.T) {
+		execSQL(t, db, `DELETE FROM user_roles WHERE user_id = 81 AND role_id = 93`)
+		want["roles"] = []any{"admin", "participant"}
+		check(t, pair.AccessToken, "", "", want)
+	})
 
 	execSQL(t, db, `INSERT INTO tournaments (id, name, slug) VALUES (201, 'First', 'first'), (202, 'Second', 'second')`)
 	for _, id := range []int64{201, 202} {
@@ -179,7 +198,14 @@ func TestGetUserInfoPostgres(t *testing.T) {
 			"created_at": "2026-02-03T04:05:06Z",
 			"id":         float64(82), "username": "other_user", "email": "other_user@example.com", "status": "ACTIVE",
 			"first_name": nil, "last_name": nil, "avatar_url": nil, "favorite_team_id": nil, "selected_tournament_id": nil,
+			"roles": []any{"participant"},
 		})
+	})
+
+	t.Run("all roles removed", func(t *testing.T) {
+		execSQL(t, db, `DELETE FROM user_roles WHERE user_id = 81`)
+		want["roles"] = []any{}
+		check(t, pair.AccessToken, "", "", want)
 	})
 
 	execSQL(t, db, `DELETE FROM users WHERE id = 81`)

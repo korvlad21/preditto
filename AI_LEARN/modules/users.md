@@ -1,6 +1,6 @@
 # Users
 
-Reviewed: 2026-11-07; role seed changes verified with the seed suite against disposable PostgreSQL; API behavior from source/schema and test-scenario inspection.
+Reviewed: 2026-11-07; UserInfo role loading and shared request consumers verified with targeted race-enabled HTTP/middleware tests against disposable PostgreSQL; role seeds previously verified with the seed suite.
 
 ## Purpose and API
 
@@ -10,13 +10,15 @@ Owns account/profile persistence, the request's current-user snapshot, selected 
 
 The response includes the account creation timestamp from `users.created_at` through `UserInfo.CreatedAt`. The existing joined query loads it into the shared snapshot without additional database queries, including when no profile exists.
 
+`UserInfo.Roles` returns all assigned role codes ordered by code, or `[]` when none are assigned. GetUserInfo loads them through an `ARRAY` subquery joining `user_roles` to `roles` within the existing account/profile query. No extra database round trips or row multiplication are introduced, and roles remain available without a profile. The frontend UserInfo type mirrors this additive field; auth User responses are unchanged.
+
 The user handler Swagger annotation reuses UserInfo, including its nullable profile fields. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
 
 ## Current-user snapshot
 
 `RequireAuth` establishes UserIDKey; `LoadUser` then calls UserService.GetUserInfo once and stores a shared `*model.UserInfo` in Gin context. `UserHandler` reads `middleware.CurrentUser` without another database query. The chain is attached in [main.go](../../backend/cmd/api/main.go) and shared with tournament routes.
 
-A missing account produces USER_NOT_FOUND. A missing `user_info` row is allowed for reads: the LEFT JOIN returns null profile fields. Empty strings stay distinct from null. Snapshots are loaded on each request, so a committed selection change is visible with the same access token on a subsequent request. Concurrent writes after loading do not change the current snapshot. After a successful profile write, handlers must update the shared snapshot if later consumers need the changed value. A failed write must not update it.
+A missing account produces USER_NOT_FOUND. A missing `user_info` row is allowed for reads: the LEFT JOIN returns null profile fields. Empty strings stay distinct from null. Snapshots are loaded on each request, so committed selection and role changes are visible with the same access token on a subsequent request. Concurrent writes after loading do not change the current snapshot. After a successful profile write, handlers must update the shared snapshot if later consumers need the changed value. A failed write must not update it.
 
 The snapshot is not a tournament-membership or role authorization check. LoadUser does not reject BLOCKED status. Access-token lifetime and blocking policy are documented in auth.
 
@@ -53,4 +55,4 @@ UpdateSelectedTournament changes only an existing profile. A nil ID clears selec
 
 From `backend/`: `go test -race -mod=readonly -count=1 ./internal/middleware ./internal/handler -run 'TestLoadUser|TestUserContextMissing|TestGetUserInfo|TestSelectTournament'`.
 
-[User HTTP tests](../../backend/internal/handler/user_test.go) require disposable `PREDITTO_AUTH_TEST_DSN` for database scenarios. They cover identity isolation, null/empty fields, missing users/profiles, error secrecy and selection refresh. [Middleware tests](../../backend/internal/middleware/user_test.go) cover one load and shared-pointer behavior. User creation/role changes also require auth rollback checks; seed changes use `PREDITTO_SEED_TEST_DSN` and the relevant [seed tests](../../backend/seeds/test/users_postgres_test.go). See [Go prerequisites and the seed race limit](../commands/topics/go.md).
+[User HTTP tests](../../backend/internal/handler/user_test.go) require disposable `PREDITTO_AUTH_TEST_DSN` for database scenarios. They cover identity isolation, null/empty fields, missing users/profiles, error secrecy, selection refresh, empty/single/multiple roles, code ordering and role changes with the same token. [Middleware tests](../../backend/internal/middleware/user_test.go) cover one load, shared-pointer behavior and role serialization from the snapshot. User creation/role changes also require auth rollback checks; seed changes use `PREDITTO_SEED_TEST_DSN` and the relevant [seed tests](../../backend/seeds/test/users_postgres_test.go). See [Go prerequisites and the seed race limit](../commands/topics/go.md).

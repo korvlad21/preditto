@@ -29,4 +29,6 @@ type UserInfo struct {
 	FavoriteTeamID       *int64    `json:"favorite_team_id" extensions:"x-nullable" format:"int64"`
 	SelectedTournamentID *int64    `json:"selected_tournament_id" extensions:"x-nullable" format:"int64"`
 	CreatedAt            time.Time `json:"created_at" format:"date-time"`
+	// Assigned role codes, ordered by code; an empty array when no roles are assigned.
+	Roles []string `json:"roles"`
 }

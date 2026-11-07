@@ -28,4 +28,6 @@ export interface UserInfo {
   selected_tournament_id: number | null
   // RFC 3339 timestamp, e.g. "2026-10-25T12:00:00Z".
   created_at: string
+  // Assigned role codes, ordered by code; empty when no roles are assigned.
+  roles: string[]
 }

@@ -93,11 +93,16 @@ func (r *UserRepository) GetUserInfo(ctx context.Context, id int64) (model.UserI
 	var user model.UserInfo
 	err := r.query.QueryRowContext(ctx, `
 		SELECT u.id, u.username, u.email, u.status, u.created_at,
-			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id, i.selected_tournament_id
+			i.first_name, i.last_name, i.avatar_url, i.favorite_team_id, i.selected_tournament_id,
+			ARRAY(
+				SELECT r.code FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+				WHERE ur.user_id = u.id ORDER BY r.code
+			)
 		FROM users u LEFT JOIN user_info i ON i.user_id = u.id
 		WHERE u.id = $1
 	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.Status, &user.CreatedAt,
-		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID, &user.SelectedTournamentID)
+		&user.FirstName, &user.LastName, &user.AvatarURL, &user.FavoriteTeamID, &user.SelectedTournamentID,
+		pq.Array(&user.Roles))
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.UserInfo{}, ErrNotFound
 	}
