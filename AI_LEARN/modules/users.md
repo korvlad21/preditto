@@ -1,6 +1,6 @@
 # Users
 
-Reviewed: 2026-10-22, source/schema and test-scenario inspection; no new runtime tests in this documentation change.
+Reviewed: 2026-11-07; role seed changes verified with the seed suite against disposable PostgreSQL; API behavior from source/schema and test-scenario inspection.
 
 ## Purpose and API
 
@@ -39,7 +39,7 @@ UpdateSelectedTournament changes only an existing profile. A nil ID clears selec
 
 [AssignUserRole / RemoveUserRole](../../backend/internal/repository/user_roles.go) accept a database or caller-owned transaction. Assignment is idempotent on the user/role pair; removing an absent pair succeeds. UserRepository.AssignRole resolves a role code before insertion. Auth registration assigns participant; this does not create tournament participation.
 
-[Development users](../../backend/seeds/development/users.go) and [profiles](../../backend/seeds/development/user_info.go) have 20 matching entries. The [role assignments](../../backend/seeds/development/user_roles.go) cover the original three users, not every development account. Repeated seeds restore configured account/profile fields and passwords; favorite teams use literal IDs, which must exist. See the [seed guide](../../backend/seeds/README.md) for exact repeat-run behavior. There is no general profile-edit API, role-management service/API or permission-enforcement middleware.
+[Development users](../../backend/seeds/development/users.go) and [profiles](../../backend/seeds/development/user_info.go) have 20 matching entries. The [role assignments](../../backend/seeds/development/user_roles.go) preserve the explicit admin roles for korvlad21 and hanna_stoma and participant for boroda, then append every remaining seeded username with participant once at package initialization. Username deduplication keeps the explicit assignments authoritative and covers all development users without growing the list on reruns. Existing database assignments are preserved. Repeated seeds restore configured account/profile fields and passwords; favorite teams use literal IDs, which must exist. See the [seed guide](../../backend/seeds/README.md) for exact repeat-run behavior. There is no general profile-edit API, role-management service/API or permission-enforcement middleware.
 
 ## Source map and dependencies
 

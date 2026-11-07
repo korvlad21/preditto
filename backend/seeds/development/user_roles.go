@@ -20,6 +20,20 @@ var userRoles = []userRole{
 	{"boroda", model.RoleCodeParticipant},
 }
 
+func init() {
+	assigned := make(map[string]struct{}, len(users))
+	for _, item := range userRoles {
+		assigned[item.username] = struct{}{}
+	}
+	for _, item := range users {
+		if _, exists := assigned[item.username]; exists {
+			continue
+		}
+		userRoles = append(userRoles, userRole{item.username, model.RoleCodeParticipant})
+		assigned[item.username] = struct{}{}
+	}
+}
+
 func seedUserRoles(ctx context.Context, tx *sql.Tx) error {
 	for _, item := range userRoles {
 		var userID, roleID int64

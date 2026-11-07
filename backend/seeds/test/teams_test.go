@@ -193,13 +193,23 @@ func TestSeedUserRolesUsesResolvedIDs(t *testing.T) {
 	if err := development.Run(context.Background(), db); err != nil {
 		t.Fatal(err)
 	}
-	want := [][2]int64{{40, 70}, {41, 70}, {42, 71}}
-	if len(conn.assignments) != len(want) {
-		t.Fatalf("assignments=%v, want %v", conn.assignments, want)
+	if len(conn.assignments) != len(conn.users) {
+		t.Fatalf("assignments=%d, users=%d", len(conn.assignments), len(conn.users))
 	}
-	for i := range want {
-		if conn.assignments[i] != want[i] {
-			t.Fatalf("assignment=%v, want %v", conn.assignments[i], want[i])
+	assigned := make(map[int64]int64)
+	for _, assignment := range conn.assignments {
+		if _, exists := assigned[assignment[0]]; exists {
+			t.Fatalf("duplicate assignment for user %d", assignment[0])
+		}
+		assigned[assignment[0]] = assignment[1]
+	}
+	for username, userID := range conn.users {
+		wantRole := conn.roles["participant"]
+		if username == "korvlad21" || username == "hanna_stoma" {
+			wantRole = conn.roles["admin"]
+		}
+		if assigned[userID] != wantRole {
+			t.Fatalf("role for %s=%d, want %d", username, assigned[userID], wantRole)
 		}
 	}
 }

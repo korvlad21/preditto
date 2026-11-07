@@ -26,8 +26,23 @@ func TestRolesAndAssignmentsPostgres(t *testing.T) {
 		if err := db.QueryRow(`SELECT (SELECT count(*) FROM roles), (SELECT count(*) FROM user_roles)`).Scan(&roles, &assignments); err != nil {
 			t.Fatal(err)
 		}
-		if roles != 2 || assignments != 3 {
+		if roles != 2 || assignments != 20 {
 			t.Fatalf("run %d: roles=%d assignments=%d", run, roles, assignments)
+		}
+		var invalidAssignments int
+		if err := db.QueryRow(`
+			SELECT count(*) FROM users u
+			LEFT JOIN user_roles ur ON ur.user_id = u.id
+			LEFT JOIN roles r ON r.id = ur.role_id
+			WHERE r.code IS DISTINCT FROM CASE
+				WHEN u.username IN ('korvlad21', 'hanna_stoma') THEN 'admin'
+				ELSE 'participant'
+			END
+		`).Scan(&invalidAssignments); err != nil {
+			t.Fatal(err)
+		}
+		if invalidAssignments != 0 {
+			t.Fatalf("run %d: %d users have missing or incorrect roles", run, invalidAssignments)
 		}
 		for _, want := range []struct {
 			username, code, name string
@@ -67,7 +82,7 @@ func TestRolesAndAssignmentsPostgres(t *testing.T) {
 			t.Fatalf("assignments=%d, want %d", got, want)
 		}
 	}
-	assertCount(2)
+	assertCount(19)
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -81,11 +96,11 @@ func TestRolesAndAssignmentsPostgres(t *testing.T) {
 	if err := tx.Rollback(); err != nil {
 		t.Fatal(err)
 	}
-	assertCount(2)
+	assertCount(19)
 	if err := development.Run(ctx, db); err != nil {
 		t.Fatal(err)
 	}
-	assertCount(3)
+	assertCount(20)
 	if err := repository.AssignUserRole(ctx, db, -1, 81); err == nil {
 		t.Fatal("expected missing user foreign key error")
 	}
