@@ -1,6 +1,6 @@
 # Users
 
-Reviewed: 2026-11-07; UserInfo role loading and shared request consumers verified with targeted race-enabled HTTP/middleware tests against disposable PostgreSQL; role seeds previously verified with the seed suite.
+Reviewed: 2026-11-08; UserInfo role loading and the RequireRole admin gate verified with race-enabled middleware/HTTP tests against disposable PostgreSQL; role seeds previously verified with the seed suite.
 
 ## Purpose and API
 
@@ -20,7 +20,7 @@ The user handler Swagger annotation reuses UserInfo, including its nullable prof
 
 A missing account produces USER_NOT_FOUND. A missing `user_info` row is allowed for reads: the LEFT JOIN returns null profile fields. Empty strings stay distinct from null. Snapshots are loaded on each request, so committed selection and role changes are visible with the same access token on a subsequent request. Concurrent writes after loading do not change the current snapshot. After a successful profile write, handlers must update the shared snapshot if later consumers need the changed value. A failed write must not update it.
 
-The snapshot is not a tournament-membership or role authorization check. LoadUser does not reject BLOCKED status. Access-token lifetime and blocking policy are documented in auth.
+The snapshot is not itself a tournament-membership or role authorization check. [RequireRole](../../backend/internal/middleware/role.go) runs after RequireAuth and LoadUser, checks an exact role code in the shared snapshot without database queries, returns 403 FORBIDDEN for a missing role, and fails closed with 401 UNAUTHORIZED if the snapshot is absent. Registration uses it with RoleCodeAdmin. LoadUser does not reject BLOCKED status. Access-token lifetime and blocking policy are documented in auth.
 
 ## Models and persistence
 

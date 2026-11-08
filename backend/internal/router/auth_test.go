@@ -16,7 +16,7 @@ import (
 func TestRegisterAuthRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	engine := router.New()
-	router.RegisterAuthRoutes(engine.Group("/api"), handler.NewAuthHandler(nil))
+	router.RegisterAuthRoutes(engine.Group("/api"), handler.NewAuthHandler(nil), nil)
 
 	var got []string
 	for _, route := range engine.Routes() {
@@ -38,10 +38,14 @@ func TestRegisterAuthRoutes(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
-		if w.Code != http.StatusBadRequest || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Pragma") != "no-cache" {
+		status, code := http.StatusBadRequest, "INVALID_REQUEST"
+		if path == "register" {
+			status, code = http.StatusUnauthorized, "UNAUTHORIZED"
+		}
+		if w.Code != status || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Pragma") != "no-cache" {
 			t.Fatalf("%s: status=%d, headers=%v", path, w.Code, w.Header())
 		}
-		if w.Body.String() != `{"success":false,"error":"INVALID_REQUEST"}` {
+		if w.Body.String() != `{"success":false,"error":"`+code+`"}` {
 			t.Fatalf("%s: body=%s", path, w.Body.String())
 		}
 	}

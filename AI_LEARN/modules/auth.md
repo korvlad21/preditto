@@ -1,6 +1,6 @@
 # Auth
 
-Reviewed: 2026-10-25, forced-short registration and targeted auth/HTTP tests against disposable PostgreSQL; rollback scenarios passed with race detection and affected-package vet passed.
+Reviewed: 2026-11-08; admin-only registration, authorization denials and transactional rollback verified against disposable PostgreSQL with race detection; middleware/router tests, Swagger checks and affected-package vet passed.
 
 ## Purpose and API
 
@@ -13,13 +13,15 @@ Owns registration, credential verification, JWT issuance, refresh-session rotati
 | `/api/auth/refresh` | 200, replacement token pair |
 | `/api/auth/logout` | 200, success without data |
 
-Exact fields, validation bounds, errors and examples live in the [auth contract](../../backend/docs/auth.md), which uses the [shared response contract](../../backend/docs/responses.md). Routes are public, but refresh/logout validate the submitted refresh credential. Auth requests are limited to 16 KiB and responses have no-store/no-cache headers.
+Exact fields, validation bounds, errors and examples live in the [auth contract](../../backend/docs/auth.md), which uses the [shared response contract](../../backend/docs/responses.md). Registration requires an authenticated admin; login, refresh and logout are public, with refresh/logout validating the submitted refresh credential. Auth requests are limited to 16 KiB and responses have no-store/no-cache headers.
 
 Auth handler Swagger annotations reuse the auth request/response DTOs and User model. See the [Swagger guide](../../backend/docs/swagger.md) for generation and shared envelope ownership.
 
 ## Business behavior
 
+- Registration runs RequireAuth, LoadUser and RequireRole(model.RoleCodeAdmin) before binding the request. Missing/invalid/expired access tokens return 401 UNAUTHORIZED; an authenticated user without admin receives 403 FORBIDDEN. Roles come from the shared database-loaded UserInfo snapshot, with no extra query in RequireRole. Missing callers retain LoadUser's 404 USER_NOT_FOUND behavior; database errors fail closed with 500 INTERNAL_ERROR. Login, refresh and logout do not inherit this chain.
 - Registration validates the DTO, hashes the password with bcrypt, creates an ACTIVE account and profile, assigns the existing participant role by code, and persists the first refresh session. Database uniqueness and favorite-team constraints remain authoritative; IDs are obtained from the database.
+- Registration returns the new participant's user and tokens; clients must keep the registering admin's session. The transactional registration use case and response payload are unchanged.
 - Login accepts username or email with case-sensitive lookup. Unknown users still trigger a bcrypt comparison; wrong-password and unknown-user responses are identical. Only ACTIVE accounts may log in or refresh.
 - After successful login commits its session, the handler synchronously sends a login notification to the authenticated account email through the process-wide [mailer.Send](email.md), configured at API startup. Disabled mail is skipped without logging; delivery failures are logged without changing the successful token response. Registration and rejected login do not send email.
 - Access and refresh JWTs use HS256 with different configured secrets, independent random JTIs, and distinct token types. Parsing requires the expected type/signature, expiration, issued-at time, positive user subject and nonempty JTI.
@@ -49,10 +51,10 @@ Registration commits account, profile, role assignment and refresh session toget
 
 ## Dependencies and limits
 
-[Config](../../backend/internal/config/config.go) requires distinct secrets of at least 32 bytes and valid access/short-refresh/long-refresh TTLs; the [database-only seed CLI](../../backend/cmd/seed/main.go) does not require JWT settings. Registration needs a provisioned participant role. There is no access blacklist, token-family compromise detection, refresh cleanup scheduler, or role/permission authorization middleware. Existing access-token authentication does not enforce account status on every request. See users for the separate database snapshot middleware.
+[Config](../../backend/internal/config/config.go) requires distinct secrets of at least 32 bytes and valid access/short-refresh/long-refresh TTLs; the [database-only seed CLI](../../backend/cmd/seed/main.go) does not require JWT settings. Registration needs a provisioned participant role and an existing admin account (development seeds or deployment bootstrap). RequireRole provides registration's role gate; there is no permission-based authorization layer, access blacklist, token-family compromise detection or refresh cleanup scheduler. Existing access-token authentication does not enforce account status on every request. See users for the shared database snapshot and role middleware.
 
 ## Verification
 
 From `backend/`, run `go test -race -mod=readonly -count=1 ./internal/auth ./internal/dto/auth ./internal/middleware ./internal/router ./internal/handler` for changes spanning auth behavior. Narrow the package/filter when the affected scope permits; use the [Go guide](../commands/topics/go.md) for prerequisites.
 
-[HTTP integration tests](../../backend/internal/handler/auth_postgres_test.go) require a disposable `PREDITTO_AUTH_TEST_DSN`. They cover validation, uniqueness, nonsequential IDs, registration rollback at profile/role/session stages, login secrecy and blocking, refresh rejection/rollback, concurrent rotation, logout and migration 9 rollback. Remember Me tests cover configured expiration boundaries, signed-mode tampering, invalid JSON types, forced-short registration (including ignored client overrides) and login mode selection, repeated rotation, ignored refresh-body overrides and persisted expiration. Rollback and concurrent rotation tests exercise legacy, short and remembered modes. Token and middleware tests cover algorithm, signature, type, claim and header validation. Passing a run without the DSN does not verify database behavior.
+[HTTP integration tests](../../backend/internal/handler/auth_postgres_test.go) require a disposable `PREDITTO_AUTH_TEST_DSN`. They cover registration authorization and absence of writes on denial, current roles with the same token, validation, uniqueness, nonsequential IDs, registration rollback at profile/role/session stages, login secrecy and blocking, refresh rejection/rollback, concurrent rotation, logout and migration 9 rollback. Remember Me tests cover configured expiration boundaries, signed-mode tampering, invalid JSON types, forced-short registration (including ignored client overrides) and login mode selection, repeated rotation, ignored refresh-body overrides and persisted expiration. Rollback and concurrent rotation tests exercise legacy, short and remembered modes. Token and middleware tests cover algorithm, signature, type, claim, header validation and exact role matching. Passing a run without the DSN does not verify database behavior.

@@ -25,11 +25,15 @@ Unset, empty, production, staging and other values leave both UI assets and
 `/swagger/doc.json` unavailable (404), regardless of Gin debug/release mode.
 There is no separate switch that enables Swagger in production.
 
-1. Expand register or login, click **Try it out**, edit the JSON, and **Execute**.
+1. Expand login, click **Try it out**, sign in with an existing account, and **Execute**.
 2. Copy `data.access_token` from the successful response.
 3. Click **Authorize**, enter `Bearer <access_token>` (including the prefix), and confirm.
-4. Execute a protected user, favorite-team or tournament operation. Public routes
-   do not require authorization. Missing/invalid/expired access JWTs return 401.
+4. Execute a protected user, favorite-team or tournament operation. Registration
+   additionally requires an admin account; provision the first admin through seeds
+   or deployment bootstrap. Its response tokens belong to the newly created user,
+   so keep the admin token when registering further accounts. Public routes do not
+   require authorization. Missing/invalid/expired access JWTs return 401; registration
+   without the admin role returns 403 FORBIDDEN.
 5. Refresh uses `refresh_token` in its JSON body. After rotation, replace the pair
    and authorize again with the new access token. Logout also takes a refresh token.
 

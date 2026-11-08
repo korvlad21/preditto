@@ -26,14 +26,18 @@ func NewAuthHandler(service *service.AuthService) *AuthHandler {
 // Register register a user.
 // @Summary Register a user
 // @Tags Auth
-// @Description Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Always issues a short refresh session. Unknown fields, including remember_me, are ignored.
+// @Description Requires an authenticated admin. Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Returns the created user's tokens and always issues a short refresh session. Unknown fields, including remember_me, are ignored.
 // @Accept json
 // @Param request body authdto.RegisterRequest true "JSON request body"
 // @Produce json
 // @Success 201 {object} apidocs.Success{data=authdto.AuthResponse}
 // @Failure 400 {object} apidocs.Error "INVALID_REQUEST or FAVORITE_TEAM_NOT_FOUND"
+// @Failure 401 {object} apidocs.Error "UNAUTHORIZED (missing, invalid or expired access token)"
+// @Failure 403 {object} apidocs.Error "FORBIDDEN (admin role required)"
+// @Failure 404 {object} apidocs.Error "USER_NOT_FOUND (authenticated account no longer exists)"
 // @Failure 409 {object} apidocs.Error "USERNAME_ALREADY_EXISTS or EMAIL_ALREADY_EXISTS"
 // @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Security BearerAuth
 // @Router /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req authdto.RegisterRequest

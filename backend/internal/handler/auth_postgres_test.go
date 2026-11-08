@@ -101,6 +101,15 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 	}
 	t.Cleanup(func() { _ = mailer.Configure(config.MailConfig{}) })
 	gin.SetMode(gin.TestMode)
+	if db != nil {
+		// Provision the registering admin without issuing a persisted refresh session.
+		execSQL(t, db, `
+			INSERT INTO users (id, username, email, password_hash, status)
+			VALUES (1, 'registration_admin', 'admin@example.test', 'unused', 'ACTIVE');
+			INSERT INTO roles (id, code, name) VALUES (1, 'admin', 'Admin');
+			INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
+		`)
+	}
 	tokens, err := auth.NewTokenManager(testConfig())
 	if err != nil {
 		t.Fatal(err)
@@ -110,7 +119,8 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 		t.Fatal(err)
 	}
 	r := router.New()
-	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc))
+	users := service.NewUserService(repository.NewUserRepository(db))
+	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc), []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(users)})
 	r.GET("/protected", middleware.RequireAuth(tokens), func(c *gin.Context) { c.JSON(200, gin.H{"user_id": c.GetInt64(middleware.UserIDKey)}) })
 	return r, tokens
 }
@@ -128,9 +138,25 @@ func call(t *testing.T, api http.Handler, path string, body any) *httptest.Respo
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/auth/"+path, bytes.NewReader(data))
 	req.Header.Set("Content-Type", "application/json")
+	if path == "register" {
+		req.Header.Set("Authorization", "Bearer "+adminAccessToken(t))
+	}
 	w := httptest.NewRecorder()
 	api.ServeHTTP(w, req)
 	return w
+}
+
+func adminAccessToken(t *testing.T) string {
+	t.Helper()
+	tokens, err := auth.NewTokenManager(testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	pair, _, err := tokens.GeneratePair(1, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pair.AccessToken
 }
 
 func register(t *testing.T, api http.Handler) authdto.AuthResponse {
@@ -190,7 +216,10 @@ func assertError(t *testing.T, w *httptest.ResponseRecorder, status int, code st
 func assertEmptyUsers(t *testing.T, db *sql.DB) {
 	t.Helper()
 	var count int
-	if err := db.QueryRow(`SELECT (SELECT count(*) FROM users) + (SELECT count(*) FROM user_info) + (SELECT count(*) FROM user_roles) + (SELECT count(*) FROM refresh_tokens)`).Scan(&count); err != nil {
+	if err := db.QueryRow(`SELECT (SELECT count(*) FROM users WHERE id <> 1)
+		+ (SELECT count(*) FROM user_info WHERE user_id <> 1)
+		+ (SELECT count(*) FROM user_roles WHERE user_id <> 1)
+		+ (SELECT count(*) FROM refresh_tokens)`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 0 {
@@ -285,7 +314,7 @@ func TestRegisterRollbackPostgres(t *testing.T) {
 	for _, tc := range []struct{ name, setup string }{
 		{"profile failure", `ALTER TABLE user_info ADD CONSTRAINT reject_profile CHECK (user_id < 0)`},
 		{"missing participant role", `DELETE FROM roles WHERE code='participant'`},
-		{"role assignment failure", `ALTER TABLE user_roles ADD CONSTRAINT reject_assignment CHECK (user_id < 0)`},
+		{"role assignment failure", `ALTER TABLE user_roles ADD CONSTRAINT reject_assignment CHECK (user_id = 1 OR user_id < 0)`},
 		{"session failure", `ALTER TABLE refresh_tokens ADD CONSTRAINT reject_session CHECK (user_id < 0)`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -296,6 +325,96 @@ func TestRegisterRollbackPostgres(t *testing.T) {
 			assertEmptyUsers(t, db)
 		})
 	}
+}
+
+func TestRegisterAuthorizationPostgres(t *testing.T) {
+	db := postgres(t)
+	api, tokens := testAPI(t, db)
+	execSQL(t, db, `
+		INSERT INTO users (id, username, email, password_hash, status) VALUES
+			(2, 'participant', 'participant@example.test', 'unused', 'ACTIVE'),
+			(3, 'no_roles', 'no_roles@example.test', 'unused', 'ACTIVE');
+		INSERT INTO user_roles (user_id, role_id) VALUES (2, 91);
+	`)
+	participant, _, err := tokens.GeneratePair(2, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	noRoles, _, err := tokens.GeneratePair(3, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminToken := adminAccessToken(t)
+	claims, err := tokens.ParseAccessToken(adminToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims.IssuedAt = jwt.NewNumericDate(time.Now().Add(-2 * time.Hour))
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Hour))
+	expired, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(testConfig().AccessSecret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := func(header, body string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/register", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if header != "" {
+			req.Header.Set("Authorization", header)
+		}
+		w := httptest.NewRecorder()
+		api.ServeHTTP(w, req)
+		return w
+	}
+	rowCount := func() int {
+		t.Helper()
+		var count int
+		if err := db.QueryRow(`SELECT (SELECT count(*) FROM users) + (SELECT count(*) FROM user_info)
+			+ (SELECT count(*) FROM user_roles) + (SELECT count(*) FROM refresh_tokens)`).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	before := rowCount()
+	for _, tc := range []struct {
+		name, header string
+		status       int
+		code         string
+	}{
+		{"missing token", "", 401, "UNAUTHORIZED"},
+		{"invalid token", "Bearer invalid", 401, "UNAUTHORIZED"},
+		{"wrong scheme", "Basic " + adminToken, 401, "UNAUTHORIZED"},
+		{"expired token", "Bearer " + expired, 401, "UNAUTHORIZED"},
+		{"refresh token", "Bearer " + participant.RefreshToken, 401, "UNAUTHORIZED"},
+		{"participant", "Bearer " + participant.AccessToken, 403, "FORBIDDEN"},
+		{"no roles", "Bearer " + noRoles.AccessToken, 403, "FORBIDDEN"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// Client-supplied IDs and roles cannot grant registration access.
+			w := request(tc.header, `{"user_id":1,"roles":["admin"]}`)
+			assertError(t, w, tc.status, tc.code)
+			if w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("Pragma") != "no-cache" {
+				t.Fatal("authorization failure is cacheable")
+			}
+			if rowCount() != before {
+				t.Fatal("denied registration wrote to the database")
+			}
+		})
+	}
+	// The existing token sees current DB roles. Allowed requests still reach DTO validation.
+	assertError(t, request("Bearer "+adminToken, "{"), 400, "INVALID_REQUEST")
+	execSQL(t, db, `DELETE FROM user_roles WHERE user_id = 1 AND role_id = 1`)
+	assertError(t, request("Bearer "+adminToken, "{"), 403, "FORBIDDEN")
+	execSQL(t, db, `INSERT INTO user_roles (user_id, role_id) VALUES (1, 91), (1, 1)`)
+	assertError(t, request("Bearer "+adminToken, "{"), 400, "INVALID_REQUEST")
+	if rowCount() != before+1 {
+		t.Fatal("authorization/validation failures created registration records")
+	}
+	// Errors loading the role snapshot must fail closed without exposing database details.
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	assertError(t, request("Bearer "+adminToken, "{"), 500, "INTERNAL_ERROR")
 }
 
 func TestLoginPostgres(t *testing.T) {
@@ -514,6 +633,9 @@ func TestInvalidRequestsPostgres(t *testing.T) {
 		for _, body := range []string{"{", `{}`, `null`, strings.Repeat(" ", 17<<10) + `{}`} {
 			req := httptest.NewRequest(http.MethodPost, "/api/auth/"+path, strings.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
+			if path == "register" {
+				req.Header.Set("Authorization", "Bearer "+adminAccessToken(t))
+			}
 			w := httptest.NewRecorder()
 			api.ServeHTTP(w, req)
 			assertError(t, w, 400, "INVALID_REQUEST")

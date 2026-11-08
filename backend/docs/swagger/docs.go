@@ -228,7 +228,12 @@ const docTemplate = `{
         },
         "/api/auth/register": {
             "post": {
-                "description": "Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Always issues a short refresh session. Unknown fields, including remember_me, are ignored.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires an authenticated admin. Body limit: 16 KiB. Responses have Cache-Control: no-store and Pragma: no-cache. Returns the created user's tokens and always issues a short refresh session. Unknown fields, including remember_me, are ignored.",
                 "consumes": [
                     "application/json"
                 ],
@@ -271,6 +276,24 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "INVALID_REQUEST or FAVORITE_TEAM_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "UNAUTHORIZED (missing, invalid or expired access token)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "FORBIDDEN (admin role required)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND (authenticated account no longer exists)",
                         "schema": {
                             "$ref": "#/definitions/apidocs.Error"
                         }

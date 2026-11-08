@@ -8,6 +8,7 @@ const (
 	InvalidCredentials     = "INVALID_CREDENTIALS"
 	InvalidToken           = "INVALID_TOKEN"
 	Unauthorized           = "UNAUTHORIZED"
+	Forbidden              = "FORBIDDEN"
 	UserBlocked            = "USER_BLOCKED"
 	UsernameAlreadyExists  = "USERNAME_ALREADY_EXISTS"
 	EmailAlreadyExists     = "EMAIL_ALREADY_EXISTS"

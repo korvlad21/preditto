@@ -23,8 +23,11 @@ HTTP -> Gin handler -> Auth service -> Repository -> PostgreSQL
                            +-> TokenManager -> JWT (golang-jwt/jwt/v5)
 ```
 
-The existing `repository.AssignUserRole` is reused. Authentication does not embed
-roles or permissions in JWTs and does not implement RBAC checks.
+The existing `repository.AssignUserRole` is reused. JWTs do not embed roles or
+permissions. Registration runs `RequireAuth -> LoadUser -> RequireRole(admin)`
+before request binding. The role check reuses roles loaded from the database in
+the shared UserInfo snapshot; it performs no additional queries. Login, refresh
+and logout remain public and validate their own credentials.
 
 ## Configuration and startup
 
@@ -50,7 +53,9 @@ Compose and the environment example use `720h` (30 days). The seed CLI uses
 Apply migration 000009 before running the API. Registration requires the existing
 `participant` role created by the development role seed. The API resolves its ID
 by code; neither user IDs nor role IDs are assumed. Environments using a different
-bootstrap process must provision this role before allowing registration.
+bootstrap process must provision this role before allowing registration. An
+existing admin account is also required: provision the first admin through the
+development seeds or the deployment's account/role bootstrap process.
 
 From the project root, after configuring `.env`:
 
@@ -117,8 +122,17 @@ of tokens already issued.
 
 ## Registration
 
+Only an authenticated user with `model.RoleCodeAdmin` may register an account.
+Send the admin's access token in the Authorization header. Missing, invalid,
+expired or wrong-type tokens return `401 UNAUTHORIZED`; users without the admin
+role receive `403 FORBIDDEN`. Client-supplied roles or user IDs cannot grant access.
+The existing LoadUser behavior applies: a deleted caller returns `404 USER_NOT_FOUND`
+and snapshot-loading failures return `500 INTERNAL_ERROR`. Authorization failures
+do not create a user, profile, role assignment or refresh session.
+
 ```http
 POST /api/auth/register
+Authorization: Bearer <admin access JWT>
 Content-Type: application/json
 
 {
@@ -161,6 +175,12 @@ its ID with `RETURNING id`, inserts `user_info`, assigns `participant`, and stor
 the first refresh session. Profile defaults supply `updated_at` and a null avatar.
 Any error, including token/session creation or role assignment, rolls back all
 four records. Tokens are returned only after commit.
+
+The response's user and tokens belong to the newly created participant, not to
+the admin making the request. An admin client must retain its own session.
+Role changes committed before the next snapshot query are respected even when
+the caller reuses the same access token. Existing account-status/access-token
+revocation policy is unchanged; this endpoint adds a role check only.
 
 Database unique constraints handle competing registrations safely. The favorite
 team foreign key validates existence in the same transaction, including deletion
@@ -277,7 +297,7 @@ Here `userService` implements UserInfoLoader. RequireAuth alone establishes toke
 LoadUser then loads the profile snapshot for handlers using CurrentUser. See the
 [users module](../../AI_LEARN/modules/users.md#current-user-snapshot).
 
-Clients send `Authorization: Bearer <access JWT>`. Middleware validates the access
+Clients send `Authorization: Bearer <access JWT>`. RequireAuth validates the access
 key, HS256, required claims, expiration, and `token_type = access`, then stores an
 `int64` under `middleware.UserIDKey` (`"user_id"`) in the Gin context. It does not
 query PostgreSQL or apply roles. A status change therefore prevents new login and
@@ -293,7 +313,8 @@ in responses. PasswordHash also has a defensive `json:"-"` model tag.
 | --- | --- |
 | 400 | `INVALID_REQUEST`, `FAVORITE_TEAM_NOT_FOUND` |
 | 401 | `INVALID_CREDENTIALS`, `INVALID_TOKEN`, `UNAUTHORIZED` |
-| 403 | `USER_BLOCKED` |
+| 403 | `USER_BLOCKED`, `FORBIDDEN` |
+| 404 | `USER_NOT_FOUND` |
 | 409 | `USERNAME_ALREADY_EXISTS`, `EMAIL_ALREADY_EXISTS` |
 | 500 | `INTERNAL_ERROR` |
 
@@ -319,7 +340,9 @@ and the known seed timestamp assertion failure under race instrumentation.
 Coverage includes the requested register/login/refresh/logout/middleware cases,
 minimal JWT claims, wrong algorithms and signatures, wrong token types signed
 with the correct key, missing/expired/tampered sessions, nonsequential IDs,
-registration rollback at multiple stages, rotation rollback, concurrent rotation,
+admin-only registration (401/403, no writes on denial, multiple roles and role
+revocation with the same token), registration rollback at multiple stages,
+rotation rollback, concurrent rotation,
 and migration 000009 down/up.
 
 JWT parsing options follow the [golang-jwt documentation](https://golang-jwt.github.io/jwt/usage/parse/).

@@ -42,11 +42,11 @@ Use the [module index](modules/index.md) to select sources and tests.
 | [Predictions](modules/predictions.md) | Predicted scores and stored calculation results | Tournament participants and matches |
 | [Rankings](modules/rankings.md) | Stored stage and cumulative participant rankings | Tournament participants and stages |
 
-Countries share the teams document. Participation and prize rules belong to tournaments. Role tables and assignment belong to users; an authorization policy layer is not implemented. Prediction submission, match scoring, payments, payouts, tournament join/leave endpoints and application frontend screens are not implemented. Predictions currently have schema only. Do not infer these features from names, costs or seed data.
+Countries share the teams document. Participation and prize rules belong to tournaments. Role tables, assignment and the RequireRole middleware belong to users; auth applies the admin gate to registration. A permission-based authorization policy layer is not implemented. Prediction submission, match scoring, payments, payouts, tournament join/leave endpoints and application frontend screens are not implemented. Predictions currently have schema only. Do not infer these features from names, costs or seed data.
 
 ## Shared request and transaction behavior
 
-All eleven current `/api/*` endpoints use POST. Public auth/team routes and protected user/tournament/favorite-team routes are wired separately. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile snapshot per request. See [users](modules/users.md#current-user-snapshot) for its lifecycle and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
+All eleven current `/api/*` endpoints use POST. Login/refresh/logout and team-directory routes are public; user/tournament/favorite-team routes require authentication, and registration additionally requires admin. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile/role snapshot per request. RegisterAuthRoutes receives that same middleware chain for registration only and adds RequireRole(RoleCodeAdmin), while retaining the shared auth request limits/cache headers. See [users](modules/users.md#current-user-snapshot) for snapshot and role-gate behavior and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
 
 Swagger UI and its JSON specification are registered only for explicit
 `APP_ENV=development`, independently of Gin mode. The shared `newRouter` composition

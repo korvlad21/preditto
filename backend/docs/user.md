@@ -57,8 +57,9 @@ not immediately invalidate an issued access token; no new role checks are added.
 
 `cmd/api/main.go` creates a shared middleware chain with `RequireAuth` followed by
 `LoadUser`. `router.RegisterUserRoutes` receives a protected `/api` group;
-`RegisterTournamentRoutes` receives the same protected group. Public auth and team routes
-remain on their public groups. `LoadUser` reuses `UserService` and the `UserRepository`
+`RegisterTournamentRoutes` receives the same protected group. Registration uses
+the same authentication/loading chain plus RequireRole(admin); login, refresh,
+logout and team-directory routes remain public. `LoadUser` reuses `UserService` and the `UserRepository`
 in `internal/repository/user.go`. A single parameterized query uses a `LEFT JOIN`
 for the profile and an `ARRAY` subquery for role codes; it never
 reads password hashes. `model.UserInfo` is the response shape because the existing
