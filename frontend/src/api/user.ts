@@ -63,6 +63,7 @@ export async function getCurrentUser(): Promise<User> {
     email: info.email,
     avatarUrl: info.avatar_url,
     createdAt: info.created_at,
+    roles: info.roles ?? [],
     favoriteTeam: await resolveFavoriteTeam(info.favorite_team_id),
   }
 }

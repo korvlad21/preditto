@@ -261,6 +261,12 @@
   font-size: 14px;
 }
 
+.auth-alert--success {
+  border-color: rgba(52, 199, 120, 0.5);
+  background: rgba(52, 199, 120, 0.12);
+  color: #b8f0cf;
+}
+
 .auth-switch {
   display: flex;
   align-items: center;

@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { register } from '../../api/auth.ts'
 import { ApiError } from '../../api/client.ts'
 import AvatarUpload from '../../components/AvatarUpload/AvatarUpload.tsx'
@@ -108,13 +108,14 @@ function RegisterPage() {
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [serverError, setServerError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [visiblePasswords, setVisiblePasswords] = useState({ password: false, confirmPassword: false })
   const [avatar, setAvatar] = useState<File | null>(null)
   const [team, setTeam] = useState<Team | null>(null)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const inputRefs = useRef<Partial<Record<Field, HTMLInputElement | null>>>({})
-  const navigate = useNavigate()
+  const [formKey, setFormKey] = useState(0)
 
   const focusFirstError = (fieldErrors: FieldErrors) => {
     const field = FIELD_ORDER.find((name) => fieldErrors[name])
@@ -126,6 +127,7 @@ function RegisterPage() {
     setValues((prev) => ({ ...prev, [name]: event.target.value }))
     setErrors((prev) => ({ ...prev, [name]: undefined }))
     setServerError('')
+    setSuccessMessage('')
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -140,8 +142,9 @@ function RegisterPage() {
     }
 
     setIsSubmitting(true)
+    setSuccessMessage('')
     try {
-      // The user signs in explicitly afterwards, so returned tokens are not stored.
+      // An admin registers the account; its returned tokens are not stored.
       await register({ ...values, favoriteTeamId: team?.id ?? null, avatar })
     } catch (error) {
       setIsSubmitting(false)
@@ -158,12 +161,22 @@ function RegisterPage() {
         setServerError('Выбранная команда не найдена, выберите другую')
       } else if (code === 'INVALID_REQUEST') {
         setServerError('Проверьте введённые данные')
+      } else if (code === 'FORBIDDEN') {
+        setServerError('Регистрировать пользователей может только администратор')
+      } else if (code === 'UNAUTHORIZED') {
+        setServerError('Сессия истекла. Войдите снова')
       } else {
-        setServerError('Не удалось зарегистрироваться. Попробуйте ещё раз')
+        setServerError('Не удалось зарегистрировать пользователя. Попробуйте ещё раз')
       }
       return
     }
-    navigate('/login', { replace: true })
+    // Ready for the next account: clear the form, team and avatar.
+    setSuccessMessage(`Пользователь ${values.login} зарегистрирован`)
+    setValues({ login: '', lastName: '', firstName: '', email: '', password: '', confirmPassword: '' })
+    setTeam(null)
+    setAvatar(null)
+    setFormKey((key) => key + 1)
+    setIsSubmitting(false)
   }
 
   return (
@@ -173,12 +186,10 @@ function RegisterPage() {
       <div className="auth-card auth-card--register">
         <BrandLogo size="sm" />
         <h1>Регистрация</h1>
-        <p className="auth-subtitle">
-          Создайте аккаунт и станьте частью футбольного сообщества
-        </p>
+        <p className="auth-subtitle">Создание аккаунта нового участника</p>
 
         <div className="register-extras">
-          <AvatarUpload onChange={setAvatar} />
+          <AvatarUpload key={formKey} onChange={setAvatar} />
           <FavoriteTeamButton team={team} onClick={() => setIsPickerOpen(true)} />
         </div>
 
@@ -239,6 +250,12 @@ function RegisterPage() {
             )
           })}
 
+          {successMessage && (
+            <div className="auth-alert auth-alert--success" role="status">
+              {successMessage}
+            </div>
+          )}
+
           {serverError && (
             <div className="auth-alert" role="alert">
               {serverError}
@@ -258,7 +275,7 @@ function RegisterPage() {
               </>
             ) : (
               <>
-                Зарегистрироваться
+                Зарегистрировать
                 <ArrowRightIcon className="auth-submit__arrow" />
               </>
             )}
@@ -266,7 +283,7 @@ function RegisterPage() {
         </form>
 
         <p className="auth-switch auth-switch--plain">
-          Уже есть аккаунт? <Link to="/login">Войти</Link>
+          <Link to="/">На главную</Link>
         </p>
       </div>
 

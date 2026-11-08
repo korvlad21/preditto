@@ -261,38 +261,6 @@
   opacity: 0.6;
 }
 
-/* Secondary "undo" action of the current tournament. */
-.tournament-card__action--clear {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 44px;
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--ui-text-soft);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s,
-    color 0.2s;
-
-  &:hover:not(:disabled) {
-    border-color: rgba(255, 77, 106, 0.6);
-    background: rgba(255, 77, 106, 0.08);
-    color: #ffc2cc;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--ui-link);
-    outline-offset: 2px;
-  }
-}
-
 .tournaments-empty {
   padding: 40px 16px;
   border: 1px dashed var(--ui-border);

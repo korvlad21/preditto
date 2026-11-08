@@ -1,5 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router'
 import CurrentUserProvider from './auth/CurrentUserProvider.tsx'
+import GuestOnly from './auth/GuestOnly.tsx'
+import RequireAdmin from './auth/RequireAdmin.tsx'
 import RequireAuth from './auth/RequireAuth.tsx'
 import AppLayout from './components/AppLayout/AppLayout.tsx'
 import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage.tsx'
@@ -25,8 +27,13 @@ function App() {
     <CurrentUserProvider>
       <Routes>
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route element={<GuestOnly />}>
+            <Route path="/login" element={<LoginPage />} />
+          </Route>
+          {/* Only admins register users. */}
+          <Route element={<RequireAdmin />}>
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 

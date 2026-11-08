@@ -27,6 +27,8 @@ export interface User {
   createdAt: string
   // null: no favorite team; undefined: the team could not be resolved (teams API failed).
   favoriteTeam?: { id: number; name: string; logoUrl: string | null } | null
+  // Role codes from UserInfo.roles (user_roles table), e.g. 'admin', 'participant'.
+  roles: string[]
 }
 
 // model.UserInfo: `data` of POST /api/user/get_user_info (account + profile).
