@@ -44,38 +44,35 @@ func (r *UserRepository) UpdateUser(ctx context.Context, req usersdto.UpdateUser
 	}
 	defer tx.Rollback()
 	var id int64
-	if err := tx.QueryRowContext(ctx, `SELECT id FROM users WHERE id = $1 FOR UPDATE`, req.UserID).Scan(&id); err != nil {
+	// UPDATE also locks the account, serializing profile writes for this user.
+	if err := tx.QueryRowContext(ctx, `UPDATE users SET email = $1 WHERE id = $2 RETURNING id`, req.Email, req.UserID).Scan(&id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.UserInfo{}, ErrNotFound
 		}
-		return model.UserInfo{}, fmt.Errorf("lock user update: %w", err)
-	}
-	// Ensure a profile exists, preserving unrelated fields on an existing row.
-	if _, err := tx.ExecContext(ctx, `INSERT INTO user_info (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`, id); err != nil {
-		return model.UserInfo{}, fmt.Errorf("ensure user profile: %w", err)
-	}
-	var currentURL *string
-	if err := tx.QueryRowContext(ctx, `SELECT avatar_url FROM user_info WHERE user_id = $1 FOR UPDATE`, id).Scan(&currentURL); err != nil {
-		return model.UserInfo{}, fmt.Errorf("lock user profile: %w", err)
-	}
-	if uploadedURL == nil && req.AvatarURL != nil && *req.AvatarURL != "" &&
-		(currentURL == nil || *req.AvatarURL != *currentURL) {
-		return model.UserInfo{}, ErrInvalidAvatarURL
-	}
-	if _, err := tx.ExecContext(ctx, `UPDATE users SET email = $1 WHERE id = $2`, req.Email, id); err != nil {
 		return model.UserInfo{}, fmt.Errorf("update user: %w", userWriteError(err))
+	}
+	if uploadedURL == nil && req.AvatarURL != nil && *req.AvatarURL != "" {
+		var currentURL *string
+		err := tx.QueryRowContext(ctx, `SELECT avatar_url FROM user_info WHERE user_id = $1 FOR UPDATE`, id).Scan(&currentURL)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return model.UserInfo{}, fmt.Errorf("lock user profile: %w", err)
+		}
+		if currentURL == nil || *req.AvatarURL != *currentURL {
+			return model.UserInfo{}, ErrInvalidAvatarURL
+		}
 	}
 	avatarURL := req.AvatarURL
 	if uploadedURL != nil {
 		avatarURL = uploadedURL
 	}
 	_, err = tx.ExecContext(ctx, `
-		UPDATE user_info SET
-			first_name = COALESCE($2, first_name),
-			last_name = COALESCE($3, last_name),
-			favorite_team_id = CASE WHEN $4::bigint IS NULL THEN favorite_team_id ELSE NULLIF($4, 0) END,
-			avatar_url = CASE WHEN $5::text IS NULL THEN avatar_url ELSE NULLIF($5, '') END
-		WHERE user_id = $1
+		INSERT INTO user_info (user_id, first_name, last_name, favorite_team_id, avatar_url)
+		VALUES ($1, $2, $3, NULLIF($4::bigint, 0), NULLIF($5::text, ''))
+		ON CONFLICT (user_id) DO UPDATE SET
+			first_name = COALESCE(EXCLUDED.first_name, user_info.first_name),
+			last_name = COALESCE(EXCLUDED.last_name, user_info.last_name),
+			favorite_team_id = CASE WHEN $4::bigint IS NULL THEN user_info.favorite_team_id ELSE EXCLUDED.favorite_team_id END,
+			avatar_url = CASE WHEN $5::text IS NULL THEN user_info.avatar_url ELSE EXCLUDED.avatar_url END
 	`, id, req.FirstName, req.LastName, req.FavoriteTeamID, avatarURL)
 	if err != nil {
 		return model.UserInfo{}, fmt.Errorf("update user profile: %w", userWriteError(err))

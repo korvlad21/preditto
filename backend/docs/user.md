@@ -128,6 +128,12 @@ serialized. HTTP 200 returns updated `UserInfo` in the shared `success/data`
 envelope with `Cache-Control: no-store`. After commit, self-updates refresh the
 existing shared snapshot. An admin editing another account keeps their own snapshot.
 
+The transaction uses `UPDATE users ... RETURNING id`, a profile UPSERT and the
+final `GetUserInfo` query. Only a nonempty client-supplied `avatar_url` without
+an upload requires an additional locked read for comparison. This is three SQL
+statements normally, or four with that check, excluding BEGIN/COMMIT and the
+middleware's user load. Email conflicts are checked before the stored avatar URL.
+
 ### Upload an avatar
 
 Use the same PUT route with `multipart/form-data`: exactly one text field `data`

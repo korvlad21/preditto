@@ -205,6 +205,9 @@ func TestUpdateUserPostgres(t *testing.T) {
 	})
 	owner, admin := updateToken(t, tokens, 81), updateToken(t, tokens, 82)
 	initial := readUpdateUser(t, db, 81)
+	if user := updatedUser(t, updateUserRequest(api, owner, `{"user_id":81,"email":"owner@example.com"}`)); !sameUpdateUser(user, initial) {
+		t.Fatal("email-only update changed existing profile fields")
+	}
 	user := updatedUser(t, updateUserRequest(api, owner, `{"user_id":81,"email":"owner@example.com","first_name":"Иван","last_name":"","favorite_team_id":0}`))
 	if before != after || !sameUpdateUser(*after, user) || *user.FirstName != "Иван" || *user.LastName != "" || user.FavoriteTeamID != nil || *user.SelectedTournamentID != 201 || !user.CreatedAt.Equal(initial.CreatedAt) || !reflect.DeepEqual(user.Roles, initial.Roles) {
 		t.Fatalf("incorrect update or snapshot: %+v", user)
@@ -215,6 +218,7 @@ func TestUpdateUserPostgres(t *testing.T) {
 		code   string
 	}{
 		{`{"user_id":81,"email":"admin@example.com","first_name":"Uncommitted"}`, 409, "EMAIL_ALREADY_EXISTS"},
+		{`{"user_id":81,"email":"admin@example.com","avatar_url":"/users/untrusted.jpg"}`, 409, "EMAIL_ALREADY_EXISTS"},
 		{`{"user_id":81,"email":"rollback@example.com","favorite_team_id":999}`, 400, "FAVORITE_TEAM_NOT_FOUND"},
 		{`{"user_id":81,"email":"rollback@example.com","avatar_url":"../../outside.jpg"}`, 400, "INVALID_REQUEST"},
 		{`{"user_id":81,"email":"rollback@example.com","avatar_url":"https://example.com/avatar.jpg"}`, 400, "INVALID_REQUEST"},
@@ -226,10 +230,23 @@ func TestUpdateUserPostgres(t *testing.T) {
 	}
 	assertError(t, updateUserRequest(api, owner, `{"user_id":83,"email":"forbidden@example.com"}`), 403, "FORBIDDEN")
 	assertError(t, updateUserRequest(api, admin, `{"user_id":999,"email":"missing@example.com"}`), 404, "USER_NOT_FOUND")
+	missingProfile := readUpdateUser(t, db, 83)
+	assertError(t, updateUserRequest(api, admin, `{"user_id":83,"email":"rollback@example.com","avatar_url":"/users/untrusted.jpg"}`), 400, "INVALID_REQUEST")
 	assertError(t, updateUserRequest(api, admin, `{"user_id":83,"email":"rollback@example.com","favorite_team_id":999}`), 400, "FAVORITE_TEAM_NOT_FOUND")
 	var count int
 	if err := db.QueryRow(`SELECT count(*) FROM user_info WHERE user_id=83`).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("profile insert did not roll back: %d %v", count, err)
+	}
+	if !sameUpdateUser(readUpdateUser(t, db, 83), missingProfile) {
+		t.Fatal("failed update of missing profile changed the account")
+	}
+	// An email-only update creates an absent profile with nullable fields intact.
+	adminBefore := readUpdateUser(t, db, 82)
+	if created := updatedUser(t, updateUserRequest(api, admin, `{"user_id":82,"email":"admin@example.com"}`)); !sameUpdateUser(created, adminBefore) {
+		t.Fatal("email-only profile creation changed nullable fields")
+	}
+	if err := db.QueryRow(`SELECT count(*) FROM user_info WHERE user_id=82`).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("missing profile was not created: %d %v", count, err)
 	}
 	other := updatedUser(t, updateUserRequest(api, admin, `{"user_id":83,"email":"changed@example.com","first_name":"Other","favorite_team_id":5}`))
 	if other.ID != 83 || other.Status != "BLOCKED" || *other.FavoriteTeamID != 5 || other.LastName != nil || before != after || after.ID != 82 || after.Email != "admin@example.com" {
@@ -287,9 +304,13 @@ func TestUpdateUserAvatarPostgres(t *testing.T) {
 	if !sameUpdateUser(user, readUpdateUser(t, db, 81)) {
 		t.Fatal("URL not persisted")
 	}
+	if unchanged := updatedUser(t, updateUserRequest(api, token, body)); !sameUpdateUser(unchanged, user) {
+		t.Fatal("omitted avatar was not preserved")
+	}
 	keep, _ := json.Marshal(map[string]any{"user_id": 81, "email": "owner@example.com", "avatar_url": *user.AvatarURL})
 	updatedUser(t, updateUserRequest(api, token, string(keep)))
-	assertError(t, updateUserRequest(api, updateToken(t, tokens, 83), strings.ReplaceAll(string(keep), `"user_id":81`, `"user_id":83`)), 400, "INVALID_REQUEST")
+	otherAvatar, _ := json.Marshal(map[string]any{"user_id": 83, "email": "no_profile@example.com", "avatar_url": *user.AvatarURL})
+	assertError(t, updateUserRequest(api, updateToken(t, tokens, 83), string(otherAvatar)), 400, "INVALID_REQUEST")
 	second := updatedUser(t, uploadUserAvatar(t, api, token, body, stored))
 	if *user.AvatarURL == *second.AvatarURL {
 		t.Fatal("avatar UUID reused")

@@ -1,6 +1,6 @@
 # Users
 
-Reviewed: 2026-11-08; profile updates, avatar persistence, rollback and concurrent email uniqueness verified with race-enabled HTTP tests against disposable PostgreSQL. Existing role-loading and RequireRole coverage is retained.
+Reviewed: 2026-11-09; profile updates, avatar persistence, rollback and concurrent email uniqueness verified with race-enabled HTTP tests against disposable PostgreSQL. Existing role-loading and RequireRole coverage is retained.
 
 ## Purpose and API
 
@@ -38,6 +38,8 @@ The snapshot is not itself a tournament-membership or role authorization check. 
 | [user_roles](../../backend/migrations/000007_create_user_roles.up.sql), [role_permissions](../../backend/migrations/000008_create_role_permissions.up.sql) | Composite primary keys, cascading parent references and reverse-lookup indexes |
 
 UserRepository.CreateUser performs both account and profile inserts and must run inside the auth transaction callback. UpdateUser owns an independent account/profile transaction. FindUserByLogin is used before credential verification; LockUser obtains a shared account-row lock for session issuance. GetUserInfo never reads the password hash.
+
+UpdateUser uses three SQL statements: the email UPDATE locks the account and checks existence, a profile UPSERT preserves omitted fields and tournament selection, and GetUserInfo reads the result. A nonempty client-supplied avatar URL without an upload requires a fourth statement to lock/read the profile for comparison. Counts exclude transaction commands and middleware loading. Email conflicts are checked before avatar URL validation.
 
 UpdateSelectedTournament changes only an existing profile. A nil ID clears selection at repository level; zero affected rows return ErrNotFound. Uniqueness and named FK errors are mapped in userWriteError, including ErrTournamentNotFound for selection races. The HTTP selection endpoint does not expose nil/reset behavior.
 

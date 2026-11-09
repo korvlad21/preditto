@@ -27,6 +27,7 @@ const maxUserJSONBytes = 16 << 10
 // @Summary Update a user
 // @Tags Users
 // @Description Owner or admin only, using CurrentUser from RequireAuth then LoadUser. JSON: user_id/email required; omitted/null optional fields are unchanged, favorite_team_id=0 clears the favorite, avatar_url="" clears the avatar, nonempty avatar_url must equal the target's stored URL. For upload use multipart/form-data with this JSON in the data field and one avatar file; omit avatar_url or set it empty. JPEG/PNG only, at most 5 MiB and 4096x4096 pixels, decoded and re-encoded as JPEG with a UUID name. JSON limit 16 KiB; multipart limit 5 MiB + 20 KiB. Atomic account/profile update; a missing profile is created. Other fields are preserved. Returns updated UserInfo. Cache-Control: no-store. Swagger 2 represents the JSON mode; the multipart alternative is described here and in docs/user.md.
+// @Description Email conflicts are checked before validating a nonempty stored avatar URL.
 // @Accept json,mpfd
 // @Param request body usersdto.UpdateUserRequest true "JSON body, or JSON data field with an avatar file in multipart mode"
 // @Produce json
