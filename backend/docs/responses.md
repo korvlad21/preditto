@@ -31,13 +31,14 @@ preserved; `NOT_FOUND` identifies unmatched API paths and unsupported methods.
 Clients translate these stable codes into Russian, English, or another locale.
 Unknown codes should use a generic localized error fallback.
 
-| POST route | Success status | `data` |
+| Route (POST unless specified) | Success status | `data` |
 | --- | --- | --- |
 | `/api/auth/register` | 201 | Existing user and token fields |
 | `/api/auth/login` | 200 | Existing user and token fields |
 | `/api/auth/refresh` | 200 | Existing token fields |
 | `/api/auth/logout` | 200 | Omitted |
 | `/api/user/get_user_info` | 200 | Existing account and profile fields |
+| `PUT /api/user/update_user` | 200 | Updated account and profile fields |
 | `/api/teams/get_all_teams` | 200 | `{"teams":[...]}` |
 | `/api/teams/get_team` | 200 | `{"team":{...}}` |
 | `/api/teams/get_favorite_team` | 200 | `{"team":{...}}` |

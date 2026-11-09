@@ -59,6 +59,7 @@ func TestSwaggerRouteCoverage(t *testing.T) {
 	protected := map[string]bool{
 		"/api/auth/register":                   true,
 		"/api/user/get_user_info":              true,
+		"/api/user/update_user":                true,
 		"/api/teams/get_favorite_team":         true,
 		"/api/tournaments/get_all_tournaments": true,
 		"/api/tournaments/select_tournament":   true,

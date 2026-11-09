@@ -86,3 +86,104 @@ fields, secrecy, NULL and empty values, missing profiles and users, no/single/mu
 roles, role ordering, role changes with the same token, and isolation between
 authenticated users. Authentication and database-error tests run without
 a live database.
+
+## Update a user
+
+`PUT /api/user/update_user` uses `RequireAuth -> LoadUser`. The handler checks
+`CurrentUser(c).ID` and its role codes: the caller must be the target's owner or
+have `model.RoleCodeAdmin`. The body selects the target, never the caller's
+identity. Query selectors are ignored. No additional status restriction applies.
+
+Send `Authorization: Bearer <access_token>` and `Content-Type: application/json`:
+
+```json
+{
+  "user_id": 81,
+  "email": "updated@example.com",
+  "favorite_team_id": 5,
+  "first_name": "Alex",
+  "last_name": "Smith",
+  "avatar_url": ""
+}
+```
+
+| Field | Validation and update semantics |
+| --- | --- |
+| `user_id` | Required positive signed 64-bit integer; account must exist |
+| `email` | Required valid email, at most 255 characters; case-sensitive uniqueness among other accounts; retaining one's own email succeeds |
+| `favorite_team_id` | Optional integer; positive IDs must reference a team, zero clears the reference to SQL NULL |
+| `first_name`, `last_name` | Optional strings, at most 100 characters; empty strings are preserved |
+| `avatar_url` | Optional string, at most 500 characters; empty clears to SQL NULL; nonempty must exactly match the target's currently stored URL |
+
+Omitted or JSON-null optional fields are unchanged. Unknown fields, invalid
+types, NUL characters, invalid UTF-8, multiple JSON values and oversized bodies
+are rejected. JSON bodies are limited to 16 KiB. Usernames, passwords, status,
+roles, account creation time and selected tournament are preserved.
+
+UserRepository locks the target account/profile and updates `users` and
+`user_info` in one transaction, creating a missing profile. Database uniqueness
+and favorite-team foreign keys provide race-safe validation; a profile failure
+rolls back the email and any inserted profile. Concurrent edits of a target are
+serialized. HTTP 200 returns updated `UserInfo` in the shared `success/data`
+envelope with `Cache-Control: no-store`. After commit, self-updates refresh the
+existing shared snapshot. An admin editing another account keeps their own snapshot.
+
+### Upload an avatar
+
+Use the same PUT route with `multipart/form-data`: exactly one text field `data`
+containing the JSON request and exactly one file field `avatar`. Omit
+`avatar_url` or set it empty when uploading. Let the client generate the boundary;
+do not manually set Content-Type with browser FormData.
+
+```sh
+curl -X PUT http://localhost:8080/api/user/update_user \
+  -H 'Authorization: Bearer <access_token>' \
+  --form-string 'data={"user_id":81,"email":"updated@example.com","first_name":"Alex"}' \
+  --form 'avatar=@/absolute/path/avatar.png'
+```
+
+Limits: complete multipart body 5 MiB + 20 KiB; JSON field 16 KiB; image file
+5 MiB. Only decoded JPEG/PNG content is accepted, at most 4096 pixels per
+dimension. Configuration is checked before allocating pixels, then the image
+is fully decoded, transparency flattened on white and JPEG encoded at quality
+85. Client filenames, extensions and MIME declarations do not select the format
+or path. Re-encoding removes source metadata and appended content.
+
+Files receive a cryptographically random UUID v4 plus `.jpg` under
+`frontend/images/users/`; only `/users/<uuid>.jpg` is stored in the database.
+No client-selected filesystem path is read/written or URL fetched. JSON can
+retain the target's existing URL or clear it; new paths require an upload.
+
+Run the backend from `backend/`: it uses `../frontend/images/users`. Compose
+mounts that host directory at `/frontend/images/users` for the backend; the
+frontend's existing mount and Vite's `images` public directory serve `/users/`.
+Production hosting must persist this directory and map `/users/` to it; a static
+build does not include later uploads. The backend adds no static route.
+Uploaded files are ignored by Git.
+
+The image is written and closed before the SQL transaction. A write failure
+prevents database changes; a known database failure removes the new file.
+Cleanup failures return an internal error and retain server-side details.
+An uncertain COMMIT outcome retains the new file to avoid deleting an image
+the database may reference. Replaced/cleared files are also retained to avoid
+concurrent-request deletion races. Filesystem and SQL cannot share a transaction:
+process termination can leave an unreferenced file. Reconciliation is outside
+this endpoint.
+
+| HTTP status | Error code |
+| --- | --- |
+| 400 | `INVALID_REQUEST` (validation, image or avatar path); `FAVORITE_TEAM_NOT_FOUND` |
+| 401 | `UNAUTHORIZED` (missing/invalid/expired access token or missing current-user context) |
+| 403 | `FORBIDDEN` (neither owner nor admin) |
+| 404 | `USER_NOT_FOUND` (missing caller or target account) |
+| 409 | `EMAIL_ALREADY_EXISTS` |
+| 413 | `INVALID_REQUEST` (request, JSON field or image too large) |
+| 415 | `INVALID_REQUEST` (unsupported/missing request Content-Type) |
+| 500 | `INTERNAL_ERROR` (database/filesystem error without internal details) |
+
+[Update HTTP tests](../internal/handler/update_user_test.go) cover validation,
+authorization, missing profiles, rollback, snapshot updates, concurrent email
+uniqueness and avatar handling. Run from `backend/` with
+`go test -race -mod=readonly -count=1 ./internal/handler -run '^TestUpdateUser'`.
+Database cases require disposable `PREDITTO_AUTH_TEST_DSN`; validation/access
+tests run without PostgreSQL.

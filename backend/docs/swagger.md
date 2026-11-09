@@ -1,6 +1,6 @@
 # Swagger UI
 
-Swagger documents all 11 existing `/api` POST operations plus `GET /`, `/hello`
+Swagger documents all 11 `/api` POST operations, `PUT /api/user/update_user`, plus `GET /`, `/hello`
 and `/health`. Matches, predictions, rankings and tournament stages currently
 have no HTTP endpoints to document. The [response contract](responses.md) and
 module API guides explain behavior beyond the interactive schemas.
@@ -41,6 +41,11 @@ Requests use the UI's current host and scheme; no localhost server URL is baked
 into the specification. Authorization is not persisted across page reloads.
 Swagger 2.0 represents Bearer authentication as an API-key header, so the UI
 does not add `Bearer ` automatically. Refresh tokens are not access credentials.
+
+The update-user operation documents its JSON request schema and describes the
+multipart alternative (`data` JSON text plus `avatar` file). Swagger 2 cannot
+describe body and formData parameters together for one operation. Use curl or
+FormData as shown in the [user contract](user.md#upload-an-avatar) for uploads.
 
 ## Generate and check
 

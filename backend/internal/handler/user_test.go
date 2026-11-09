@@ -27,8 +27,8 @@ func userAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 		t.Fatal(err)
 	}
 	api := router.New()
-	users := service.NewUserService(repository.NewUserRepository(db))
-	router.RegisterUserRoutes(api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users)), handler.NewUserHandler())
+	users := service.NewUserService(repository.NewUserRepository(db), nil)
+	router.RegisterUserRoutes(api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users)), handler.NewUserHandler(users))
 	return api, tokens
 }
 

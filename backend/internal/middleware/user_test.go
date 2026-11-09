@@ -68,7 +68,7 @@ func TestLoadUser(t *testing.T) {
 					t.Fatal("context snapshot was copied")
 				}
 				c.Next()
-			}, handler.NewUserHandler().GetUserInfo)
+			}, handler.NewUserHandler(nil).GetUserInfo)
 			req := httptest.NewRequest("GET", "/user", nil)
 			if tc.token != "" {
 				req.Header.Set("Authorization", "Bearer "+tc.token)
@@ -107,7 +107,7 @@ func TestLoadUser(t *testing.T) {
 func TestUserContextMissing(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/user", handler.NewUserHandler().GetUserInfo)
+	r.GET("/user", handler.NewUserHandler(nil).GetUserInfo)
 	r.GET("/load", middleware.LoadUser(userLoader(func(context.Context, int64) (model.UserInfo, error) {
 		t.Fatal("database called without authentication")
 		return model.UserInfo{}, nil

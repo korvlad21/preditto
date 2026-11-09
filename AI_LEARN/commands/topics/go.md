@@ -26,6 +26,13 @@ For formatting, inspect changed Go files with `gofmt -l`; write only files in sc
 - Tests create isolated schemas, apply migrations and clean up. Without the respective variable, database scenarios skip; package success alone does not prove integration coverage.
 - Full-suite integration verification requires both variables. Module documents link the relevant test files and narrower commands.
 
+When comparing database models with decoded JSON in tests, compare timestamps
+with `time.Time.Equal` or normalize them to UTC before structural comparison.
+During update-user verification, `reflect.DeepEqual` incorrectly rejected equal
+instants because lib/pq and JSON used different time.Location representations.
+Canonicalizing only the test comparison fixed the assertions; the update tests
+then passed against disposable PostgreSQL with `-race`.
+
 ## SMTP module checks
 
 From `backend/`, run:

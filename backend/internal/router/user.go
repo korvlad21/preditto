@@ -10,4 +10,5 @@ import (
 func RegisterUserRoutes(api *gin.RouterGroup, user *handler.UserHandler) {
 	routes := api.Group("/user")
 	routes.POST("/get_user_info", user.GetUserInfo)
+	routes.PUT("/update_user", user.UpdateUser)
 }

@@ -719,6 +719,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/user/update_user": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Owner or admin only, using CurrentUser from RequireAuth then LoadUser. JSON: user_id/email required; omitted/null optional fields are unchanged, favorite_team_id=0 clears the favorite, avatar_url=\"\" clears the avatar, nonempty avatar_url must equal the target's stored URL. For upload use multipart/form-data with this JSON in the data field and one avatar file; omit avatar_url or set it empty. JPEG/PNG only, at most 5 MiB and 4096x4096 pixels, decoded and re-encoded as JPEG with a UUID name. JSON limit 16 KiB; multipart limit 5 MiB + 20 KiB. Atomic account/profile update; a missing profile is created. Other fields are preserved. Returns updated UserInfo. Cache-Control: no-store. Swagger 2 represents the JSON mode; the multipart alternative is described here and in docs/user.md.",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update a user",
+                "parameters": [
+                    {
+                        "description": "JSON body, or JSON data field with an avatar file in multipart mode",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/apidocs.Success"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.UserInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "INVALID_REQUEST (including invalid image or avatar path) or FAVORITE_TEAM_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "UNAUTHORIZED",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "FORBIDDEN",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "EMAIL_ALREADY_EXISTS",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "413": {
+                        "description": "INVALID_REQUEST (request or avatar exceeds size limit)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "415": {
+                        "description": "INVALID_REQUEST (unsupported request Content-Type)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "INTERNAL_ERROR",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "produces": [
@@ -1290,6 +1390,45 @@ const docTemplate = `{
                     "format": "int64",
                     "minimum": 1,
                     "example": 1
+                }
+            }
+        },
+        "users.UpdateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "user_id"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "description": "Empty clears the avatar; a nonempty value must equal this user's stored URL.",
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "email": {
+                    "description": "Uniqueness follows the database's case-sensitive email constraint.",
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255
+                },
+                "favorite_team_id": {
+                    "description": "Omitted/null optional fields are unchanged. Zero clears the favorite team.",
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0
+                },
+                "first_name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "last_name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "user_id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 1
                 }
             }
         }

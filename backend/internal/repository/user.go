@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
+	usersdto "preditto/internal/dto/users"
 	"preditto/internal/model"
 )
 
@@ -20,14 +21,73 @@ var (
 	ErrUsernameExists       = errors.New("username already exists")
 	ErrEmailExists          = errors.New("email already exists")
 	ErrFavoriteTeamNotFound = errors.New("favorite team not found")
+	ErrInvalidAvatarURL     = errors.New("avatar URL must match the stored user avatar")
+	// Retain a new file if the server cannot determine whether COMMIT succeeded.
+	ErrUserCommitUncertain = errors.New("user transaction commit outcome uncertain")
 )
 
 type UserRepository struct {
+	db    *sql.DB
 	query queryDB
 }
 
 func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{query: db}
+	return &UserRepository{db: db, query: db}
+}
+
+// UpdateUser serializes profile updates and atomically writes both tables.
+// uploadedURL is trusted output from AvatarStore, never a client-supplied path.
+func (r *UserRepository) UpdateUser(ctx context.Context, req usersdto.UpdateUserRequest, uploadedURL *string) (model.UserInfo, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return model.UserInfo{}, fmt.Errorf("begin user update: %w", err)
+	}
+	defer tx.Rollback()
+	var id int64
+	if err := tx.QueryRowContext(ctx, `SELECT id FROM users WHERE id = $1 FOR UPDATE`, req.UserID).Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.UserInfo{}, ErrNotFound
+		}
+		return model.UserInfo{}, fmt.Errorf("lock user update: %w", err)
+	}
+	// Ensure a profile exists, preserving unrelated fields on an existing row.
+	if _, err := tx.ExecContext(ctx, `INSERT INTO user_info (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`, id); err != nil {
+		return model.UserInfo{}, fmt.Errorf("ensure user profile: %w", err)
+	}
+	var currentURL *string
+	if err := tx.QueryRowContext(ctx, `SELECT avatar_url FROM user_info WHERE user_id = $1 FOR UPDATE`, id).Scan(&currentURL); err != nil {
+		return model.UserInfo{}, fmt.Errorf("lock user profile: %w", err)
+	}
+	if uploadedURL == nil && req.AvatarURL != nil && *req.AvatarURL != "" &&
+		(currentURL == nil || *req.AvatarURL != *currentURL) {
+		return model.UserInfo{}, ErrInvalidAvatarURL
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE users SET email = $1 WHERE id = $2`, req.Email, id); err != nil {
+		return model.UserInfo{}, fmt.Errorf("update user: %w", userWriteError(err))
+	}
+	avatarURL := req.AvatarURL
+	if uploadedURL != nil {
+		avatarURL = uploadedURL
+	}
+	_, err = tx.ExecContext(ctx, `
+		UPDATE user_info SET
+			first_name = COALESCE($2, first_name),
+			last_name = COALESCE($3, last_name),
+			favorite_team_id = CASE WHEN $4::bigint IS NULL THEN favorite_team_id ELSE NULLIF($4, 0) END,
+			avatar_url = CASE WHEN $5::text IS NULL THEN avatar_url ELSE NULLIF($5, '') END
+		WHERE user_id = $1
+	`, id, req.FirstName, req.LastName, req.FavoriteTeamID, avatarURL)
+	if err != nil {
+		return model.UserInfo{}, fmt.Errorf("update user profile: %w", userWriteError(err))
+	}
+	user, err := (&UserRepository{query: tx}).GetUserInfo(ctx, id)
+	if err != nil {
+		return model.UserInfo{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return model.UserInfo{}, fmt.Errorf("commit user update: %w", errors.Join(ErrUserCommitUncertain, err))
+	}
+	return user, nil
 }
 
 // CreateUser must be called within InTransaction so profile failures roll back users.

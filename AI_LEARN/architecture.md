@@ -46,7 +46,7 @@ Countries share the teams document. Participation and prize rules belong to tour
 
 ## Shared request and transaction behavior
 
-All eleven current `/api/*` endpoints use POST. Login/refresh/logout and team-directory routes are public; user/tournament/favorite-team routes require authentication, and registration additionally requires admin. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile/role snapshot per request. RegisterAuthRoutes receives that same middleware chain for registration only and adds RequireRole(RoleCodeAdmin), while retaining the shared auth request limits/cache headers. See [users](modules/users.md#current-user-snapshot) for snapshot and role-gate behavior and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
+The API has eleven POST endpoints and `PUT /api/user/update_user`. Login/refresh/logout and team-directory routes are public; user/tournament/favorite-team routes require authentication, registration additionally requires admin, and profile updates require the target owner or admin. Protected routes requiring `CurrentUser` use `RequireAuth` then `LoadUser`; the latter loads one shared profile/role snapshot per request. RegisterAuthRoutes receives that same middleware chain for registration only and adds RequireRole(RoleCodeAdmin), while retaining the shared auth request limits/cache headers. See [users](modules/users.md#current-user-snapshot) for snapshot and role-gate behavior and [responses](../backend/docs/responses.md) for envelopes, status codes, fallback errors and non-API exceptions.
 
 Swagger UI and its JSON specification are registered only for explicit
 `APP_ENV=development`, independently of Gin mode. The shared `newRouter` composition
@@ -56,7 +56,7 @@ in `internal/apidocs`. The single generated artifact is `docs/swagger/docs.go`.
 See the [Swagger guide](../backend/docs/swagger.md) for generation, dependencies,
 authorization and automated checks, and the [maintenance rule](index.md#api-documentation-maintenance).
 
-`AuthRepository.InTransaction` supplies auth and user repository instances backed by one `sql.Tx`. AuthService uses the callback instances for atomic registration and session issuance/rotation; see [auth transaction rules](modules/auth.md#transactions-and-concurrency). Ordinary profile reads and selection writes use UserRepository directly. No generic transaction manager is implemented.
+`AuthRepository.InTransaction` supplies auth and user repository instances backed by one `sql.Tx`. AuthService uses the callback instances for atomic registration and session issuance/rotation; see [auth transaction rules](modules/auth.md#transactions-and-concurrency). Ordinary profile reads and selection writes use UserRepository directly. UserRepository.UpdateUser owns a separate account/profile transaction, coordinated with AvatarStore by UserService. Filesystem/SQL consistency and upload hosting are specified in the [user contract](../backend/docs/user.md#upload-an-avatar). No generic transaction manager is implemented.
 
 ## Shared constants
 

@@ -40,7 +40,7 @@ func tournamentAPI(t *testing.T, db *sql.DB, observers ...gin.HandlerFunc) (*gin
 		t.Fatal(err)
 	}
 	api := router.New()
-	users := &tournamentUserLoader{UserInfoLoader: service.NewUserService(repository.NewUserRepository(db))}
+	users := &tournamentUserLoader{UserInfoLoader: service.NewUserService(repository.NewUserRepository(db), nil)}
 	authMiddleware := append([]gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(users)}, observers...)
 	router.RegisterTournamentRoutes(api.Group("/api", authMiddleware...), handler.NewTournamentHandler(service.NewTournamentService(repository.NewTournamentRepository(db), repository.NewUserRepository(db))))
 	return api, tokens, users

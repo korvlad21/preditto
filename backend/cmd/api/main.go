@@ -88,11 +88,11 @@ func newRouter(db *sql.DB, cfg config.Config) (*gin.Engine, error) {
 	if err := mailer.Configure(cfg.Mail); err != nil {
 		return nil, err
 	}
-	userService := service.NewUserService(users)
+	userService := service.NewUserService(users, service.NewAvatarStore(service.AvatarDirectory))
 	authMiddleware := []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(userService)}
 	apirouter.RegisterAuthRoutes(router.Group("/api"), handler.NewAuthHandler(authService), authMiddleware)
 	protected := router.Group("/api", authMiddleware...)
-	apirouter.RegisterUserRoutes(protected, handler.NewUserHandler())
+	apirouter.RegisterUserRoutes(protected, handler.NewUserHandler(userService))
 	tournamentService := service.NewTournamentService(repository.NewTournamentRepository(db), users)
 	apirouter.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(tournamentService))
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))

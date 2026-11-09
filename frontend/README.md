@@ -58,6 +58,11 @@ There is no test script configured. Validate UI changes in the browser as well a
 
 [vite.config.ts](vite.config.ts) sets publicDir to `images`. Files under `images/logos/teams` are served as `/logos/teams/<slug>.svg`, and copied to that public path in the build. Use the [logo inventory](../docs/assets/team-logos.md) for provenance and maintenance; no duplicate asset list is needed here.
 
+User avatars written by the backend to `images/users` are served as
+`/users/<uuid>.jpg`. Compose shares this directory with the backend. Production
+must preserve and serve the upload directory independently of the static build;
+see the [upload contract](../backend/docs/user.md#upload-an-avatar).
+
 The Vite development server proxies `/api` requests to the Go backend, preserving
 the path (including `/api`), query, method, body and Authorization header. Use
 relative URLs in React so requests go through the frontend origin:

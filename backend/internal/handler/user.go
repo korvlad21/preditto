@@ -7,12 +7,15 @@ import (
 
 	"preditto/internal/middleware"
 	"preditto/internal/response"
+	"preditto/internal/service"
 )
 
-type UserHandler struct{}
+type UserHandler struct {
+	service *service.UserService
+}
 
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+func NewUserHandler(users *service.UserService) *UserHandler {
+	return &UserHandler{service: users}
 }
 
 // GetUserInfo get the current user.

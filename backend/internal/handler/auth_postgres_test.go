@@ -119,7 +119,7 @@ func testAPI(t *testing.T, db *sql.DB) (*gin.Engine, *auth.TokenManager) {
 		t.Fatal(err)
 	}
 	r := router.New()
-	users := service.NewUserService(repository.NewUserRepository(db))
+	users := service.NewUserService(repository.NewUserRepository(db), nil)
 	router.RegisterAuthRoutes(r.Group("/api"), handler.NewAuthHandler(svc), []gin.HandlerFunc{middleware.RequireAuth(tokens), middleware.LoadUser(users)})
 	r.GET("/protected", middleware.RequireAuth(tokens), func(c *gin.Context) { c.JSON(200, gin.H{"user_id": c.GetInt64(middleware.UserIDKey)}) })
 	return r, tokens

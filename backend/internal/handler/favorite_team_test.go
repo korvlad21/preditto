@@ -96,7 +96,7 @@ func TestGetFavoriteTeamPostgres(t *testing.T) {
 			(82, 'other_user', 'other@example.com', 'hash', 'ACTIVE');
 		INSERT INTO user_info (user_id, favorite_team_id) VALUES (81, 5);
 	`)
-	api, tokens := favoriteTeamAPI(t, db, service.NewUserService(repository.NewUserRepository(db)))
+	api, tokens := favoriteTeamAPI(t, db, service.NewUserService(repository.NewUserRepository(db), nil))
 	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
