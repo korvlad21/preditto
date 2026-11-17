@@ -31,7 +31,7 @@ func TestTournamentStagesPostgres(t *testing.T) {
 		ID                       int64
 		Code, Name, Kind, Status string
 		Sequence, Outcome, Exact int
-		Open, Close, Created     time.Time
+		Open, Created            time.Time
 	}
 	var before []snapshot
 	for run := 0; run < 2; run++ {
@@ -43,7 +43,7 @@ func TestTournamentStagesPostgres(t *testing.T) {
 			t.Fatal(err)
 		}
 		rows, err := db.Query(`SELECT id, code, name, stage_kind, status, sequence_no,
-			outcome_points, exact_score_points, predictions_open_at, predictions_close_at, created_at
+			outcome_points, exact_score_points, predictions_open_at, created_at
 			FROM tournament_stages WHERE tournament_id = 81 ORDER BY sequence_no`)
 		if err != nil {
 			t.Fatal(err)
@@ -52,7 +52,7 @@ func TestTournamentStagesPostgres(t *testing.T) {
 		for rows.Next() {
 			var s snapshot
 			if err := rows.Scan(&s.ID, &s.Code, &s.Name, &s.Kind, &s.Status, &s.Sequence,
-				&s.Outcome, &s.Exact, &s.Open, &s.Close, &s.Created); err != nil {
+				&s.Outcome, &s.Exact, &s.Open, &s.Created); err != nil {
 				rows.Close()
 				t.Fatal(err)
 			}
@@ -71,15 +71,13 @@ func TestTournamentStagesPostgres(t *testing.T) {
 				points, kind = 2+(i-8)/2, "play-off"
 			}
 			if s.Sequence != i+1 || s.Kind != kind || s.Outcome != points || s.Exact != 3*points ||
-				s.Name == "" || !s.Open.Before(s.Close) || s.Status == "cancelled" {
+				s.Name == "" || s.Status == "cancelled" {
 				t.Fatalf("invalid persisted stage: %+v", s)
 			}
 		}
 		if got[0].ID != 91 || got[0].Created.Format("2006-01-02") != "2000-01-01" ||
 			got[0].Open.Format("2006-01-02 15:04") != "2026-08-20 00:00" ||
-			got[0].Close.Format("2006-01-02 15:04") != "2026-09-08 14:45" ||
-			got[4].Open.Format("2006-01-02 15:04") != "2026-11-05 04:00" ||
-			got[16].Close.Format("2006-01-02 15:04") != "2027-06-05 14:00" {
+			got[4].Open.Format("2006-01-02 15:04") != "2026-11-05 04:00" {
 			t.Fatalf("incorrect identity or UTC timestamps: first=%+v fifth=%+v final=%+v", got[0], got[4], got[16])
 		}
 		var unchanged, utcTimestamps bool
@@ -103,7 +101,7 @@ func TestTournamentStagesPostgres(t *testing.T) {
 		if run == 0 {
 			if _, err := db.Exec(`UPDATE tournament_stages SET name = 'Modified', stage_kind = 'round',
 				sequence_no = 99, status = 'cancelled', predictions_open_at = NULL,
-				predictions_close_at = NULL, outcome_points = 0, exact_score_points = 0,
+				outcome_points = 0, exact_score_points = 0,
 				updated_at = '2000-01-01' WHERE tournament_id = 81`); err != nil {
 				t.Fatal(err)
 			}

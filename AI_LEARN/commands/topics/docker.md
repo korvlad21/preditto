@@ -25,3 +25,5 @@ Read the current version and inspect affected objects/data before diagnosing a d
 Calculate rollback counts from the current version. At current version 12, `down 1` removes prize rules; rolling back version 1 removes users and their data. Stop writers before an authorized rollback. Use disposable PostgreSQL for up/down/reapply verification, never a live database solely to test migrations.
 
 Baseline migrations 4 and 10 were revised for selection storage. An older applied baseline needs an explicit data-preserving transition or deliberate local rebuild; normal `up` cannot reconcile it. Inspect the actual environment before choosing a recovery, and do not infer its state from dated memory.
+
+When recreating application services, run concurrent validation in a separate one-off container. An exec-based Go check in the backend was terminated with exit 137 when that service was recreated during stage-seed verification (2026-11-17). The separate test container avoids that lifecycle dependency.

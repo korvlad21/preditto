@@ -64,34 +64,34 @@ Official sources checked on **2026-11-17**:
 - [UEFA 2026/27 regulations, Article 25](https://documents.uefa.com/r/Regulations-of-the-UEFA-Champions-League-2026/27/Article-25-Stadium-announcements-and-kick-off-times-Online): early league slot, simultaneous last matchday, knockout slots and possible exceptions.
 - [UEFA final kickoff announcement](https://www.uefa.com/uefachampionsleague/news/029c-1e9620d873ad-b9d62ed347c6-1000--uefa-champions-league-final-kick-off-moves-to-18-00cet-as-of/): 18:00 from 2025/26 onward. This specific decision is used instead of Article 25's generic 21:00 final wording; recheck the 2027 match-specific announcement when published.
 
-The dataset below shows first and last **kickoffs in UTC**, not final whistles. Source Central European wall-clock times use CEST (UTC+02) in September/October 2026 and April–June 2027, and CET (UTC+01) in November–March. The seed encodes explicit offsets and converts to UTC; it does not depend on host timezone or an installed timezone database. Prediction timestamps and explicitly written stage audit timestamps use UTC in the schema's timezone-free `TIMESTAMP(6)` columns.
+The dataset below shows last **kickoffs in UTC**, not final whistles. Source Central European wall-clock times use CEST (UTC+02) in September/October 2026 and April–June 2027, and CET (UTC+01) in November–March. The seed encodes explicit offsets and converts to UTC; it does not depend on host timezone or an installed timezone database. Prediction timestamps and explicitly written stage audit timestamps use UTC in the schema's timezone-free `TIMESTAMP(6)` columns.
 
-| sequence_no | code | First kickoff / slot (UTC) | Last kickoff / slot (UTC) | Points (outcome / exact) |
-| --- | --- | --- | --- | --- |
-| 1 | league-1 | 2026-09-08 16:45 | 2026-09-10 19:00 | 1 / 3 |
-| 2 | league-2 | 2026-10-13 16:45 | 2026-10-14 19:00 | 1 / 3 |
-| 3 | league-3 | 2026-10-20 16:45 | 2026-10-21 19:00 | 1 / 3 |
-| 4 | league-4 | 2026-11-03 17:45 | 2026-11-04 20:00 | 1 / 3 |
-| 5 | league-5 | 2026-11-24 17:45 | 2026-11-25 20:00 | 1 / 3 |
-| 6 | league-6 | 2026-12-08 17:45 | 2026-12-09 20:00 | 1 / 3 |
-| 7 | league-7 | 2027-01-19 17:45 | 2027-01-20 20:00 | 1 / 3 |
-| 8 | league-8 | 2027-01-27 20:00 | 2027-01-27 20:00 | 1 / 3 |
-| 9 | round-32-1 | 2027-02-16 17:45 | 2027-02-17 20:00 | 2 / 6 |
-| 10 | round-32-2 | 2027-02-23 17:45 | 2027-02-24 20:00 | 2 / 6 |
-| 11 | round-16-1 | 2027-03-09 17:45 | 2027-03-10 20:00 | 3 / 9 |
-| 12 | round-16-2 | 2027-03-16 17:45 | 2027-03-17 20:00 | 3 / 9 |
-| 13 | quarter-final-1 | 2027-04-06 19:00 | 2027-04-07 19:00 | 4 / 12 |
-| 14 | quarter-final-2 | 2027-04-13 19:00 | 2027-04-14 19:00 | 4 / 12 |
-| 15 | semi-final-1 | 2027-04-27 19:00 | 2027-04-28 19:00 | 5 / 15 |
-| 16 | semi-final-2 | 2027-05-04 19:00 | 2027-05-05 19:00 | 5 / 15 |
-| 17 | final | 2027-06-05 16:00 | 2027-06-05 16:00 | 6 / 18 |
+| sequence_no | code | Last kickoff / slot (UTC) | Points (outcome / exact) |
+| --- | --- | --- | --- |
+| 1 | league-1 | 2026-09-10 19:00 | 1 / 3 |
+| 2 | league-2 | 2026-10-14 19:00 | 1 / 3 |
+| 3 | league-3 | 2026-10-21 19:00 | 1 / 3 |
+| 4 | league-4 | 2026-11-04 20:00 | 1 / 3 |
+| 5 | league-5 | 2026-11-25 20:00 | 1 / 3 |
+| 6 | league-6 | 2026-12-09 20:00 | 1 / 3 |
+| 7 | league-7 | 2027-01-20 20:00 | 1 / 3 |
+| 8 | league-8 | 2027-01-27 20:00 | 1 / 3 |
+| 9 | round-32-1 | 2027-02-17 20:00 | 2 / 6 |
+| 10 | round-32-2 | 2027-02-24 20:00 | 2 / 6 |
+| 11 | round-16-1 | 2027-03-10 20:00 | 3 / 9 |
+| 12 | round-16-2 | 2027-03-17 20:00 | 3 / 9 |
+| 13 | quarter-final-1 | 2027-04-07 19:00 | 4 / 12 |
+| 14 | quarter-final-2 | 2027-04-14 19:00 | 4 / 12 |
+| 15 | semi-final-1 | 2027-04-28 19:00 | 5 / 15 |
+| 16 | semi-final-2 | 2027-05-05 19:00 | 5 / 15 |
+| 17 | final | 2027-06-05 16:00 | 6 / 18 |
 
 Stages 1–8 use `group`; 9–17 use `play-off`. The requested “1/16 final” names refer to UEFA's knockout phase play-offs, not the August qualifying play-offs. Each two-leg round has separate first/return stages; sequence numbers follow the dataset order.
 
-**Estimation and outstanding confirmation:** knockout match assignments are not yet confirmed in the reviewed sources. Stages 9–12 provisionally use the earliest permitted slot (18:45 Central European time) on the first date and latest (21:00) on the last date. Stages 13–16 use the regulation's 21:00 slot; the final uses the announced 18:00 policy. These are documented scheduling assumptions, not verified individual fixtures. Update the dataset after UEFA confirms assignments or announces exceptions/postponements. No exact wall-clock final-whistle timestamps were verified, including for completed matchdays 1–4. All stage finishes currently use **last kickoff + 3 hours**, a conservative estimate covering normal breaks, stoppage time, extra time and penalties; it cannot guarantee coverage of long interruptions or postponements. Actual completion times require reconciliation when available.
+**Estimation and outstanding confirmation:** knockout match assignments are not yet confirmed in the reviewed sources. Stages 9–12 provisionally use the latest permitted slot (21:00 Central European time) on the last date. Stages 13–16 use the regulation's 21:00 slot; the final uses the announced 18:00 policy. These are documented scheduling assumptions, not verified individual fixtures. Update the dataset after UEFA confirms assignments or announces exceptions/postponements. No exact wall-clock final-whistle timestamps were verified, including for completed matchdays 1–4. All stage finishes currently use **last kickoff + 3 hours**, a conservative estimate covering normal breaks, stoppage time, extra time and penalties; it cannot guarantee coverage of long interruptions or postponements. Actual completion times require reconciliation when available.
 
-`predictions_open_at` is the previous stage’s last kickoff + 8 hours, except stage 1 opens at **2026-08-20 00:00 UTC**. `predictions_close_at` is the first kickoff/slot − 2 hours. For example, stage 5 opens on 2026-11-05 at 04:00 UTC and closes on 2026-11-24 at 15:45 UTC. The builder rejects reversed match boundaries or prediction windows before any stage writes.
+`predictions_open_at` is the previous stage’s last kickoff + 8 hours, except stage 1 opens at **2026-08-20 00:00 UTC**. Prediction locking belongs to `matches.prediction_lock_at`. For example, stage 5 opens on 2026-11-05 at 04:00 UTC. The builder validates last-kickoff timestamp syntax before any stage writes.
 
 Status uses one execution-time clock snapshot: `finished` at or after estimated finish; the first remaining stage is `active`, including between rounds and before prediction opening; later stages are `planned`. After the final all stages are `finished`. On 2026-11-17 stages 1–4 are finished, stage 5 active and stages 6–17 planned. Rerunning refreshes statuses; there is no background updater, live UEFA fetch or match-result dependency.
 
-[Unit tests](development/tournament_stages_test.go) cover all 17 deadlines, points/kinds/order, UTC and daylight-saving offsets, opening rules and status boundaries. [PostgreSQL tests](test/tournament_stages_postgres_test.go) cover actual persistence, repeat-run restoration, nonsequential IDs, unrelated rows, a non-UTC database session and complete rollback on a rejected final-stage write. They use the same disposable-schema fixture as the other seeds, now including migration 000013.
+[Unit tests](development/tournament_stages_test.go) cover all 17 stages, points/kinds/order, UTC and daylight-saving offsets, opening rules and status boundaries. [PostgreSQL tests](test/tournament_stages_postgres_test.go) cover actual persistence, repeat-run restoration, nonsequential IDs, unrelated rows, a non-UTC database session and complete rollback on a rejected final-stage write. They use the same disposable-schema fixture as the other seeds, now including migration 000013.

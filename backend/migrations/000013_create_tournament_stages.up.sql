@@ -22,15 +22,11 @@ CREATE TABLE tournament_stages (
         )
     ),
     predictions_open_at TIMESTAMP(6),
-    predictions_close_at TIMESTAMP(6),
     outcome_points SMALLINT NOT NULL CHECK (outcome_points >= 0),
     exact_score_points SMALLINT NOT NULL CHECK (exact_score_points >= 0),
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_tournament_stages_tournament_code UNIQUE (tournament_id, code),
-    CONSTRAINT chk_tournament_stages_prediction_window CHECK (
-        predictions_close_at >= predictions_open_at
-    )
+    CONSTRAINT uq_tournament_stages_tournament_code UNIQUE (tournament_id, code)
 );
 
 CREATE INDEX idx_tournament_stages_tournament_sequence ON tournament_stages (tournament_id, sequence_no);
