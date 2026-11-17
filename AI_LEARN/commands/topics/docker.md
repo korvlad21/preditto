@@ -11,6 +11,8 @@ Use the canonical [migration guide](../../../backend/migrations/README.md) for u
 
 The migration service uses `postgres:///` with PG* environment variables. Keep the trailing slash: historical `postgres://` was normalized into invalid connection syntax. Do not construct a credential-bearing URL just to work around this.
 
+Quote the complete `NAME=value` argument when passing a test DSN with `?` to `docker run -e` from zsh. An unquoted `?sslmode=disable` produced `no matches found` before Docker ran during stage-seed verification (2026-11-17). Quoting the environment argument allowed the disposable PostgreSQL tests to run and pass. Keep real credentials out of command logs.
+
 <a id="pattern-20260915-001"></a>
 ## Applied schema and recovery
 

@@ -46,9 +46,13 @@ Selection is not membership or payment and imposes no tournament-status restrict
 
 Participant and prize-rule references do not declare cascading deletion. The selection FK alone does not make tournament deletion unrestricted. Unlike users/user_info, tournaments has no automatic updated_at trigger; the seed upsert sets it explicitly. The schema does not require a positive prize place, a total percentage of 95/100, ordered dates or nonnegative cost; do not claim these constraints exist.
 
-Migration 13 stores stage status and stage_kind as required VARCHAR(20) fields with CHECK constraints: active/planned/finished/cancelled and group/round/play-off respectively. It creates no PostgreSQL enum types. Stage timestamps use TIMESTAMP(6); created_at/updated_at default to CURRENT_TIMESTAMP without an update trigger. Stage sequence numbers need not be unique within a tournament. Rollback drops only the stage table, without CASCADE. Stages currently have no application model, API or seeds.
+Migration 13 stores stage status and stage_kind as required VARCHAR(20) fields with CHECK constraints: active/planned/finished/cancelled and group/round/play-off respectively. It creates no PostgreSQL enum types. Stage timestamps use TIMESTAMP(6); created_at/updated_at default to CURRENT_TIMESTAMP without an update trigger. Stage sequence numbers need not be unique within a tournament. Rollback drops only the stage table, without CASCADE. Stages currently have no application model or API; the development seed below populates their persistence schema.
 
 ## Seeds, dependencies and limits
+
+The [stage seed](../../backend/seeds/development/tournament_stages.go) adds 17 stages only for `uefa-champions-league-2026-2027`, resolving its ID by slug inside the existing development transaction. Upserts use `(tournament_id, code)`, preserve IDs/created_at and restore all configured fields. Sequence 1–8 is `group`; 9–17 is `play-off`. Outcome/exact-score points progress through 1/3, 2/6, 3/9, 4/12, 5/15 and 6/18. Stage timestamps written by this seed use UTC even with a non-UTC database session.
+
+The [stage calendar and sources](../../backend/seeds/README.md#tournament-stages) own dates, codes and outstanding scheduling assumptions, checked 2026-11-17. Finishes are estimated as last kickoff + 3 hours; subsequent prediction windows open 8 hours after the previous stage’s last kickoff and close 2 hours before the current stage’s first kickoff. The first window opens 2026-08-20 00:00 UTC. Status is recomputed once per seed execution: finished at/after estimated end, first unfinished stage active, subsequent stages planned. There is no automatic status refresh between runs. Knockout kickoff assignments and actual final-whistle times require confirmation; the seed uses documented regulation slots and estimates, not live match state. No schema or HTTP contract changes accompany the seed.
 
 [Matches](matches.md) references tournament_stages without cascading deletion. A stage with matches cannot be deleted until those references are removed.
 
@@ -61,6 +65,10 @@ The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as
 [Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. [Predictions](predictions.md) references participants without cascading deletion and documents the current tournament-consistency limitation. The frontend `/tournaments` page lists tournaments and selects the current one through both routes; see the [frontend README](../../frontend/README.md#tournament-selection). Join/leave, payment, prediction submission, scoring and payouts are not implemented.
 
 ## Verification
+
+Stage seed verified on 2026-11-17: all `./seeds/...` tests passed with disposable PostgreSQL 18.6, including integration cases without skips; `go vet -mod=readonly ./seeds/... ./cmd/seed` passed. No application database was seeded in this verification.
+
+Stage [unit tests](../../backend/seeds/development/tournament_stages_test.go) check all 17 stages, points, UTC windows, seasonal offsets and before/at/after completion statuses. Stage [PostgreSQL tests](../../backend/seeds/test/tournament_stages_postgres_test.go) check idempotence, restored fields, preserved identities, unrelated data, non-UTC session behavior and full transaction rollback. Run `go test -mod=readonly -count=1 ./seeds/...` with `PREDITTO_SEED_TEST_DSN` pointing to disposable PostgreSQL, plus `go vet -mod=readonly ./seeds/... ./cmd/seed`.
 
 Stage schema verified on 2026-10-24 in disposable PostgreSQL 18.6: all thirteen migration pairs applied, rolled back and reapplied; stage columns/defaults, allowed status/kind values, indexes, FK, unique code and check constraints exercised. Migration 13 rollback preserved tournament data.
 

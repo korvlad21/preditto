@@ -27,7 +27,7 @@ Restarting only the backend does not rerun seeds.
 
 `development.Run` executes the ordered seed list in a single transaction. An error rolls back the entire run. Add future seed functions in separate files in `development` and register them in dependency order in `development/seed.go`; each function must be safe to repeat.
 
-The registered order is `countries → teams → users → user_info → roles → user_roles → tournaments → tournament_participants → tournament_prize_rules`. The users seed creates or updates 20 development accounts, matching existing users by username or email and preserving their IDs. Each password is hashed with bcrypt at its default cost before writing `password_hash`; reruns restore the configured account fields and generate new valid salted hashes. If username and email belong to different existing users, the unique constraints reject the update and the whole seed transaction rolls back.
+The registered order is `countries → teams → users → user_info → roles → user_roles → tournaments → tournament_participants → tournament_prize_rules → tournament_stages`. The users seed creates or updates 20 development accounts, matching existing users by username or email and preserving their IDs. Each password is hashed with bcrypt at its default cost before writing `password_hash`; reruns restore the configured account fields and generate new valid salted hashes. If username and email belong to different existing users, the unique constraints reject the update and the whole seed transaction rolls back.
 
 The tournament seed requires migrations 000010 and 000012 and upserts `uefa-champions-league-2026-2027` by slug with status `active`. The seeded dates cover the league phase through the final, from 2026-09-08 through 2027-06-05, consistent with [UEFA](https://www.uefa.com/uefachampionsleague/news/02a6-20d57cfcd03e-407c22a7f465-1000--2026-27-champions-league-teams-dates-draws-format-final/) (checked 2026-10-16). These calendar dates are stored at midnight in the schema's timezone-free timestamps; they do not specify match kickoff times. Currency and tournament type use the shared `model.CurrencyUSD` (`USD`) and `model.TournamentTypeChampionsLeague` (`Champions league`) constants from `internal/model/tournament.go` and are restored on rerun. Tournament seed data uses a local `tournament` struct and slice, following the teams seed pattern. Cost is the decimal string `10.00`, inserted and restored on rerun without floating-point conversion. IDs and created_at are preserved; updated_at is refreshed on conflict. Prize rules resolve the actual tournament ID by slug and upsert places 1/2/3 to 50.00/30.00/15.00 percent. The remaining 5% is not allocated; unrelated tournaments and rules are untouched. PostgreSQL tests cover fresh and existing tournaments, repeat runs, missing/changed prize restoration, currency/type/cost restoration, and full rollback on a prize write failure.
 
@@ -52,3 +52,46 @@ Reusable persistence functions `repository.AssignUserRole` and `repository.Remov
 The current roles migration has no updated_at column; seeds write only code and name and also work with an additional defaulted updated_at column. PostgreSQL tests additionally cover role names, nonsequential user/role IDs, repeated assignments/removals, restoration of removed assignments, foreign-key errors, and transaction rollback.
 
 The countries seed contains 16 entries in `development/countries.go`. Add countries to its data slice using a nonempty name and a unique three-uppercase-ASCII-letter short_name. It validates the dataset and upserts on short_name, restoring names while preserving IDs and created_at. New timestamps use the database default; unrelated countries are untouched. Migration 000002 provides the required unique constraint. Apply migrations before seeds.
+
+## Tournament stages
+
+[The stage seed](development/tournament_stages.go) requires migration 000013 and resolves only `uefa-champions-league-2026-2027` by slug. It upserts 17 rows on `(tournament_id, code)`, preserving IDs and created_at, refreshing updated_at and restoring all configured fields. It does not delete other stages or populate the GEL/La Liga tournaments. Errors roll back the shared seed transaction.
+
+Official sources checked on **2026-11-17**:
+
+- [UEFA season calendar](https://www.uefa.com/uefachampionsleague/news/02a6-20d57cfcd03e-407c22a7f465-1000--2026-27-champions-league-teams-dates-draws-format-final/): dates of all rounds.
+- [UEFA league fixtures/results](https://www.uefa.com/uefachampionsleague/news/02a8-2174c9e9019d-f909a77bd77a-1000--2026-27-champions-league-all-the-phase-fixtures/) and [earlier fixture publication](https://www.uefa.com/uefachampionsleague/news/02a8-2174c9e9019d-f909a77bd77a-1000--do-not-publish-202627-champions-league-all-the-league-phase-fixtures/): league fixtures and kickoff slots; the results view omits early kickoff annotations for completed games.
+- [UEFA 2026/27 regulations, Article 25](https://documents.uefa.com/r/Regulations-of-the-UEFA-Champions-League-2026/27/Article-25-Stadium-announcements-and-kick-off-times-Online): early league slot, simultaneous last matchday, knockout slots and possible exceptions.
+- [UEFA final kickoff announcement](https://www.uefa.com/uefachampionsleague/news/029c-1e9620d873ad-b9d62ed347c6-1000--uefa-champions-league-final-kick-off-moves-to-18-00cet-as-of/): 18:00 from 2025/26 onward. This specific decision is used instead of Article 25's generic 21:00 final wording; recheck the 2027 match-specific announcement when published.
+
+The dataset below shows first and last **kickoffs in UTC**, not final whistles. Source Central European wall-clock times use CEST (UTC+02) in September/October 2026 and April–June 2027, and CET (UTC+01) in November–March. The seed encodes explicit offsets and converts to UTC; it does not depend on host timezone or an installed timezone database. Prediction timestamps and explicitly written stage audit timestamps use UTC in the schema's timezone-free `TIMESTAMP(6)` columns.
+
+| sequence_no | code | First kickoff / slot (UTC) | Last kickoff / slot (UTC) | Points (outcome / exact) |
+| --- | --- | --- | --- | --- |
+| 1 | league-1 | 2026-09-08 16:45 | 2026-09-10 19:00 | 1 / 3 |
+| 2 | league-2 | 2026-10-13 16:45 | 2026-10-14 19:00 | 1 / 3 |
+| 3 | league-3 | 2026-10-20 16:45 | 2026-10-21 19:00 | 1 / 3 |
+| 4 | league-4 | 2026-11-03 17:45 | 2026-11-04 20:00 | 1 / 3 |
+| 5 | league-5 | 2026-11-24 17:45 | 2026-11-25 20:00 | 1 / 3 |
+| 6 | league-6 | 2026-12-08 17:45 | 2026-12-09 20:00 | 1 / 3 |
+| 7 | league-7 | 2027-01-19 17:45 | 2027-01-20 20:00 | 1 / 3 |
+| 8 | league-8 | 2027-01-27 20:00 | 2027-01-27 20:00 | 1 / 3 |
+| 9 | round-32-1 | 2027-02-16 17:45 | 2027-02-17 20:00 | 2 / 6 |
+| 10 | round-32-2 | 2027-02-23 17:45 | 2027-02-24 20:00 | 2 / 6 |
+| 11 | round-16-1 | 2027-03-09 17:45 | 2027-03-10 20:00 | 3 / 9 |
+| 12 | round-16-2 | 2027-03-16 17:45 | 2027-03-17 20:00 | 3 / 9 |
+| 13 | quarter-final-1 | 2027-04-06 19:00 | 2027-04-07 19:00 | 4 / 12 |
+| 14 | quarter-final-2 | 2027-04-13 19:00 | 2027-04-14 19:00 | 4 / 12 |
+| 15 | semi-final-1 | 2027-04-27 19:00 | 2027-04-28 19:00 | 5 / 15 |
+| 16 | semi-final-2 | 2027-05-04 19:00 | 2027-05-05 19:00 | 5 / 15 |
+| 17 | final | 2027-06-05 16:00 | 2027-06-05 16:00 | 6 / 18 |
+
+Stages 1–8 use `group`; 9–17 use `play-off`. The requested “1/16 final” names refer to UEFA's knockout phase play-offs, not the August qualifying play-offs. Each two-leg round has separate first/return stages; sequence numbers follow the dataset order.
+
+**Estimation and outstanding confirmation:** knockout match assignments are not yet confirmed in the reviewed sources. Stages 9–12 provisionally use the earliest permitted slot (18:45 Central European time) on the first date and latest (21:00) on the last date. Stages 13–16 use the regulation's 21:00 slot; the final uses the announced 18:00 policy. These are documented scheduling assumptions, not verified individual fixtures. Update the dataset after UEFA confirms assignments or announces exceptions/postponements. No exact wall-clock final-whistle timestamps were verified, including for completed matchdays 1–4. All stage finishes currently use **last kickoff + 3 hours**, a conservative estimate covering normal breaks, stoppage time, extra time and penalties; it cannot guarantee coverage of long interruptions or postponements. Actual completion times require reconciliation when available.
+
+`predictions_open_at` is the previous stage’s last kickoff + 8 hours, except stage 1 opens at **2026-08-20 00:00 UTC**. `predictions_close_at` is the first kickoff/slot − 2 hours. For example, stage 5 opens on 2026-11-05 at 04:00 UTC and closes on 2026-11-24 at 15:45 UTC. The builder rejects reversed match boundaries or prediction windows before any stage writes.
+
+Status uses one execution-time clock snapshot: `finished` at or after estimated finish; the first remaining stage is `active`, including between rounds and before prediction opening; later stages are `planned`. After the final all stages are `finished`. On 2026-11-17 stages 1–4 are finished, stage 5 active and stages 6–17 planned. Rerunning refreshes statuses; there is no background updater, live UEFA fetch or match-result dependency.
+
+[Unit tests](development/tournament_stages_test.go) cover all 17 deadlines, points/kinds/order, UTC and daylight-saving offsets, opening rules and status boundaries. [PostgreSQL tests](test/tournament_stages_postgres_test.go) cover actual persistence, repeat-run restoration, nonsequential IDs, unrelated rows, a non-UTC database session and complete rollback on a rejected final-stage write. They use the same disposable-schema fixture as the other seeds, now including migration 000013.
