@@ -43,6 +43,9 @@ func (c *teamsConn) Begin() (driver.Tx, error) { return c, nil }
 func (c *teamsConn) Commit() error             { c.committed = true; return nil }
 func (c *teamsConn) Rollback() error           { c.rolledBack = true; return nil }
 func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if strings.HasPrefix(query, "LOCK TABLE matches ") || strings.Contains(query, "MERGE INTO matches") {
+		return driver.RowsAffected(0), nil
+	}
 	if strings.Contains(query, "INSERT INTO tournaments") {
 		c.tournamentID = 81
 		return driver.RowsAffected(1), nil
@@ -109,6 +112,9 @@ func (c *teamsConn) ExecContext(_ context.Context, query string, args []driver.N
 }
 
 func (c *teamsConn) QueryContext(_ context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if strings.Contains(query, "FROM fixtures f") {
+		return &userIDRows{}, nil
+	}
 	if strings.Contains(query, "SELECT id FROM tournaments") {
 		return &userIDRows{id: c.tournamentID, found: c.tournamentID != 0}, nil
 	}

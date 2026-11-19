@@ -1,10 +1,10 @@
 # Matches
 
-Reviewed: 2026-10-24; source/schema inspection and disposable PostgreSQL 18.6 verification of migration 14.
+Reviewed on 2026-11-19 against the development seed and disposable PostgreSQL 18.6.
 
 ## Purpose and scope
 
-Owns match persistence: stage/team references, scores, scheduling, prediction lock time and status. The implemented surface is [migration 14 up](../../backend/migrations/000014_create_matches.up.sql) and [down](../../backend/migrations/000014_create_matches.down.sql). No match model, repository, service, API or seeds are implemented.
+Owns match persistence and development fixtures, including stage and team references, scores, scheduling, prediction locks and status. The [schema](../../backend/migrations/000014_create_matches.up.sql), [rollback](../../backend/migrations/000014_create_matches.down.sql) and [match seed](../../backend/seeds/development/matches.go) implement this module.
 
 ## Persistence and constraints
 
@@ -24,7 +24,13 @@ Both migration directions are transactional. Rollback drops only matches; its in
 
 [Predictions](predictions.md) references matches without cascading deletion; a referenced match cannot be deleted until its predictions are removed. Match storage does not implement prediction submission, scoring rules or tournament roster management.
 
+## Development seed
+
+The development runner seeds the 2026/27 Champions League after the stages. It resolves each fixture by tournament slug, stage code and the home and away team slugs. The match seed locks the table for writes while checking those references and merging fixtures. A missing reference or duplicate fixture aborts the shared transaction. Existing matches keep their IDs and creation times. Identical rows keep their update times. A scheduled snapshot entry preserves a match already marked live, finished, postponed or cancelled. The [seed guide](../../backend/seeds/README.md#league-phase-matches) records the source data, timestamp rules and snapshot date.
+
 ## Verification
+
+The [PostgreSQL seed tests](../../backend/seeds/test/matches_postgres_test.go) check the eight matchdays, identity on rerun, other-tournament isolation, NULL fields, UTC wall times in a non-UTC session and rollback on a missing club.
 
 Use disposable PostgreSQL for migration application, constraint checks, rollback and reapplication; see the [database command workflow](../commands/topics/docker.md). Verify invalid FKs, same-team matches, negative scores, invalid/null statuses and required timestamps are rejected; unknown scores and actual times must remain NULL.
 
