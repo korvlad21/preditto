@@ -87,6 +87,58 @@ func TestGetAllTournamentsMissingUserContext(t *testing.T) {
 	assertError(t, tournamentRequest(api, "", ""), http.StatusInternalServerError, "INTERNAL_ERROR")
 }
 
+func TestLoadParticipantPostgres(t *testing.T) {
+	db := postgres(t)
+	execSQL(t, db, `
+		INSERT INTO users (id, username, email, password_hash, status) VALUES
+			(81, 'first_user', 'first@example.com', 'unused', 'ACTIVE'),
+			(82, 'other_user', 'other@example.com', 'unused', 'ACTIVE');
+		INSERT INTO tournaments (id, name, slug) VALUES (201, 'First', 'first'), (202, 'Second', 'second');
+		INSERT INTO user_info (user_id, selected_tournament_id) VALUES (81, 201), (82, 201);
+		INSERT INTO tournament_participants (id, user_id, tournament_id, status, joined_at) VALUES
+			(1, 81, 202, 'active', '2026-01-01'),
+			(2, 82, 201, 'active', '2026-02-01 10:00:00.123456');
+	`)
+	api := gin.New()
+	tokens, err := auth.NewTokenManager(testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	users := &tournamentUserLoader{UserInfoLoader: service.NewUserService(repository.NewUserRepository(db), nil)}
+	participants := service.NewTournamentParticipantService(repository.NewTournamentParticipantRepository(db))
+	api.GET("/", middleware.RequireAuth(tokens), middleware.LoadUser(users), middleware.LoadParticipant(participants), func(c *gin.Context) {
+		participant, ok := middleware.CurrentParticipant(c)
+		if !ok {
+			t.Fatal("missing participant snapshot")
+		}
+		c.JSON(http.StatusOK, participant)
+	})
+	requestParticipant := func(userID int64) *httptest.ResponseRecorder {
+		t.Helper()
+		pair, _, err := tokens.GeneratePair(userID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+		w := httptest.NewRecorder()
+		api.ServeHTTP(w, req)
+		return w
+	}
+	assertError(t, requestParticipant(81), http.StatusNotFound, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	w := requestParticipant(82)
+	if w.Code != http.StatusOK || w.Body.String() != `{"id":2,"joined_at":"2026-02-01T10:00:00.123456Z"}` {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	for _, status := range []string{model.TournamentParticipantStatusBlocked, model.TournamentParticipantStatusNotPaid} {
+		execSQL(t, db, "UPDATE tournament_participants SET status = $1 WHERE id = 2", status)
+		assertError(t, requestParticipant(82), http.StatusNotFound, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	}
+	if users.calls != 4 {
+		t.Fatalf("user loads = %d, want one per request", users.calls)
+	}
+}
+
 func TestGetAllTournamentsPostgres(t *testing.T) {
 	db := postgres(t)
 	execSQL(t, db, `

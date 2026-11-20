@@ -27,6 +27,10 @@ Selection accepts only a positive non-null int64 JSON ID and uses the authentica
 
 Selection is not membership or payment and imposes no tournament-status restriction. The repository accepts nil to clear selection, but the HTTP API does not expose reset. Dates do not automatically change tournament status.
 
+The optional [LoadParticipant middleware](../../backend/internal/middleware/tournament_participant.go) runs after RequireAuth and LoadUser. It reads the user ID and selected tournament ID from CurrentUser. The [participant service](../../backend/internal/service/tournament_participant.go) and [repository](../../backend/internal/repository/tournament_participant.go) look up that pair once and require active participation. CurrentParticipant returns the shared request snapshot containing only the participant ID and joined_at. No production route currently installs this middleware.
+
+LoadParticipant returns 401 for a missing user snapshot, 404 TOURNAMENT_NOT_SELECTED for a nil selection, 404 TOURNAMENT_PARTICIPANT_NOT_FOUND when no active participant row matches, and 500 INTERNAL_ERROR for a lookup failure.
+
 ## Sources, models and persistence
 
 | Sources | Responsibility |
@@ -34,7 +38,7 @@ Selection is not membership or payment and imposes no tournament-status restrict
 | [router](../../backend/internal/router/tournament.go), [handler](../../backend/internal/handler/tournament.go), [request DTOs](../../backend/internal/dto/tournaments/request.go) | Protected endpoints, input binding, HTTP mapping and snapshot update |
 | [service](../../backend/internal/service/tournament.go), [repository](../../backend/internal/repository/tournament.go) | Selection orchestration, existence checks, listing and aggregates |
 | [UserRepository](../../backend/internal/repository/user.go), [user middleware](../../backend/internal/middleware/user.go) | Profile selection persistence and shared request snapshot |
-| [Tournament model](../../backend/internal/model/tournament.go), [participation constants](../../backend/internal/model/tournament_participant.go) | Response projection, currencies/types/statuses; the participant model file currently contains constants only |
+| [Tournament model](../../backend/internal/model/tournament.go), [participant model](../../backend/internal/model/tournament_participant.go) | Tournament projection, currencies, types and statuses, participation statuses and ParticipantInfo |
 
 | Table | Important constraints |
 | --- | --- |
@@ -65,6 +69,8 @@ The first tournament (`uefa-champions-league-2026-2027`) includes `korvlad21` as
 [Users](users.md) owns the selection column and snapshot lifecycle; [auth](auth.md) establishes identity. [Predictions](predictions.md) references participants without cascading deletion and documents the current tournament-consistency limitation. The frontend `/tournaments` page lists tournaments and selects the current one through both routes; see the [frontend README](../../frontend/README.md#tournament-selection). Join/leave, payment, prediction submission, scoring and payouts are not implemented.
 
 ## Verification
+
+The [middleware tests](../../backend/internal/middleware/tournament_participant_test.go) cover participant lookup, error responses and the two-field snapshot. TestLoadParticipantPostgres in the [tournament tests](../../backend/internal/handler/tournament_test.go) checks isolation by both IDs, successful active lookup, and 404 for blocked and unpaid participants.
 
 Baseline simplification verified on 2026-11-17: first-kickoff data was removed from the seed, development unit tests and vet passed in a separate container, and the seed ran successfully after PostgreSQL restart and application-service recreation. The already reconciled local schema was retained and migration metadata aligned from 17 to 16 without rolling back tables. All 17 stage rows and their remaining fields (excluding updated_at) matched the pre-change checksum; the obsolete column stayed absent.
 
