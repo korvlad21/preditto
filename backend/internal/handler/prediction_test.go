@@ -33,7 +33,7 @@ func TestGetStagesPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := func(path, body string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodGet, "/api/predictions/get_stages"+path, strings.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/predictions/get_stages"+path, strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
 		w := httptest.NewRecorder()
 		api.ServeHTTP(w, req)

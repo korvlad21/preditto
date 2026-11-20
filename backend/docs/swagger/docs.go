@@ -314,7 +314,7 @@ const docTemplate = `{
             }
         },
         "/api/predictions/get_stages": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []

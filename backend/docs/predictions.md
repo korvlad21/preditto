@@ -1,6 +1,6 @@
 # Prediction stages
 
-`GET /api/predictions/get_stages` requires a Bearer access token and takes no path, query or body parameters. The API reads the tournament from the user's profile and counts predictions for the user's active participant record in that tournament.
+`POST /api/predictions/get_stages` requires a Bearer access token and takes no path, query or body parameters. The API reads the tournament from the user's profile and counts predictions for the user's active participant record in that tournament.
 
 HTTP 200 returns all stages, ordered by ascending sequence number and then stage ID. An empty tournament returns `{"success":true,"data":[]}`. Each stage includes the total number of its matches and the number of those matches with a prediction from this participant. Both counts include all match statuses. A stage with no matches has two zero counts. The opening timestamp can be null.
 

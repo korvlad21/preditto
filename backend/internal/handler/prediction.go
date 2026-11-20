@@ -28,7 +28,7 @@ func NewPredictionHandler(service *service.PredictionService) *PredictionHandler
 // @Failure 404 {object} apidocs.Error "USER_NOT_FOUND, TOURNAMENT_NOT_SELECTED or TOURNAMENT_PARTICIPANT_NOT_FOUND"
 // @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
 // @Security BearerAuth
-// @Router /api/predictions/get_stages [get]
+// @Router /api/predictions/get_stages [post]
 func (h *PredictionHandler) GetStages(c *gin.Context) {
 	user, hasUser := middleware.CurrentUser(c)
 	participant, hasParticipant := middleware.CurrentParticipant(c)
