@@ -45,6 +45,7 @@ Unknown codes should use a generic localized error fallback.
 | `/api/teams/get_all_countries` | 200 | `{"countries":[...]}` |
 | `/api/tournaments/get_all_tournaments` | 200 | `{"tournaments":[...]}` |
 | `/api/tournaments/select_tournament` | 200 | Omitted |
+| `GET /api/predictions/get_stages` | 200 | Array of [stages with prediction counts](predictions.md) |
 
 Empty collections remain `[]`. Nullable model fields remain `null`; empty strings,
 zeroes, and `false` retain their existing meaning. Business fields are unchanged.

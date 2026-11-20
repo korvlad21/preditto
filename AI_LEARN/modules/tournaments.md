@@ -27,7 +27,7 @@ Selection accepts only a positive non-null int64 JSON ID and uses the authentica
 
 Selection is not membership or payment and imposes no tournament-status restriction. The repository accepts nil to clear selection, but the HTTP API does not expose reset. Dates do not automatically change tournament status.
 
-The optional [LoadParticipant middleware](../../backend/internal/middleware/tournament_participant.go) runs after RequireAuth and LoadUser. It reads the user ID and selected tournament ID from CurrentUser. The [participant service](../../backend/internal/service/tournament_participant.go) and [repository](../../backend/internal/repository/tournament_participant.go) look up that pair once and require active participation. CurrentParticipant returns the shared request snapshot containing only the participant ID and joined_at. No production route currently installs this middleware.
+The optional [LoadParticipant middleware](../../backend/internal/middleware/tournament_participant.go) runs after RequireAuth and LoadUser. It reads the user ID and selected tournament ID from CurrentUser. The [participant service](../../backend/internal/service/tournament_participant.go) and [repository](../../backend/internal/repository/tournament_participant.go) look up that pair once and require active participation. CurrentParticipant returns the shared request snapshot containing only the participant ID and joined_at. The [prediction stage endpoint](../../backend/docs/predictions.md) uses this middleware.
 
 LoadParticipant returns 401 for a missing user snapshot, 404 TOURNAMENT_NOT_SELECTED for a nil selection, 404 TOURNAMENT_PARTICIPANT_NOT_FOUND when no active participant row matches, and 500 INTERNAL_ERROR for a lookup failure.
 
@@ -50,7 +50,7 @@ LoadParticipant returns 401 for a missing user snapshot, 404 TOURNAMENT_NOT_SELE
 
 Participant and prize-rule references do not declare cascading deletion. The selection FK alone does not make tournament deletion unrestricted. Unlike users/user_info, tournaments has no automatic updated_at trigger; the seed upsert sets it explicitly. The schema does not require a positive prize place, a total percentage of 95/100, ordered dates or nonnegative cost; do not claim these constraints exist.
 
-Migration 13 stores stage status and stage_kind as required VARCHAR(20) fields with CHECK constraints: active/planned/finished/cancelled and group/round/play-off respectively. It creates no PostgreSQL enum types. Stage timestamps use TIMESTAMP(6); created_at/updated_at default to CURRENT_TIMESTAMP without an update trigger. Stage sequence numbers need not be unique within a tournament. Rollback drops only the stage table, without CASCADE. Stages currently have no application model or API; the development seed below populates their persistence schema.
+Migration 13 stores stage status and stage_kind as required VARCHAR(20) fields with CHECK constraints: active/planned/finished/cancelled and group/round/play-off respectively. It creates no PostgreSQL enum types. Stage timestamps use TIMESTAMP(6); created_at/updated_at default to CURRENT_TIMESTAMP without an update trigger. Stage sequence numbers need not be unique within a tournament. Rollback drops only the stage table, without CASCADE. The [stage projection](../../backend/internal/model/tournament_stage.go) includes match and prediction counts for the prediction stage list.
 
 ## Seeds, dependencies and limits
 

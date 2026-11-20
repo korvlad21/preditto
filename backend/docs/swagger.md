@@ -1,8 +1,7 @@
 # Swagger UI
 
-Swagger documents all 11 `/api` POST operations, `PUT /api/user/update_user`, plus `GET /`, `/hello`
-and `/health`. Matches, predictions, rankings and tournament stages currently
-have no HTTP endpoints to document. The [response contract](responses.md) and
+Swagger documents all 11 `/api` POST operations, `PUT /api/user/update_user`,
+`GET /api/predictions/get_stages`, and the demo and health routes. The [response contract](responses.md) and
 module API guides explain behavior beyond the interactive schemas.
 
 ## Run and authorize

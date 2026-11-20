@@ -313,6 +313,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/predictions/get_stages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uses the authenticated user's tournament selection and active participation. Stages are ordered by sequence_no then id. Stages without matches or predictions have zero counts. An empty tournament returns data: []. Cache-Control: no-store.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Predictions"
+                ],
+                "summary": "Get tournament stages for predictions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/apidocs.Success"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.TournamentStage"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "UNAUTHORIZED",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND, TOURNAMENT_NOT_SELECTED or TOURNAMENT_PARTICIPANT_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "INTERNAL_ERROR",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/teams/get_all_countries": {
             "post": {
                 "description": "No body or parameters required; filters are ignored. Ordered by name; empty results are [].",
@@ -1255,6 +1313,66 @@ const docTemplate = `{
                 "type_of_tournament": {
                     "type": "string",
                     "x-nullable": true
+                }
+            }
+        },
+        "model.TournamentStage": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "count_matches": {
+                    "description": "Total matches in this stage, across all match statuses.",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "count_predictions": {
+                    "description": "Matches in this stage with a prediction from the current participant.",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "exact_score_points": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "outcome_points": {
+                    "type": "integer"
+                },
+                "predictions_open_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "x-nullable": true
+                },
+                "sequence_no": {
+                    "type": "integer"
+                },
+                "stage_kind": {
+                    "type": "string",
+                    "enum": [
+                        "group",
+                        "round",
+                        "play-off"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "planned",
+                        "finished",
+                        "cancelled"
+                    ]
+                },
+                "tournament_id": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },

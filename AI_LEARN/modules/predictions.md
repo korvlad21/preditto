@@ -1,10 +1,12 @@
 # Predictions
 
-Reviewed: 2026-10-24; source/schema inspection and disposable PostgreSQL 18.6 verification of migration 15.
+Stage API and schema reviewed on 2026-11-20.
 
 ## Purpose and scope
 
-Owns predicted match scores and stored calculation results. The implemented surface is [migration 15 up](../../backend/migrations/000015_create_predictions.up.sql) and [down](../../backend/migrations/000015_create_predictions.down.sql). No prediction model, repository, service, API, seeds or scoring process are implemented.
+Owns the prediction stage list, predicted match scores and stored calculation results. See the [stage API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
+
+The [route](../../backend/internal/router/prediction.go) requires RequireAuth, LoadUser and LoadParticipant. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go) to the [stage repository](../../backend/internal/repository/tournament_stage.go). Its left joins retain empty stages and count matching rows. The unique participant/match pair guarantees at most one joined prediction per match. The [integration test](../../backend/internal/handler/prediction_test.go) exercises this query through HTTP.
 
 ## Persistence and constraints
 
