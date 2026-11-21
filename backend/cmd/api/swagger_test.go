@@ -64,6 +64,7 @@ func TestSwaggerRouteCoverage(t *testing.T) {
 		"/api/tournaments/get_all_tournaments": true,
 		"/api/tournaments/select_tournament":   true,
 		"/api/predictions/get_stages":          true,
+		"/api/predictions/get_stage":           true,
 	}
 	for _, route := range r.Routes() {
 		if route.Path == "/swagger/*any" {

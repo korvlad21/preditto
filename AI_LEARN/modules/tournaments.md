@@ -27,9 +27,9 @@ Selection accepts only a positive non-null int64 JSON ID and uses the authentica
 
 Selection is not membership or payment and imposes no tournament-status restriction. The repository accepts nil to clear selection, but the HTTP API does not expose reset. Dates do not automatically change tournament status.
 
-The optional [LoadParticipant middleware](../../backend/internal/middleware/tournament_participant.go) runs after RequireAuth and LoadUser. It reads the user ID and selected tournament ID from CurrentUser. The [participant service](../../backend/internal/service/tournament_participant.go) and [repository](../../backend/internal/repository/tournament_participant.go) look up that pair once and require active participation. CurrentParticipant returns the shared request snapshot containing only the participant ID and joined_at. The [prediction stage endpoint](../../backend/docs/predictions.md) uses this middleware.
+The [LoadParticipant middleware](../../backend/internal/middleware/tournament_participant.go) runs after RequireAuth and LoadUser. It reads the user ID and selected tournament ID from CurrentUser. The [participant service](../../backend/internal/service/tournament_participant.go) and [repository](../../backend/internal/repository/tournament_participant.go) look up that pair once and require active participation. CurrentParticipant returns the shared request snapshot containing only the participant ID and joined_at. The [prediction stage routes](../../backend/docs/predictions.md) use this middleware.
 
-LoadParticipant returns 401 for a missing user snapshot, 404 TOURNAMENT_NOT_SELECTED for a nil selection, 404 TOURNAMENT_PARTICIPANT_NOT_FOUND when no active participant row matches, and 500 INTERNAL_ERROR for a lookup failure.
+LoadParticipant returns 401 for a missing user snapshot, 404 TOURNAMENT_NOT_SELECTED for a nil selection, and 500 INTERNAL_ERROR for a lookup failure. When no active participant row matches, LoadParticipant returns 404 with TOURNAMENT_PARTICIPANT_NOT_FOUND.
 
 ## Sources, models and persistence
 

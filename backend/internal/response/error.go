@@ -21,6 +21,7 @@ const (
 	TournamentNotFound            = "TOURNAMENT_NOT_FOUND"
 	TournamentNotSelected         = "TOURNAMENT_NOT_SELECTED"
 	TournamentParticipantNotFound = "TOURNAMENT_PARTICIPANT_NOT_FOUND"
+	TournamentStageNotFound       = "TOURNAMENT_STAGE_NOT_FOUND"
 	TournamentUpdateFailed        = "TOURNAMENT_UPDATE_FAILED"
 	InternalError                 = "INTERNAL_ERROR"
 	NotFound                      = "NOT_FOUND"

@@ -18,3 +18,7 @@ func NewPredictionService(stages *repository.TournamentStageRepository) *Predict
 func (s *PredictionService) GetStages(ctx context.Context, tournamentID, participantID int64) ([]model.TournamentStage, error) {
 	return s.stages.GetStages(ctx, tournamentID, participantID)
 }
+
+func (s *PredictionService) GetStage(ctx context.Context, tournamentID, participantID, stageID int64) (model.TournamentStage, error) {
+	return s.stages.GetStage(ctx, tournamentID, participantID, stageID)
+}

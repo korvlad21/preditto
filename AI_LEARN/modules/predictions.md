@@ -1,12 +1,14 @@
 # Predictions
 
-Stage API and schema reviewed on 2026-11-20.
+Stage API reviewed against source on 2026-11-21. Prediction schema reviewed on 2026-11-20.
 
 ## Purpose and scope
 
-Owns the prediction stage list, predicted match scores and stored calculation results. See the [stage API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
+Owns the prediction stage list and single-stage lookup, predicted match scores and stored calculation results. See the [stage API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
 
-The [route](../../backend/internal/router/prediction.go) requires RequireAuth, LoadUser and LoadParticipant. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go) to the [stage repository](../../backend/internal/repository/tournament_stage.go). Its left joins retain empty stages and count matching rows. The unique participant/match pair guarantees at most one joined prediction per match. The [integration test](../../backend/internal/handler/prediction_test.go) exercises this query through HTTP.
+Both [routes](../../backend/internal/router/prediction.go) require authentication, a loaded user and active participation in the selected tournament. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go) to the [stage repository](../../backend/internal/repository/tournament_stage.go). Its left joins retain empty stages and count matching rows. The unique participant/match pair guarantees at most one joined prediction per match.
+
+`get_stages` returns an ordered array. Both routes use `LoadParticipant`, which returns 404 for missing active participation. `get_stage` filters by a required positive JSON stage ID and returns the same projection as a single object. An absent selection returns 404 on both routes. An unknown stage ID or a stage from another tournament returns 404 on `get_stage`. The [integration test](../../backend/internal/handler/prediction_test.go) exercises both queries through HTTP.
 
 ## Persistence and constraints
 

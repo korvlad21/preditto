@@ -16,7 +16,7 @@ import (
 	"preditto/internal/service"
 )
 
-func TestGetStagesPostgres(t *testing.T) {
+func TestPredictionStagesPostgres(t *testing.T) {
 	db := postgres(t)
 	tokens, err := auth.NewTokenManager(testConfig())
 	if err != nil {
@@ -27,33 +27,43 @@ func TestGetStagesPostgres(t *testing.T) {
 	participants := service.NewTournamentParticipantService(repository.NewTournamentParticipantRepository(db))
 	predictions := service.NewPredictionService(repository.NewTournamentStageRepository(db))
 	router.RegisterPredictionRoutes(api.Group("/api", middleware.RequireAuth(tokens), middleware.LoadUser(users)),
-		handler.NewPredictionHandler(predictions), middleware.LoadParticipant(participants))
+		handler.NewPredictionHandler(predictions), participants)
 	pair, _, err := tokens.GeneratePair(81, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	request := func(path, body string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, "/api/predictions/get_stages"+path, strings.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/predictions/"+path, strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
 		w := httptest.NewRecorder()
 		api.ServeHTTP(w, req)
 		return w
 	}
-	assertError(t, request("", ""), 404, "USER_NOT_FOUND")
+	assertError(t, request("get_stages", ""), 404, "USER_NOT_FOUND")
+	assertError(t, request("get_stage", `{"id":21}`), 404, "USER_NOT_FOUND")
 	execSQL(t, db, `
 		INSERT INTO users (id, username, email, password_hash, status) VALUES
 			(81, 'first', 'first@example.com', 'unused', 'ACTIVE'),
 			(82, 'other', 'other@example.com', 'unused', 'ACTIVE');
 		INSERT INTO tournaments (id, name, slug) VALUES (1, 'First', 'first'), (2, 'Other', 'other');
 		INSERT INTO user_info (user_id) VALUES (81);`)
-	assertError(t, request("", ""), 404, "TOURNAMENT_NOT_SELECTED")
+	assertError(t, request("get_stages", ""), 404, "TOURNAMENT_NOT_SELECTED")
+	assertError(t, request("get_stage", `{"id":21}`), 404, "TOURNAMENT_NOT_SELECTED")
 	execSQL(t, db, "UPDATE user_info SET selected_tournament_id = 1 WHERE user_id = 81")
-	assertError(t, request("", ""), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	assertError(t, request("get_stages", ""), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	assertError(t, request("get_stage", `{"id":21}`), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
 	execSQL(t, db, `INSERT INTO tournament_participants (id, tournament_id, user_id, status)
 		VALUES (11, 1, 81, 'blocked'), (12, 1, 82, 'active')`)
-	assertError(t, request("", ""), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	assertError(t, request("get_stages", ""), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
+	assertError(t, request("get_stage", `{"id":21}`), 404, "TOURNAMENT_PARTICIPANT_NOT_FOUND")
 	execSQL(t, db, "UPDATE tournament_participants SET status = 'active' WHERE id = 11")
-	checkStages := func(path, body, expected string) {
+	for _, body := range []string{"", `{}`, `{"id":null}`, `{"id":0}`, `{"id":-1}`, `{"id":"21"}`,
+		`{"id":1.5}`, `{"id":9223372036854775808}`, `{"id":`} {
+		t.Run("invalid stage request "+body, func(t *testing.T) {
+			assertError(t, request("get_stage?id=21", body), 400, "INVALID_REQUEST")
+		})
+	}
+	checkData := func(path, body, expected string) {
 		t.Helper()
 		w := request(path, body)
 		var got, want any
@@ -70,7 +80,8 @@ func TestGetStagesPostgres(t *testing.T) {
 			t.Fatalf("data = %#v, want %#v", got, want)
 		}
 	}
-	checkStages("", "", "[]")
+	checkData("get_stages", "", "[]")
+	assertError(t, request("get_stage", `{"id":21}`), 404, "TOURNAMENT_STAGE_NOT_FOUND")
 	execSQL(t, db, `
 		INSERT INTO tournament_stages (id, tournament_id, code, name, stage_kind, sequence_no, status,
 			predictions_open_at, outcome_points, exact_score_points) VALUES
@@ -83,13 +94,19 @@ func TestGetStagesPostgres(t *testing.T) {
 			(31, 22, 5, 6, now(), now()), (32, 22, 6, 5, now(), now()), (33, 23, 5, 6, now(), now());
 		INSERT INTO predictions (participant_id, match_id, home_score, away_score) VALUES
 			(11, 31, 1, 0), (12, 31, 0, 0), (12, 32, 1, 1), (11, 33, 0, 1);`)
-	checkStages("?tournament_id=2&participant_id=12", `{"tournament_id":2,"participant_id":12}`, `[
-		{"id":22,"tournament_id":1,"code":"first","name":"First","stage_kind":"group","sequence_no":1,
+	const firstStage = `{"id":22,"tournament_id":1,"code":"first","name":"First","stage_kind":"group","sequence_no":1,
 		 "status":"finished","predictions_open_at":"2026-09-01T12:00:00.123456Z","outcome_points":1,
-		 "exact_score_points":3,"count_matches":2,"count_predictions":1},
-		{"id":21,"tournament_id":1,"code":"final","name":"Final","stage_kind":"play-off","sequence_no":2,
+		 "exact_score_points":3,"count_matches":2,"count_predictions":1}`
+	const finalStage = `{"id":21,"tournament_id":1,"code":"final","name":"Final","stage_kind":"play-off","sequence_no":2,
 		 "status":"planned","predictions_open_at":null,"outcome_points":2,"exact_score_points":6,
-		 "count_matches":0,"count_predictions":0}]`)
+		 "count_matches":0,"count_predictions":0}`
+	checkData("get_stages?tournament_id=2&participant_id=12", `{"tournament_id":2,"participant_id":12}`, "["+firstStage+","+finalStage+"]")
+	checkData("get_stage?id=21&tournament_id=2&participant_id=12", `{"id":22,"tournament_id":2,"participant_id":12}`, firstStage)
+	checkData("get_stage", `{"id":21}`, finalStage)
+	assertError(t, request("get_stage", `{"id":23}`), 404, "TOURNAMENT_STAGE_NOT_FOUND")
+	execSQL(t, db, "DELETE FROM predictions WHERE participant_id = 11 AND match_id = 31")
+	checkData("get_stage", `{"id":22}`, strings.Replace(firstStage, `"count_predictions":1`, `"count_predictions":0`, 1))
 	execSQL(t, db, "ALTER TABLE predictions RENAME TO unavailable_predictions")
-	assertError(t, request("", ""), 500, "INTERNAL_ERROR")
+	assertError(t, request("get_stages", ""), 500, "INTERNAL_ERROR")
+	assertError(t, request("get_stage", `{"id":22}`), 500, "INTERNAL_ERROR")
 }

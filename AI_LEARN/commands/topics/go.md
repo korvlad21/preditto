@@ -73,3 +73,10 @@ DTO imports can fail with `cannot find type definition`. Pin `--packageName swag
 when generating in a temporary directory: swag otherwise derives the package
 name from the random directory, causing drift (and invalid Go for dotted names).
 The Makefile applies both corrections; validate them with `make swagger-check`.
+
+The Makefile's versioned `go run .../cmd/swag@v1.16.6` can query the Go
+module proxy even when the generator module is cached. During restricted-network
+verification, proxy DNS failed and `GOPROXY=off` failed on the deprecation
+lookup. Both `make swagger` and `make swagger-check` passed with Go module proxy
+access restored. Keep the versioned invocation so the CLI dependencies stay
+outside the backend module.

@@ -97,7 +97,7 @@ func newRouter(db *sql.DB, cfg config.Config) (*gin.Engine, error) {
 	apirouter.RegisterTournamentRoutes(protected, handler.NewTournamentHandler(tournamentService))
 	participants := service.NewTournamentParticipantService(repository.NewTournamentParticipantRepository(db))
 	predictions := service.NewPredictionService(repository.NewTournamentStageRepository(db))
-	apirouter.RegisterPredictionRoutes(protected, handler.NewPredictionHandler(predictions), middleware.LoadParticipant(participants))
+	apirouter.RegisterPredictionRoutes(protected, handler.NewPredictionHandler(predictions), participants)
 	teamService := service.NewTeamService(repository.NewTeamRepository(db))
 	teamHandler := handler.NewTeamHandler(teamService)
 	countryService := service.NewCountryService(repository.NewCountryRepository(db))

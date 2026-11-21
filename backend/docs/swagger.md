@@ -1,6 +1,6 @@
 # Swagger UI
 
-Swagger documents all 12 `/api` POST operations, `PUT /api/user/update_user`, and the demo and health routes. The [response contract](responses.md) and
+Swagger documents all 13 `/api` POST operations, `PUT /api/user/update_user`, and the demo and health routes. The [response contract](responses.md) and
 module API guides explain behavior beyond the interactive schemas.
 
 ## Run and authorize
