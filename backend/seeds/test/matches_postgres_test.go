@@ -39,7 +39,7 @@ func TestLeaguePhaseMatchesPostgres(t *testing.T) {
 	var appearances int
 	err = db.QueryRow(`SELECT count(*) FROM (
 		SELECT stage_id, club FROM matches
-		CROSS JOIN LATERAL (VALUES (home_tournament_team_id), (away_tournament_team_id)) sides(club)
+		CROSS JOIN LATERAL (VALUES (home_team_id), (away_team_id)) sides(club)
 		GROUP BY stage_id, club HAVING count(*) = 1
 	) once_per_round`).Scan(&appearances)
 	if err != nil || appearances != 8*36 {
@@ -56,14 +56,14 @@ func TestLeaguePhaseMatchesPostgres(t *testing.T) {
 			SELECT id, 'league-1', 'Other stage', 'group', 1, 'planned', 1, 3
 			FROM tournaments WHERE slug = 'uefa-champions-league-2026-2027-gel' RETURNING id
 		)
-		INSERT INTO matches (stage_id, home_tournament_team_id, away_tournament_team_id,
+		INSERT INTO matches (stage_id, home_team_id, away_team_id,
 			scheduled_start_at, prediction_lock_at, status)
 		SELECT other_stage.id, h.id, a.id, '2030-01-01', '2029-12-31 23:00', 'postponed'
 		FROM other_stage, teams h, teams a WHERE h.slug = 'aek-athens' AND a.slug = 'lask';
 		CREATE TEMP TABLE before_rerun AS SELECT * FROM matches;
 		UPDATE matches SET home_score = NULL, away_score = NULL, status = 'scheduled',
-			scheduled_start_at = '2000-01-01' WHERE home_tournament_team_id =
-			(SELECT id FROM teams WHERE slug = 'aek-athens') AND away_tournament_team_id =
+			scheduled_start_at = '2000-01-01' WHERE home_team_id =
+			(SELECT id FROM teams WHERE slug = 'aek-athens') AND away_team_id =
 			(SELECT id FROM teams WHERE slug = 'lask') AND status = 'finished';
 	`)
 	if err != nil {
@@ -81,15 +81,15 @@ func TestLeaguePhaseMatchesPostgres(t *testing.T) {
 	var kickoffCorrect bool
 	err = db.QueryRow(`SELECT scheduled_start_at = '2026-09-08 16:45' AND home_score = 1 AND away_score = 0
 		AND actual_start_at = '2026-09-08 16:46:32.404' AND finished_at = '2026-09-08 18:46:14.426'
-		FROM matches WHERE status = 'finished' AND home_tournament_team_id = (SELECT id FROM teams WHERE slug = 'aek-athens')
-		AND away_tournament_team_id = (SELECT id FROM teams WHERE slug = 'lask')`).Scan(&kickoffCorrect)
+		FROM matches WHERE status = 'finished' AND home_team_id = (SELECT id FROM teams WHERE slug = 'aek-athens')
+		AND away_team_id = (SELECT id FROM teams WHERE slug = 'lask')`).Scan(&kickoffCorrect)
 	if err != nil || !kickoffCorrect {
 		t.Fatalf("incorrect persisted AEK–LASK score or UTC timestamps: %v", err)
 	}
 	t.Run("ambiguous existing fixture", func(t *testing.T) {
-		_, err := db.Exec(`INSERT INTO matches (stage_id, home_tournament_team_id,
-			away_tournament_team_id, scheduled_start_at, prediction_lock_at)
-			SELECT stage_id, home_tournament_team_id, away_tournament_team_id, scheduled_start_at,
+		_, err := db.Exec(`INSERT INTO matches (stage_id, home_team_id,
+			away_team_id, scheduled_start_at, prediction_lock_at)
+			SELECT stage_id, home_team_id, away_team_id, scheduled_start_at,
 				prediction_lock_at FROM matches WHERE status = 'finished' LIMIT 1`)
 		if err != nil {
 			t.Fatal(err)

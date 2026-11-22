@@ -14,13 +14,13 @@ Required VARCHAR(20) status defaults to scheduled when omitted and is CHECK-cons
 
 All timestamps use TIMESTAMP(6) without time zone. scheduled_start_at and prediction_lock_at are required; actual_start_at and finished_at are nullable. created_at and updated_at default to CURRENT_TIMESTAMP; there is no automatic updated_at trigger or enforced ordering between match timestamps.
 
-Composite B-tree indexes pair stage_id, home_tournament_team_id, away_tournament_team_id and status individually with scheduled_start_at. They support filtered schedules and date ranges; the leading FK columns also support reference checks. A separate scheduled_start_at index supports the global schedule without requiring a stage, team or status filter. The home/away indexes allow either side to participate in team-match searches. There are no redundant standalone indexes on their leading columns.
+Composite B-tree indexes pair stage_id, home_team_id, away_team_id and status individually with scheduled_start_at. They support filtered schedules and date ranges; the leading FK columns also support reference checks. A separate scheduled_start_at index supports the global schedule without requiring a stage, team or status filter. The home/away indexes allow either side to participate in team-match searches. There are no redundant standalone indexes on their leading columns.
 
 Both migration directions are transactional. Rollback drops only matches; its indexes, constraints and identity sequence are removed with the table.
 
 ## Dependencies and limitations
 
-[Tournaments](tournaments.md) owns stages; [teams](teams.md) owns the shared team directory. Despite their names, home_tournament_team_id and away_tournament_team_id reference teams directly. No tournament_teams table exists, and these FKs do not establish membership in the stage's tournament. The column names intentionally retain the supplied schema contract.
+[Tournaments](tournaments.md) owns stages; [teams](teams.md) owns the shared team directory. Both `home_team_id` and `away_team_id` reference teams directly. No tournament_teams table exists, and these FKs do not establish membership in the stage's tournament.
 
 [Predictions](predictions.md) references matches without cascading deletion; a referenced match cannot be deleted until its predictions are removed. Match storage does not implement prediction submission, scoring rules or tournament roster management.
 

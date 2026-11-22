@@ -89,7 +89,7 @@ func TestPredictionStagesPostgres(t *testing.T) {
 			(22, 1, 'first', 'First', 'group', 1, 'finished', '2026-09-01 12:00:00.123456', 1, 3),
 			(23, 2, 'other', 'Other', 'group', 1, 'planned', NULL, 1, 3);
 		INSERT INTO teams (id, name, slug, country) VALUES (6, 'Away', 'away', 'TST');
-		INSERT INTO matches (id, stage_id, home_tournament_team_id, away_tournament_team_id,
+		INSERT INTO matches (id, stage_id, home_team_id, away_team_id,
 			scheduled_start_at, prediction_lock_at) VALUES
 			(31, 22, 5, 6, now(), now()), (32, 22, 6, 5, now(), now()), (33, 23, 5, 6, now(), now());
 		INSERT INTO predictions (participant_id, match_id, home_score, away_score) VALUES

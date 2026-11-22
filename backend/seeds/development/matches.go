@@ -43,8 +43,8 @@ func seedMatches(ctx context.Context, tx *sql.Tx) error {
 			WHEN f.away_id IS NULL THEN 'missing away team'
 			ELSE 'duplicate fixture' END
 		FROM fixtures f
-		LEFT JOIN matches m ON m.stage_id = f.stage_id AND m.home_tournament_team_id = f.home_id
-			AND m.away_tournament_team_id = f.away_id
+		LEFT JOIN matches m ON m.stage_id = f.stage_id AND m.home_team_id = f.home_id
+			AND m.away_team_id = f.away_id
 		GROUP BY f.stage, f.home, f.away, f.stage_id, f.home_id, f.away_id
 		HAVING f.stage_id IS NULL OR f.home_id IS NULL OR f.away_id IS NULL OR count(*) > 1
 		LIMIT 1
@@ -57,8 +57,8 @@ func seedMatches(ctx context.Context, tx *sql.Tx) error {
 	}
 	_, err = tx.ExecContext(ctx, matchFixturesSQL+`
 		MERGE INTO matches m USING fixtures f
-		ON m.stage_id = f.stage_id AND m.home_tournament_team_id = f.home_id
-			AND m.away_tournament_team_id = f.away_id
+		ON m.stage_id = f.stage_id AND m.home_team_id = f.home_id
+			AND m.away_team_id = f.away_id
 		WHEN MATCHED AND (f.status <> 'scheduled' OR m.status = 'scheduled')
 			AND (m.scheduled_start_at, m.prediction_lock_at, m.actual_start_at, m.finished_at,
 				 m.home_score, m.away_score, m.status) IS DISTINCT FROM
@@ -67,7 +67,7 @@ func seedMatches(ctx context.Context, tx *sql.Tx) error {
 		THEN UPDATE SET scheduled_start_at = f.scheduled_start_at, prediction_lock_at = f.prediction_lock_at,
 			actual_start_at = f.actual_start_at, finished_at = f.finished_at, home_score = f.home_score,
 			away_score = f.away_score, status = f.status, updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-		WHEN NOT MATCHED THEN INSERT (stage_id, home_tournament_team_id, away_tournament_team_id,
+		WHEN NOT MATCHED THEN INSERT (stage_id, home_team_id, away_team_id,
 			scheduled_start_at, prediction_lock_at, actual_start_at, finished_at, home_score,
 			away_score, status, created_at, updated_at)
 		VALUES (f.stage_id, f.home_id, f.away_id, f.scheduled_start_at, f.prediction_lock_at,
