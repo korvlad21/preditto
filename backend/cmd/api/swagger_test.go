@@ -57,14 +57,15 @@ func TestSwaggerRouteCoverage(t *testing.T) {
 		t.Fatalf("invalid Bearer authorization definition: %+v", security)
 	}
 	protected := map[string]bool{
-		"/api/auth/register":                   true,
-		"/api/user/get_user_info":              true,
-		"/api/user/update_user":                true,
-		"/api/teams/get_favorite_team":         true,
-		"/api/tournaments/get_all_tournaments": true,
-		"/api/tournaments/select_tournament":   true,
-		"/api/predictions/get_stages":          true,
-		"/api/predictions/get_stage":           true,
+		"/api/auth/register":                    true,
+		"/api/user/get_user_info":               true,
+		"/api/user/update_user":                 true,
+		"/api/teams/get_favorite_team":          true,
+		"/api/tournaments/get_all_tournaments":  true,
+		"/api/tournaments/select_tournament":    true,
+		"/api/predictions/get_stages":           true,
+		"/api/predictions/get_stage":            true,
+		"/api/predictions/get_user_predictions": true,
 	}
 	for _, route := range r.Routes() {
 		if route.Path == "/swagger/*any" {

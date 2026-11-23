@@ -49,3 +49,17 @@ HTTP 200 returns the stage object directly in `data`. It has the same fields and
 | 404 | TOURNAMENT_NOT_SELECTED | The user's profile has no tournament selection |
 | 404 | TOURNAMENT_STAGE_NOT_FOUND | No stage with this ID in the selected tournament |
 | 500 | INTERNAL_ERROR | Internal lookup or processing failure |
+
+## Get matches with my predictions
+
+`POST /api/predictions/get_user_predictions` requires a Bearer access token and a JSON body such as `{"id":1}`. The required positive int64 `id` identifies a stage in the selected tournament. The API uses the active participant from the authenticated request. Client-supplied tournament and participant IDs are ignored.
+
+On HTTP 200, `data` contains every match of the stage, ordered by `scheduled_start_at` ascending and then by match `id` ascending. An existing stage without matches returns `{"success":true,"data":[]}`.
+
+| Field in each item | Contents |
+| --- | --- |
+| `match` | `id`, nullable `home_score` and `away_score`, `scheduled_start_at`, `prediction_lock_at`, nullable `actual_start_at` and `finished_at`, and `status`. Timestamps use RFC 3339. |
+| `home_team`, `away_team` | Each contains `id`, `name`, nullable `short_name` and nullable `logo_url`. |
+| `prediction` | `null` if this participant has no prediction for the match. Otherwise contains `id`, `home_score`, `away_score`, nullable `result_type` and nullable `awarded_points`. |
+
+Validation, error codes and cache headers follow [Get one stage](#get-one-stage). Both an unknown stage and a stage from another tournament return HTTP 404 with `TOURNAMENT_STAGE_NOT_FOUND`.

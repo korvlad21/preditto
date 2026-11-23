@@ -1,14 +1,16 @@
 # Predictions
 
-Stage API reviewed against source on 2026-11-21. Prediction schema reviewed on 2026-11-20.
+Stage and match APIs reviewed against source on 2026-11-23. Prediction schema reviewed on 2026-11-20.
 
 ## Purpose and scope
 
-Owns the prediction stage list and single-stage lookup, predicted match scores and stored calculation results. See the [stage API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
+Owns prediction stage lookups, the stage match list with the current participant's predictions, predicted scores and stored calculation results. See the [API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
 
-Both [routes](../../backend/internal/router/prediction.go) require authentication, a loaded user and active participation in the selected tournament. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go) to the [stage repository](../../backend/internal/repository/tournament_stage.go). Its left joins retain empty stages and count matching rows. The unique participant/match pair guarantees at most one joined prediction per match.
+All [prediction routes](../../backend/internal/router/prediction.go) require authentication, a loaded user and active participation in the selected tournament. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go). Missing selection or active participation returns 404.
 
-`get_stages` returns an ordered array. Both routes use `LoadParticipant`, which returns 404 for missing active participation. `get_stage` filters by a required positive JSON stage ID and returns the same projection as a single object. An absent selection returns 404 on both routes. An unknown stage ID or a stage from another tournament returns 404 on `get_stage`. The [integration test](../../backend/internal/handler/prediction_test.go) exercises both queries through HTTP.
+The [stage repository](../../backend/internal/repository/tournament_stage.go) counts matches and participant predictions for `get_stages` and `get_stage`. Its left joins retain empty stages. The list returns an ordered array and the single-stage lookup returns the same projection as an object.
+
+`get_user_predictions` uses the [prediction repository](../../backend/internal/repository/predictions.go) to fetch a stage's matches, both teams and optional participant predictions in one query. The join on participant and match IDs yields at most one prediction per match. Matches are ordered by scheduled start and ID. An empty stage returns an empty array. Both single-stage routes return 404 for an unknown stage or one outside the selected tournament. The [HTTP integration test](../../backend/internal/handler/prediction_test.go) covers the three routes against PostgreSQL.
 
 ## Persistence and constraints
 

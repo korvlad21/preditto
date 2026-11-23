@@ -8,11 +8,12 @@ import (
 )
 
 type PredictionService struct {
-	stages *repository.TournamentStageRepository
+	stages      *repository.TournamentStageRepository
+	predictions *repository.PredictionRepository
 }
 
-func NewPredictionService(stages *repository.TournamentStageRepository) *PredictionService {
-	return &PredictionService{stages: stages}
+func NewPredictionService(stages *repository.TournamentStageRepository, predictions *repository.PredictionRepository) *PredictionService {
+	return &PredictionService{stages: stages, predictions: predictions}
 }
 
 func (s *PredictionService) GetStages(ctx context.Context, tournamentID, participantID int64) ([]model.TournamentStage, error) {
@@ -21,4 +22,8 @@ func (s *PredictionService) GetStages(ctx context.Context, tournamentID, partici
 
 func (s *PredictionService) GetStage(ctx context.Context, tournamentID, participantID, stageID int64) (model.TournamentStage, error) {
 	return s.stages.GetStage(ctx, tournamentID, participantID, stageID)
+}
+
+func (s *PredictionService) GetUserPredictions(ctx context.Context, tournamentID, participantID, stageID int64) ([]model.MatchWithPrediction, error) {
+	return s.predictions.GetUserPredictions(ctx, tournamentID, participantID, stageID)
 }

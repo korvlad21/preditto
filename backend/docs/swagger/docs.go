@@ -446,6 +446,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/predictions/get_user_predictions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uses the authenticated user's selected tournament and active participant. Matches are ordered by scheduled_start_at then id. A missing prediction is null. An empty stage returns data: []. Cache-Control: no-store.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Predictions"
+                ],
+                "summary": "Get stage matches with my predictions",
+                "parameters": [
+                    {
+                        "description": "JSON request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/predictions.GetStageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/apidocs.Success"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.MatchWithPrediction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "INVALID_REQUEST (invalid body or missing/invalid id)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "UNAUTHORIZED",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND, TOURNAMENT_NOT_SELECTED, TOURNAMENT_PARTICIPANT_NOT_FOUND or TOURNAMENT_STAGE_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "INTERNAL_ERROR",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/teams/get_all_countries": {
             "post": {
                 "description": "No body or parameters required; filters are ignored. Ordered by name; empty results are [].",
@@ -1305,6 +1383,121 @@ const docTemplate = `{
                 },
                 "short_name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.Match": {
+            "type": "object",
+            "properties": {
+                "actual_start_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "x-nullable": true
+                },
+                "away_score": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "finished_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "x-nullable": true
+                },
+                "home_score": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "prediction_lock_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "scheduled_start_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "scheduled",
+                        "live",
+                        "finished",
+                        "postponed",
+                        "cancelled"
+                    ]
+                }
+            }
+        },
+        "model.MatchTeam": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "logo_url": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "name": {
+                    "type": "string"
+                },
+                "short_name": {
+                    "type": "string",
+                    "x-nullable": true
+                }
+            }
+        },
+        "model.MatchWithPrediction": {
+            "type": "object",
+            "properties": {
+                "away_team": {
+                    "$ref": "#/definitions/model.MatchTeam"
+                },
+                "home_team": {
+                    "$ref": "#/definitions/model.MatchTeam"
+                },
+                "match": {
+                    "$ref": "#/definitions/model.Match"
+                },
+                "prediction": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Prediction"
+                        }
+                    ],
+                    "x-nullable": true
+                }
+            }
+        },
+        "model.Prediction": {
+            "type": "object",
+            "properties": {
+                "awarded_points": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "away_score": {
+                    "type": "integer"
+                },
+                "home_score": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "result_type": {
+                    "type": "string",
+                    "enum": [
+                        "exact_score",
+                        "outcome",
+                        "missed"
+                    ],
+                    "x-nullable": true
                 }
             }
         },
