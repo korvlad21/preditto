@@ -125,3 +125,50 @@ func (h *PredictionHandler) GetUserPredictions(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, matches)
 }
+
+// SavePrediction creates or updates the active participant's score prediction.
+// @Summary Save my prediction for one match
+// @Tags Predictions
+// @Description Uses the selected tournament and authenticated participant. The stage must have opened (a null opening time is closed), the match deadline must be in the future, and live or finished matches are closed. Calculated predictions are final. Returns success after an insert or update. Cache-Control: no-store.
+// @Accept json
+// @Param request body predictionsdto.SavePredictionRequest true "Match ID and predicted home and away scores (zero is valid)"
+// @Produce json
+// @Success 200 {object} apidocs.EmptySuccess
+// @Failure 400 {object} apidocs.Error "INVALID_REQUEST (invalid body, missing, null or out-of-range field)"
+// @Failure 401 {object} apidocs.Error "UNAUTHORIZED"
+// @Failure 404 {object} apidocs.Error "USER_NOT_FOUND, TOURNAMENT_NOT_SELECTED, TOURNAMENT_PARTICIPANT_NOT_FOUND or MATCH_NOT_FOUND"
+// @Failure 409 {object} apidocs.Error "PREDICTIONS_NOT_OPEN, PREDICTION_LOCKED or PREDICTION_ALREADY_CALCULATED"
+// @Failure 500 {object} apidocs.Error "INTERNAL_ERROR"
+// @Security BearerAuth
+// @Router /api/predictions/save_prediction [post]
+func (h *PredictionHandler) SavePrediction(c *gin.Context) {
+	user, hasUser := middleware.CurrentUser(c)
+	participant, hasParticipant := middleware.CurrentParticipant(c)
+	if !hasUser || user.SelectedTournamentID == nil || !hasParticipant {
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
+		return
+	}
+	var req predictionsdto.SavePredictionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.AbortError(c, http.StatusBadRequest, response.InvalidRequest)
+		return
+	}
+	err := h.service.SavePrediction(c.Request.Context(), *user.SelectedTournamentID, participant.ID, user.ID, req.MatchID, *req.HomeScore, *req.AwayScore)
+	switch {
+	case err == nil:
+		response.Success(c, http.StatusOK, nil)
+	case errors.Is(err, repository.ErrParticipantNotFound):
+		response.AbortError(c, http.StatusNotFound, response.TournamentParticipantNotFound)
+	case errors.Is(err, repository.ErrNotFound):
+		response.AbortError(c, http.StatusNotFound, response.MatchNotFound)
+	case errors.Is(err, repository.ErrPredictionsNotOpen):
+		response.AbortError(c, http.StatusConflict, response.PredictionsNotOpen)
+	case errors.Is(err, repository.ErrPredictionLocked):
+		response.AbortError(c, http.StatusConflict, response.PredictionLocked)
+	case errors.Is(err, repository.ErrPredictionCalculated):
+		response.AbortError(c, http.StatusConflict, response.PredictionAlreadyCalculated)
+	default:
+		_ = c.Error(err)
+		response.AbortError(c, http.StatusInternalServerError, response.InternalError)
+	}
+}

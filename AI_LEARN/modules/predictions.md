@@ -1,10 +1,10 @@
 # Predictions
 
-Stage and match APIs reviewed against source on 2026-11-23. Prediction schema reviewed on 2026-11-20.
+Prediction saving added on 2026-11-24. Stage and match read APIs reviewed against source on 2026-11-23. Prediction schema reviewed on 2026-11-20.
 
 ## Purpose and scope
 
-Owns prediction stage lookups, the stage match list with the current participant's predictions, predicted scores and stored calculation results. See the [API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
+Owns prediction stage lookups, the stage match list with the current participant's predictions, single-match prediction submission, predicted scores and stored calculation results. See the [API contract](../../backend/docs/predictions.md) and [prediction schema](../../backend/migrations/000015_create_predictions.up.sql).
 
 All [prediction routes](../../backend/internal/router/prediction.go) require authentication, a loaded user and active participation in the selected tournament. The [handler](../../backend/internal/handler/prediction.go) passes the selected tournament ID and active participant ID through the [prediction service](../../backend/internal/service/prediction.go). Missing selection or active participation returns 404.
 
@@ -24,25 +24,10 @@ All timestamps use TIMESTAMP(6) without time zone. created_at and updated_at are
 
 [Tournaments](tournaments.md) owns participants and stages; [matches](matches.md) owns match references. A participant has tournament_participants.tournament_id; a match reaches its tournament through matches.stage_id -> tournament_stages.tournament_id. The two independent FKs in predictions verify existence, not equality of those tournament IDs. Cross-tournament predictions are therefore possible through direct SQL.
 
-For a future repository write, the minimal proposed validation is an atomic conditional insert (not implemented application behavior):
-
-```sql
-INSERT INTO predictions (participant_id, match_id, home_score, away_score)
-SELECT p.id, m.id, $3, $4
-FROM tournament_participants p
-JOIN matches m ON m.id = $2
-JOIN tournament_stages s ON s.id = m.stage_id
-WHERE p.id = $1
-  AND p.tournament_id = s.tournament_id
-RETURNING id;
-```
-
-No returned row means the participant/match was absent or their tournaments differed. This validates the statement's snapshot; it is not a database-wide invariant. Future workflows must also prevent or coordinate reassignment of participant.tournament_id, match.stage_id and stage.tournament_id while predictions reference them. A complete database-enforced rule would require a broader schema or trigger design covering those parent updates, beyond this migration.
-
-The migration does not enforce participant status, prediction deadlines, match status or scoring rules.
+The [save endpoint](../../backend/docs/predictions.md#save-a-prediction) checks the active participant's user and tournament, the match's stage and tournament, and the UTC submission window in one SQL statement. A row lock on the participant serializes submissions even for a new prediction. Shared locks keep the match and stage stable while allowing other participants to save. The UPSERT checks the wall-clock deadline again after locking a conflicting prediction and updates its scores only while `calculated_at IS NULL`. Its `RETURNING` result determines success. A later reassignment of a match, stage or participant can change the tournament relationship after this statement commits.
 
 ## Verification
 
-Use disposable PostgreSQL for migration up/down/reapply, valid and invalid values, FK/unique/check constraints, NULL defaults and parent-row preservation. Test the proposed conditional insert for both matching and different tournaments, and distinguish that query's behavior from the weaker direct-SQL guarantees. See the [database command workflow](../commands/topics/docker.md).
+Use disposable PostgreSQL for migration up/down/reapply, valid and invalid values, FK/unique/check constraints, NULL defaults and parent-row preservation. Run the [save HTTP integration tests](../../backend/internal/handler/save_prediction_test.go) against disposable PostgreSQL for validation, access, timing, UPSERT and concurrent scoring/submission. See the [database command workflow](../commands/topics/docker.md).
 
 Verified all fifteen migrations up/down/up; result types, NULL/defaults, timestamp precision and index definitions; 17 negative FK/unique/check/NOT NULL cases. Migration 15 rollback removed prediction objects while preserving participants and matches, and reapplied successfully. The proposed conditional insert accepted a same-tournament pair and rejected a cross-tournament pair; direct SQL still accepted a cross-tournament prediction, confirming the documented limitation. These checks used a disposable database, not the application database.

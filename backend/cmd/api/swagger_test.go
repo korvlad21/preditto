@@ -66,6 +66,7 @@ func TestSwaggerRouteCoverage(t *testing.T) {
 		"/api/predictions/get_stages":           true,
 		"/api/predictions/get_stage":            true,
 		"/api/predictions/get_user_predictions": true,
+		"/api/predictions/save_prediction":      true,
 	}
 	for _, route := range r.Routes() {
 		if route.Path == "/swagger/*any" {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"preditto/internal/model"
@@ -14,6 +15,77 @@ type PredictionRepository struct {
 
 func NewPredictionRepository(db *sql.DB) *PredictionRepository {
 	return &PredictionRepository{db: db}
+}
+
+var (
+	ErrParticipantNotFound  = errors.New("active tournament participant not found")
+	ErrPredictionsNotOpen   = errors.New("stage predictions have not opened")
+	ErrPredictionLocked     = errors.New("match closed for predictions")
+	ErrPredictionCalculated = errors.New("prediction already calculated")
+)
+
+func (r *PredictionRepository) SavePrediction(ctx context.Context, tournamentID, participantID, userID, matchID int64, homeScore, awayScore int16) error {
+	// Serialize this participant's submissions even when the prediction row does
+	// not exist yet. Shared fixture locks allow other participants to save concurrently.
+	// Materialize the locked inputs before testing the UTC wall-clock window.
+	var outcome string
+	err := r.db.QueryRowContext(ctx, `
+		WITH participant AS MATERIALIZED (
+			SELECT id FROM tournament_participants
+			WHERE tournament_id = $1 AND id = $2 AND user_id = $3 AND status = $7
+			FOR NO KEY UPDATE
+		), fixture AS MATERIALIZED (
+			SELECT m.id, m.status, m.prediction_lock_at, s.predictions_open_at
+			FROM matches m JOIN tournament_stages s ON s.id = m.stage_id
+			WHERE s.tournament_id = $1 AND m.id = $4
+			FOR SHARE OF m, s
+		), eligibility AS MATERIALIZED (
+			SELECT f.id, f.prediction_lock_at, CASE
+				WHEN NOT EXISTS (SELECT FROM participant) THEN 'no_participant'
+				WHEN f.id IS NULL THEN 'no_match'
+				WHEN status IN ('live', 'finished') THEN 'locked'
+				WHEN predictions_open_at IS NULL OR predictions_open_at > (clock_timestamp() AT TIME ZONE 'UTC') THEN 'not_open'
+			END AS refusal
+			FROM (SELECT 1) anchor LEFT JOIN fixture f ON true
+		), saved AS (
+			INSERT INTO predictions (participant_id, match_id, home_score, away_score)
+			SELECT $2, id, $5, $6 FROM eligibility
+			WHERE refusal IS NULL
+			  AND (clock_timestamp() AT TIME ZONE 'UTC') < prediction_lock_at
+			ON CONFLICT ON CONSTRAINT uq_predictions_participant_match DO UPDATE
+			SET home_score = EXCLUDED.home_score, away_score = EXCLUDED.away_score,
+			    updated_at = clock_timestamp()
+			WHERE predictions.calculated_at IS NULL
+			  AND (clock_timestamp() AT TIME ZONE 'UTC') < (SELECT prediction_lock_at FROM eligibility)
+			RETURNING id
+		)
+		SELECT CASE
+			WHEN EXISTS (SELECT FROM saved) THEN 'saved'
+			WHEN refusal IS NOT NULL THEN refusal
+			WHEN prediction_lock_at <= (clock_timestamp() AT TIME ZONE 'UTC') THEN 'locked'
+			ELSE 'calculated'
+		END
+		FROM eligibility
+	`, tournamentID, participantID, userID, matchID, homeScore, awayScore, model.TournamentParticipantStatusActive).Scan(&outcome)
+	if err != nil {
+		return fmt.Errorf("save prediction: %w", err)
+	}
+	switch outcome {
+	case "saved":
+		return nil
+	case "no_participant":
+		return ErrParticipantNotFound
+	case "no_match":
+		return ErrNotFound
+	case "locked":
+		return ErrPredictionLocked
+	case "not_open":
+		return ErrPredictionsNotOpen
+	case "calculated":
+		return ErrPredictionCalculated
+	default:
+		return fmt.Errorf("unexpected save prediction outcome %q", outcome)
+	}
 }
 
 func (r *PredictionRepository) GetUserPredictions(ctx context.Context, tournamentID, participantID, stageID int64) ([]model.MatchWithPrediction, error) {

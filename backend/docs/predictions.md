@@ -1,4 +1,4 @@
-# Prediction stages
+# Predictions
 
 ## List stages
 
@@ -63,3 +63,29 @@ On HTTP 200, `data` contains every match of the stage, ordered by `scheduled_sta
 | `prediction` | `null` if this participant has no prediction for the match. Otherwise contains `id`, `home_score`, `away_score`, nullable `result_type` and nullable `awarded_points`. |
 
 Validation, error codes and cache headers follow [Get one stage](#get-one-stage). Both an unknown stage and a stage from another tournament return HTTP 404 with `TOURNAMENT_STAGE_NOT_FOUND`.
+
+## Save a prediction
+
+`POST /api/predictions/save_prediction` requires a Bearer access token. Send a JSON object with all three integer fields.
+
+```json
+{"match_id":1,"home_score":2,"away_score":0}
+```
+
+`match_id` is a positive signed 64-bit integer. Both scores accept 0 through 32767 inclusive. Missing or null fields are invalid. The API uses the authenticated user's selected tournament and active participant record. It derives the match's tournament from its stage.
+
+Submission opens at the stage's `predictions_open_at` (inclusive) and closes at the match's `prediction_lock_at` (exclusive), using the database clock and UTC fixture times. A null opening time keeps the stage closed. Live and finished matches are closed. Scheduled, postponed and cancelled matches use the same time window. A calculated prediction is final.
+
+HTTP 200 returns `{"success":true}` after creating or updating the prediction. Repeated saves replace both scores and refresh the update timestamp. Result calculation owns `result_type`, `awarded_points` and `calculated_at`.
+
+| HTTP | Error code | Condition |
+| --- | --- | --- |
+| 400 | INVALID_REQUEST | Invalid request body, field type, presence or range |
+| 401 | UNAUTHORIZED | Missing or invalid access token |
+| 404 | USER_NOT_FOUND / TOURNAMENT_NOT_SELECTED | Missing user or tournament selection |
+| 404 | TOURNAMENT_PARTICIPANT_NOT_FOUND | Active participation is missing or has been revoked |
+| 404 | MATCH_NOT_FOUND | Match is missing or belongs to another tournament |
+| 409 | PREDICTIONS_NOT_OPEN | Stage opening time is missing or in the future |
+| 409 | PREDICTION_LOCKED | Match is live or finished, or its deadline has arrived |
+| 409 | PREDICTION_ALREADY_CALCULATED | The prediction has a calculation timestamp |
+| 500 | INTERNAL_ERROR | Internal lookup or save failure |

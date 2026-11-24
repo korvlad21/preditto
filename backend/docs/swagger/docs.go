@@ -524,6 +524,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/predictions/save_prediction": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uses the selected tournament and authenticated participant. The stage must have opened (a null opening time is closed), the match deadline must be in the future, and live or finished matches are closed. Calculated predictions are final. Returns success after an insert or update. Cache-Control: no-store.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Predictions"
+                ],
+                "summary": "Save my prediction for one match",
+                "parameters": [
+                    {
+                        "description": "Match ID and predicted home and away scores (zero is valid)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/predictions.SavePredictionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.EmptySuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "INVALID_REQUEST (invalid body, missing, null or out-of-range field)",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "UNAUTHORIZED",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND, TOURNAMENT_NOT_SELECTED, TOURNAMENT_PARTICIPANT_NOT_FOUND or MATCH_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "PREDICTIONS_NOT_OPEN, PREDICTION_LOCKED or PREDICTION_ALREADY_CALCULATED",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "INTERNAL_ERROR",
+                        "schema": {
+                            "$ref": "#/definitions/apidocs.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/teams/get_all_countries": {
             "post": {
                 "description": "No body or parameters required; filters are ignored. Ordered by name; empty results are [].",
@@ -1732,6 +1801,34 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "description": "Required positive signed 64-bit tournament stage ID.",
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 1,
+                    "example": 1
+                }
+            }
+        },
+        "predictions.SavePredictionRequest": {
+            "type": "object",
+            "required": [
+                "away_score",
+                "home_score",
+                "match_id"
+            ],
+            "properties": {
+                "away_score": {
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0,
+                    "example": 0
+                },
+                "home_score": {
+                    "type": "integer",
+                    "maximum": 32767,
+                    "minimum": 0,
+                    "example": 2
+                },
+                "match_id": {
                     "type": "integer",
                     "format": "int64",
                     "minimum": 1,

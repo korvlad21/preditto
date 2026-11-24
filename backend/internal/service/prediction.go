@@ -27,3 +27,7 @@ func (s *PredictionService) GetStage(ctx context.Context, tournamentID, particip
 func (s *PredictionService) GetUserPredictions(ctx context.Context, tournamentID, participantID, stageID int64) ([]model.MatchWithPrediction, error) {
 	return s.predictions.GetUserPredictions(ctx, tournamentID, participantID, stageID)
 }
+
+func (s *PredictionService) SavePrediction(ctx context.Context, tournamentID, participantID, userID, matchID int64, homeScore, awayScore int16) error {
+	return s.predictions.SavePrediction(ctx, tournamentID, participantID, userID, matchID, homeScore, awayScore)
+}

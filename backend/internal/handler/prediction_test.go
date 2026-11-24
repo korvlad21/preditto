@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,8 +17,8 @@ import (
 	"preditto/internal/service"
 )
 
-func TestPredictionStagesPostgres(t *testing.T) {
-	db := postgres(t)
+func predictionRequest(t *testing.T, db *sql.DB) func(string, string) *httptest.ResponseRecorder {
+	t.Helper()
 	tokens, err := auth.NewTokenManager(testConfig())
 	if err != nil {
 		t.Fatal(err)
@@ -32,13 +33,18 @@ func TestPredictionStagesPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := func(path, body string) *httptest.ResponseRecorder {
+	return func(path, body string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/api/predictions/"+path, strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+pair.AccessToken)
 		w := httptest.NewRecorder()
 		api.ServeHTTP(w, req)
 		return w
 	}
+}
+
+func TestPredictionStagesPostgres(t *testing.T) {
+	db := postgres(t)
+	request := predictionRequest(t, db)
 	assertError(t, request("get_stages", ""), 404, "USER_NOT_FOUND")
 	assertError(t, request("get_stage", `{"id":21}`), 404, "USER_NOT_FOUND")
 	assertError(t, request("get_user_predictions", `{"id":21}`), 404, "USER_NOT_FOUND")

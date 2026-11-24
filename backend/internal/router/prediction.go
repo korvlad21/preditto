@@ -13,4 +13,5 @@ func RegisterPredictionRoutes(api *gin.RouterGroup, predictions *handler.Predict
 	routes.POST("/get_stages", predictions.GetStages)
 	routes.POST("/get_stage", predictions.GetStage)
 	routes.POST("/get_user_predictions", predictions.GetUserPredictions)
+	routes.POST("/save_prediction", predictions.SavePrediction)
 }

@@ -48,6 +48,7 @@ Unknown codes should use a generic localized error fallback.
 | `POST /api/predictions/get_stages` | 200 | Array of [stages with prediction counts](predictions.md) |
 | `/api/predictions/get_stage` | 200 | One [stage with prediction counts](predictions.md#get-one-stage) |
 | `/api/predictions/get_user_predictions` | 200 | Array of [stage matches with teams and the current participant's predictions](predictions.md#get-matches-with-my-predictions) |
+| `/api/predictions/save_prediction` | 200 | Omitted after a successful [save](predictions.md#save-a-prediction) |
 
 Empty collections remain `[]`. Nullable model fields remain `null`; empty strings,
 zeroes, and `false` retain their existing meaning. Business fields are unchanged.
