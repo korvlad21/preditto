@@ -25,7 +25,7 @@ func TestLeaguePhaseMatchesPostgres(t *testing.T) {
 			WHERE t.slug = 'uefa-champions-league-2026-2027' AND s.sequence_no BETWEEN 1 AND 8
 			GROUP BY s.code, s.sequence_no HAVING count(*) = 18 AND bool_and(
 				m.prediction_lock_at = m.scheduled_start_at - interval '1 hour' AND
-				CASE WHEN s.sequence_no <= 4 THEN m.status = 'finished'
+				CASE WHEN s.sequence_no <= 5 THEN m.status = 'finished'
 					AND m.home_score IS NOT NULL AND m.away_score IS NOT NULL
 					AND m.actual_start_at IS NOT NULL AND m.finished_at IS NOT NULL
 					AND m.finished_at > m.actual_start_at
